@@ -33,7 +33,7 @@ new THREE.TextureLoader().load(
   undefined,
   error => console.error("The Flat: assets/bg-scene-hq.png sky background failed to load.", error)
 );
-scene.fog = new THREE.Fog(0x25231f, 10, 24);
+scene.fog = new THREE.Fog(0x34343b, 12, 30);
 
 const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.08, 70);
 camera.rotation.order = "YXZ";
@@ -47,13 +47,13 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setPixelRatio(1);
 renderer.domElement.style.imageRendering = "pixelated";
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.NoToneMapping;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.BasicShadowMap;
 renderer.shadowMap.autoUpdate = true;
 // Very subtle analog-like frame persistence for motion, kept deliberately restrained.
-renderer.domElement.style.filter = 'contrast(1.015) saturate(0.96)';
-renderer.toneMappingExposure = 1.0;
+renderer.domElement.style.filter = 'contrast(1.06) saturate(1.04)';
+renderer.toneMappingExposure = 1.12;
 renderer.domElement.id = "screenCanvas";
 renderer.domElement.tabIndex = 0;
 mount.appendChild(renderer.domElement);
@@ -109,6 +109,19 @@ function animate(now) {
   previous = now;
 
   const nearest = controller.update(deltaTime);
+  // Cinematic hinge easing with smooth acceleration/deceleration; collision stays disabled while open.
+  for (const door of world.doorAnimations) {
+    const target = door.targetOpen ? 1 : 0;
+    door.progress += (target - door.progress) * (1 - Math.exp(-deltaTime * 5.5));
+    if (Math.abs(target - door.progress) < 0.002) door.progress = target;
+    const eased = door.progress * door.progress * (3 - 2 * door.progress);
+    door.pivot.rotation.y = door.closedRotation + (door.openRotation - door.closedRotation) * eased;
+    if (!door.targetOpen && door.progress < 0.9 && door.closedBounds) {
+      Object.assign(door.collider, door.closedBounds);
+    } else if (door.targetOpen) {
+      door.collider.minX = 30; door.collider.maxX = 31;
+    }
+  }
   // Subtle per-object luminance shimmer: tiny, slow, phase-shifted so the room feels
   // like a worn PS1/CRT capture rather than a visibly vibrating scene.
   const shimmer = 0.012 + Math.sin(now * 0.0017) * 0.004;

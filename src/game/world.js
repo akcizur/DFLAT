@@ -3,6 +3,12 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
       const colliders = [];
       const interactables = [];
       const meshesToAnimate = [];
+      const doorAnimations = [];
+      function animateDoor(pivot, collider, closedRotation, openRotation, closedBounds = null) {
+        const door = { pivot, collider, closedRotation, openRotation, targetOpen: false, angle: closedRotation, progress: 0, closedBounds };
+        doorAnimations.push(door);
+        return door;
+      }
   
       function box(name, x, y, z, sx, sy, sz, material, options = {}) {
         const geo = new THREE.BoxGeometry(sx, sy, sz);
@@ -106,6 +112,7 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
       localBox(loggiaDoorPivot, 1.72, 1.38, -.085, .035, .16, .035, M.metal);
       const loggiaDoorCollider = { minX: -1.12, maxX: 1.12, minZ: -6.18, maxZ: -5.78, door: true };
       colliders.push(loggiaDoorCollider);
+      const loggiaDoorAnim = animateDoor(loggiaDoorPivot, loggiaDoorCollider, 0, -1.15, { minX: -1.12, maxX: 1.12, minZ: -6.18, maxZ: -5.78 });
       box('Lodžie / podlaha', 0, -.045, -7.18, 3.25, .12, 2.2, M.tile);
       box('Lodžie / čelní zábradlí', 0, .56, -8.22, 3.25, 1.12, .08, M.metal, { collider: true });
       box('Lodžie / horní madlo', 0, 1.14, -8.22, 3.3, .07, .12, M.metal);
@@ -113,15 +120,10 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
       box('Lodžie / levé zábradlí', -1.58, .56, -7.18, .08, 1.12, 2.12, M.metal, { collider: true });
       box('Lodžie / pravé zábradlí', 1.58, .56, -7.18, .08, 1.12, 2.12, M.metal, { collider: true });
       interact('loggiaDoor', 'Dveře na lodžii', 'Na konci chodby vedou skleněné dveře na lodžii.', -0.15, -5.0, () => {
-        if (!state.loggiaDoorOpen) {
-          state.loggiaDoorOpen = true;
-          loggiaDoorPivot.rotation.y = -1.15;
-          loggiaDoorCollider.minX = 30;
-          loggiaDoorCollider.maxX = 31;
-          ui.showToast('Dveře na lodžii jsou otevřené.');
-        } else {
-          ui.showToast('Dveře na lodžii jsou otevřené.');
-        }
+        state.loggiaDoorOpen = !state.loggiaDoorOpen;
+        loggiaDoorAnim.targetOpen = state.loggiaDoorOpen;
+        if (state.loggiaDoorOpen) { loggiaDoorCollider.minX = 30; loggiaDoorCollider.maxX = 31; ui.showToast('Dveře na lodžii se otevírají.'); }
+        else { ui.showToast('Dveře na lodžii se zavírají.'); }
       }, 2.3);
 
       // Decorative jambs and lintels. These frame openings without adding collision blockers.
@@ -174,6 +176,7 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
       localBox(balconyDoorPivot, 0.045, 1.20, 1.57, 0.04, 0.18, 0.04, M.metal);
       const balconyDoorCollider = { minX: -8.15, maxX: -7.74, minZ: 2.55, maxZ: 4.35, door: true };
       colliders.push(balconyDoorCollider);
+      const balconyDoorAnim = animateDoor(balconyDoorPivot, balconyDoorCollider, 0, 1.2, { minX: -8.15, maxX: -7.74, minZ: 2.55, maxZ: 4.35 });
       box('Balkon / podlaha', -9.0, -0.045, 3.45, 2.0, 0.12, 2.18, M.dark);
       box('Balkon / vnější zábradlí', -9.96, 0.58, 3.45, 0.08, 1.16, 2.18, M.metal, { collider: true });
       box('Balkon / horní madlo', -9.0, 1.12, 2.40, 1.92, 0.08, 0.08, M.metal, { collider: true });
@@ -184,15 +187,10 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
         box('Balkon / svislá příčka', -9.96, 0.58, z, 0.06, 1.08, 0.055, M.metal);
       }
       interact('balconyDoor', 'Balkonové dveře', 'Skleněné dveře vedou na balkon.', -7.05, 3.45, () => {
-        if (!state.balconyDoorOpen) {
-          state.balconyDoorOpen = true;
-          balconyDoorPivot.rotation.y = 1.2;
-          balconyDoorCollider.minX = 30;
-          balconyDoorCollider.maxX = 31;
-          ui.showToast('Balkonové dveře jsou otevřené.');
-        } else {
-          ui.showToast('Vstup na balkon je volný.');
-        }
+        state.balconyDoorOpen = !state.balconyDoorOpen;
+        balconyDoorAnim.targetOpen = state.balconyDoorOpen;
+        if (state.balconyDoorOpen) { balconyDoorCollider.minX = 30; balconyDoorCollider.maxX = 31; ui.showToast('Balkonové dveře se otevírají.'); }
+        else { ui.showToast('Balkonové dveře se zavírají.'); }
       }, 2.35);
 
       // Plants.
@@ -263,15 +261,24 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
       localBox(doorPivot, 1.18, 1.42, -.08, .04, .10, .04, M.yellow);
       localBox(doorPivot, .20, 1.42, -.08, .04, .10, .04, M.darkWood);
       const doorCollider = { minX: -.9, maxX: .9, minZ: 5.63, maxZ: 6.1, door: true }; colliders.push(doorCollider);
+      const frontDoorAnim = animateDoor(doorPivot, doorCollider, 0, -1.35, { minX: -.9, maxX: .9, minZ: 5.63, maxZ: 6.1 });
       interact('frontdoor', 'Vstupní dveře', 'Dveře jsou zamčené. Potřebuješ klíče.', 0, 5.1, () => {
         if (!state.hasKeys) { ui.showToast('Zamčeno. Klíče budou někde v bytě.'); return; }
-        if (!state.doorOpen) { state.doorOpen = true; doorPivot.rotation.y = -1.35; doorCollider.minX = 20; doorCollider.maxX = 21; ui.showToast('Odemčeno. Čerstvý vzduch z chodby.'); ui.updateObjective(state); }
-        else { ui.showToast('Dveře už jsou otevřené. Venku na tebe čeká chodba.'); ui.completeGame(state); }
+        state.doorOpen = !state.doorOpen;
+        frontDoorAnim.targetOpen = state.doorOpen;
+        if (state.doorOpen) {
+          doorCollider.minX = 20; doorCollider.maxX = 21;
+          ui.showToast('Zámek cvakne. Dveře se pomalu otevírají.');
+          ui.updateObjective(state);
+        } else {
+          doorCollider.minX = 20; doorCollider.maxX = 21;
+          ui.showToast('Vstupní dveře se zavírají.');
+        }
       }, 2.2);
   
       // Reference rendering setup: hemisphere fill, PCF sun shadows on desktop, warm room pools.
       scene.add(new THREE.HemisphereLight(0xc7d1d8, 0x332b24, 1.05));
-      const sun = new THREE.DirectionalLight(0xbfd7ff, 1.65);
+      const sun = new THREE.DirectionalLight(0xffd7b0, 1.9);
       sun.position.set(-4, 7, 5);
       sun.castShadow = !LOW_POWER;
       sun.shadow.mapSize.set(1024, 1024);
@@ -283,10 +290,10 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
       sun.shadow.camera.far = 25;
       sun.shadow.bias = -0.0005;
       scene.add(sun);
-      const warm = new THREE.PointLight(0xffd29a, 42, 18, 2);
+      const warm = new THREE.PointLight(0xffd29a, 34, 18, 2);
       warm.position.set(0, 2.82, -.4);
       scene.add(warm);
-      const livingLight = new THREE.PointLight(0xffd29a, 16, 10, 2);
+      const livingLight = new THREE.PointLight(0xffc58c, 18, 11, 2);
       livingLight.position.set(-4.2, 2.55, -2.8);
       scene.add(livingLight);
       const kitchenLight = new THREE.PointLight(0xffe8bd, 22, 11, 2);
