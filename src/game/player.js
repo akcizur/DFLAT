@@ -1,6 +1,6 @@
 // First-person movement, collision handling, proximity and camera synchronization.
 export function createPlayerController({ camera, colliders, interactables, state, ui }) {
-  const player = { x: 0, z: 4.95, yaw: Math.PI * 0.02, pitch: -0.04, speed: 3.45, radius: 0.29 };
+  const player = { x: 0, z: 4.95, yaw: Math.PI * 0.02, pitch: -0.04, speed: 2.15, radius: 0.29 };
   camera.position.set(player.x, 1.68, player.z);
   camera.rotation.order = "YXZ";
   let walkTime = 0;
@@ -53,11 +53,11 @@ export function createPlayerController({ camera, colliders, interactables, state
     const desiredMoving = state.started && !state.paused &&
       (Math.abs(player.x - cameraX) + Math.abs(player.z - cameraZ) > 0.0005 ||
        Object.values(keysDown).some(Boolean));
-    const blend = 1 - Math.exp(-deltaTime * 8);
-    walkBlend += ((desiredMoving ? 1 : 0) - walkBlend) * (1 - Math.exp(-deltaTime * 5));
-    if (desiredMoving) walkTime += deltaTime * 10.5;
-    const bob = Math.sin(walkTime) * 0.027 * walkBlend;
-    const sway = Math.sin(walkTime * 0.5) * 0.009 * walkBlend;
+    const blend = 1 - Math.exp(-deltaTime * 4.2);
+    walkBlend += ((desiredMoving ? 1 : 0) - walkBlend) * (1 - Math.exp(-deltaTime * 3.2));
+    if (desiredMoving) walkTime += deltaTime * 7.2;
+    const bob = Math.sin(walkTime) * 0.012 * walkBlend;
+    const sway = Math.sin(walkTime * 0.42) * 0.004 * walkBlend;
     const targetX = player.x + Math.cos(player.yaw) * sway;
     const targetY = 1.68 + bob;
     const targetZ = player.z - Math.sin(player.yaw) * sway;

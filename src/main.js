@@ -49,15 +49,15 @@ renderer.domElement.style.imageRendering = "pixelated";
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFShadowMap;
+renderer.shadowMap.type = THREE.BasicShadowMap;
 renderer.shadowMap.autoUpdate = true;
-renderer.toneMappingExposure = 1.12;
+renderer.toneMappingExposure = 1.05;
 renderer.domElement.id = "screenCanvas";
 renderer.domElement.tabIndex = 0;
 mount.appendChild(renderer.domElement);
 
 function resize() {
-  const pixelScale = LOW_POWER ? 4.2 : 3.6;
+  const pixelScale = LOW_POWER ? 2.8 : 2.35;
   const width = Math.max(200, Math.floor(innerWidth / pixelScale));
   const height = Math.max(125, Math.floor(innerHeight / pixelScale));
   renderer.setSize(width, height, false);
@@ -83,10 +83,10 @@ const world = createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui });
 // Low-resolution shadow maps preserve the pixel-art look while adding readable contact shadows.
 scene.traverse(object => {
   if (object.isLight && object.castShadow) {
-    object.shadow.mapSize.set(LOW_POWER ? 64 : 128, LOW_POWER ? 64 : 128);
-    object.shadow.bias = -0.0006;
-    object.shadow.normalBias = 0.04;
-    object.shadow.radius = 1;
+    object.shadow.mapSize.set(LOW_POWER ? 192 : 384, LOW_POWER ? 192 : 384);
+    object.shadow.bias = -0.00035;
+    object.shadow.normalBias = 0.025;
+    object.shadow.radius = 0;
   }
 });
 const controller = createPlayerController({
