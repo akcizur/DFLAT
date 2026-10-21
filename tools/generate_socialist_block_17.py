@@ -263,6 +263,11 @@ def build():
         concrete,
     )
     wall_object.data.materials.append(partition_material)
+    # The first 32 faces form the outer ring; all subsequent prism faces are partitions.
+    perimeter_face_count = len(wall_nodes) * 4
+    for polygon in wall_object.data.polygons:
+        if polygon.index >= perimeter_face_count:
+            polygon.material_index = 1
     # Perimeter and partitions deliberately share a single mesh/Array, so every
     # storey uses the same exact 2.8 m vertical increment.
     _add_array(wall_object, "17 storeys | 2.8 m spacing")
