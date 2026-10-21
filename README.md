@@ -16,13 +16,16 @@ Then open [http://localhost:8000](http://localhost:8000). Three.js is loaded fro
 
 - `index.html` — semantic page shell and the existing game HUD/menus.
 - `styles.css` — all presentation; no inline style block is required.
+- `assets/city-sunset.webp` — panoramic exterior background projected around the apartment as a 360-degree sky.
 - `src/main.js` — bootstraps Three.js, shared game state, world, controller, input and render loop.
 - `src/game/materials.js` — reusable material palette.
-- `src/game/world.js` — apartment geometry, lighting, collision volumes and interactables.
+- `src/game/world.js` — continuous wall material, solid door headers, four exterior windows, accessible balcony, lighting, collision volumes and interactables.
 - `src/game/player.js` — first-person movement, collision response, nearby interaction detection and camera sync.
 - `src/game/input.js` — keyboard, pointer lock and touch input.
 - `src/game/ui.js` — objectives, inventory display, notifications, menus' visual state and in-game clock.
 - `scripts/check-architecture.mjs` — verifies entry points, local imports and JavaScript syntax.
+
+The supplied city-at-sunset panorama is used as a 360-degree background visible through the exterior windows and bedroom balcony door.
 
 The site intentionally has no bundler or install-time dependency, so GitHub Pages can serve it directly.
 
