@@ -510,7 +510,7 @@ def build_roof_details():
 
     # Střešní výlez (komínový výstup)
     objs.append(box("Vylet_Box", -10000, 5000, z1+750, 900, 900, 1200, M['bila']))
-    objs.append(box("Vylet_St", -10000, 5000, z1+1400, 1000, 1000, 100, M['kov_tm'])
+    objs.append(box("Vylet_St", -10000, 5000, z1+1400, 1000, 1000, 100, M['kov_tm']))
     for i, (lx, ly) in enumerate([(-10400,4600),(-10400,5400),(-9600,4600),(-9600,5400)]):
         objs.append(box(f"Vylet_L{i}", lx, ly, z1+300, 80, 80, 600, M['beton']))
 
