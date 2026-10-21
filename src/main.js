@@ -35,7 +35,7 @@ new THREE.TextureLoader().load(
   error => console.error("The Flat: assets/bg-scene-hq.png sky background failed to load.", error)
 );
 // Soft depth haze becomes visible around 2–3 m; keeps distant room geometry from feeling too sharp.
-scene.fog = new THREE.FogExp2(0x34343b, 0.075);
+scene.fog = new THREE.FogExp2(0x34343b, 0.052);
 
 const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.08, 70);
 camera.rotation.order = "YXZ";
@@ -57,8 +57,8 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.BasicShadowMap;
 renderer.shadowMap.autoUpdate = true;
 // Very subtle analog-like frame persistence for motion, kept deliberately restrained.
-renderer.domElement.style.filter = 'contrast(1.06) saturate(1.04)';
-renderer.toneMappingExposure = 1.12;
+renderer.domElement.style.filter = 'contrast(1.025) saturate(1.02)';
+renderer.toneMappingExposure = 1.04;
 renderer.domElement.id = "screenCanvas";
 renderer.domElement.tabIndex = 0;
 mount.appendChild(renderer.domElement);
