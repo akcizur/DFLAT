@@ -5,6 +5,6 @@
   "description": "Static Three.js first-person apartment game",
   "scripts": {
     "check": "node scripts/check-architecture.mjs",
-    "check:syntax": "node --check src/main.js && node --check src/game/materials.js && node --check src/game/world.js && node --check src/game/player.js && node --check src/game/ui.js && node --check src/game/input.js && node --check scripts/check-architecture.mjs"
+    "check:syntax": "node --check src/main.js && node --check src/game/pixel-post.js && node --check src/game/materials.js && node --check src/game/world.js && node --check src/game/player.js && node --check src/game/ui.js && node --check src/game/input.js && node --check scripts/check-architecture.mjs"
   }
 }

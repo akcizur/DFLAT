@@ -1,0 +1,59 @@
+/* Cinematic pixel post-processing companion styles: monochrome menu, quick intro and zoom-cut transitions. */
+#startScreen.tv-bios-mode {
+  background: #030303;
+  color: #e8e8e8;
+  transition: opacity 260ms steps(5, end), transform 260ms ease, filter 260ms ease;
+  transform-origin: center center;
+}
+#startScreen.tv-bios-mode .term {
+  border-color: #bcbcbc;
+  background: radial-gradient(ellipse at 50% 42%, #202020 0%, #0b0b0b 68%, #030303 100%);
+  box-shadow: inset 0 0 24px #000, 0 0 0 6px #171717, 0 0 0 8px #555, 0 0 28px #000;
+  animation: tv-idle 7s steps(1, end) infinite;
+}
+#startScreen.tv-bios-mode .tv-bios-title { margin-top: 18px; margin-bottom: 12px; }
+#startScreen.tv-bios-mode .tv-bios-info { line-height: 1.65; }
+#startScreen.tv-bios-mode .tv-bios-rule { margin: 8px 0; color: #777; }
+#startScreen.tv-bios-mode .tv-bios-footer { margin-top: 14px; color: #bbb; }
+#startScreen.tv-bios-mode .cmd { letter-spacing: .08em; text-transform: uppercase; }
+#startScreen.tv-bios-mode.transition-out {
+  opacity: 0;
+  transform: scale(1.065);
+  filter: brightness(1.4) contrast(1.25);
+  pointer-events: none;
+}
+.boot-screen {
+  color: #e8e8e8;
+  background: #000;
+  animation: boot-power-clean 1.28s steps(1, end) forwards;
+}
+.boot-screen:before { opacity: .28; }
+.boot-screen:after { background: radial-gradient(ellipse at center, transparent 55%, #000 100%); animation: none; }
+.boot-noise { opacity: .035; animation-duration: .22s; }
+.bios { text-shadow: 0 0 3px #ddd; }
+.bios > div:first-child { color: #fff; }
+.bios span, .boot-footer, .boot-logo small { color: #bdbdbd; }
+.boot-logo { text-shadow: 1px 0 #999, -1px 0 #444; animation: logo-wake-clean .65s steps(3, end) both; }
+.logo-mark span { color: #d5d5d5; }
+.boot-logo div { letter-spacing: .22em; }
+.menu-logo { text-shadow: none; }
+.menu-logo b { color: #eee; }
+@keyframes boot-power-clean {
+  0% { opacity: 1; transform: scaleY(.012); filter: brightness(2); }
+  10% { transform: scaleY(1); filter: none; }
+  18% { opacity: 1; }
+  23% { opacity: .76; }
+  30%, 68% { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; pointer-events: none; }
+}
+@keyframes logo-wake-clean {
+  0% { opacity: 0; transform: scale(.94); }
+  40% { opacity: .75; transform: scale(1.015); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes tv-idle { 0%, 97%, 100% { opacity: 1; } 98% { opacity: .97; } }
+@media (prefers-reduced-motion: reduce) {
+  .boot-screen, .boot-logo, .boot-noise,
+  #startScreen.tv-bios-mode .term { animation: none !important; }
+  #startScreen.tv-bios-mode, #startScreen.tv-bios-mode.transition-out { transition: none !important; }
+}

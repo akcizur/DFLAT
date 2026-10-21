@@ -1,5 +1,5 @@
 // Keyboard, pointer lock and touch controls. No game-world logic lives here.
-export function bindInput({ renderer, state, controller, ui }) {
+export function bindInput({ renderer, state, controller, ui, postFx }) {
   const { player, keysDown, doInteract } = controller;
   let touchLook = null;
 
@@ -8,22 +8,31 @@ export function bindInput({ renderer, state, controller, ui }) {
   }
 
   function startGame() {
+    if (state.started) return;
     state.started = true;
-    ui.hideStart();
+    const startScreen = document.getElementById("startScreen");
+    startScreen.classList.add("transition-out");
+    postFx?.triggerZoom(0.065);
     state.paused = false;
     ui.hidePause();
     renderer.domElement.focus();
     if (matchMedia("(pointer:fine)").matches) lockPointer();
+    window.setTimeout(() => {
+      ui.hideStart();
+      startScreen.classList.remove("transition-out");
+    }, 260);
   }
 
   function pauseGame() {
     if (!state.started || state.finished) return;
     state.paused = true;
+    postFx?.triggerZoom(-0.035);
     ui.showPause();
     if (document.pointerLockElement) document.exitPointerLock();
   }
 
   function resumeGame() {
+    postFx?.triggerZoom(0.025);
     state.paused = false;
     ui.hidePause();
     if (matchMedia("(pointer:fine)").matches) lockPointer();
