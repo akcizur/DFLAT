@@ -93,6 +93,7 @@ if (!blenderGenerator.includes("include_entry=True") || !blenderGenerator.includ
 if (!blenderGenerator.includes('boolean.solver = "EXACT"')) fail("Stairwell and roof-hatch cuts must use Blender's exact Boolean solver");
 if (!blenderGenerator.includes("STAIR_FLIGHTS_PER_STOREY = 2") || !blenderGenerator.includes("STEPS_PER_FLIGHT = 8")) fail("Blender generator must create switch-back stairs between storeys");
 if (!blenderGenerator.includes("STAIRWELL_SIZE = (3.98, 3.93)")) fail("Floor slabs must include the stairwell opening");
+if (!blenderGenerator.includes("rail_vertex_offset = len(stair_vertices)") || !blenderGenerator.includes("index + rail_vertex_offset")) fail("Stair handrails must use valid shared-mesh vertex indices");
 if (!blenderGenerator.includes("ROOF_HATCH_SIZE = (1.05, 1.05)") || !blenderGenerator.includes("def _build_roof_ladder(")) fail("Roof must have a ladder hatch and fixed ladder");
 if (!blenderGenerator.includes("Fixed ladder from top floor to roof hatch")) fail("Roof ladder object must be included in the generated collection");
 const materialsSource = await readFile(path.join(root, "src/game/materials.js"), "utf8");
