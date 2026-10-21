@@ -507,3 +507,111 @@
 .runtime-error p { max-width: 620px; margin: 0; color: #c28d4c; }
 .runtime-error a { margin-top: 10px; color: #ff493d; text-decoration: none; }
 .runtime-error a:hover, .runtime-error a:focus-visible { color: #ffe0ad; text-decoration: underline; }
+
+
+/* Centered in-game HUD: preserve the minimalist BIOS look while keeping
+   all primary status information aligned around the screen's center axis. */
+.hud .topline {
+  left: 50%;
+  right: auto;
+  width: min(620px, calc(100vw - 32px));
+  transform: translateX(-50%);
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.hud .brand {
+  text-align: left;
+}
+.hud .status {
+  text-align: right;
+}
+.hud .objective {
+  left: 50%;
+  right: auto;
+  top: clamp(76px, 10vh, 106px);
+  width: min(340px, calc(100vw - 36px));
+  max-width: none;
+  transform: translateX(-50%);
+  border-left: 0;
+  border-top: 1px solid var(--crt-edge);
+  padding: 10px 14px;
+  text-align: center;
+  background: rgba(8, 5, 2, .58);
+}
+.hud .objective b {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--crt-hot);
+  letter-spacing: .14em;
+}
+.hud .objective #inventoryText {
+  margin-top: 4px !important;
+}
+.hud .bottomline {
+  left: 50%;
+  right: auto;
+  width: min(760px, calc(100vw - 32px));
+  transform: translateX(-50%);
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  text-align: center;
+}
+.hud .hint {
+  text-align: center;
+  max-width: 100%;
+}
+.hud .bottomline .right {
+  max-width: 100%;
+  text-align: center;
+  font-size: 9px;
+}
+.hud .interaction {
+  left: 50%;
+  right: auto;
+  bottom: auto;
+  top: calc(50% + 24px);
+  transform: translateX(-50%);
+  max-width: calc(100vw - 32px);
+  text-align: center;
+  background: rgba(8, 5, 2, .86);
+}
+.hud .interaction.show {
+  animation: hud-prompt-in .16s steps(4, end) both;
+}
+.hud .toast {
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, calc(-50% - 12px));
+  max-width: min(520px, calc(100vw - 32px));
+  text-align: center;
+}
+.hud .toast.show {
+  transform: translate(-50%, -50%);
+}
+@keyframes hud-prompt-in {
+  from { opacity: 0; transform: translate(-50%, 3px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+@media (pointer: coarse) {
+  .hud .topline {
+    top: 12px;
+    width: calc(100vw - 24px);
+  }
+  .hud .objective {
+    top: 72px;
+    width: min(300px, calc(100vw - 28px));
+  }
+  .hud .bottomline {
+    bottom: 14px;
+    width: calc(100vw - 32px);
+  }
+  .hud .bottomline .right { display: none; }
+  .hud .hint { font-size: 9px; padding: 5px 7px; }
+  .hud .interaction { top: calc(50% + 22px); bottom: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hud .interaction.show { animation: none; }
+}
