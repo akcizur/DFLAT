@@ -1,0 +1,490 @@
+:root {
+      color-scheme: dark;
+      --ink: #f0ebdf;
+      --paper: #171715;
+      --line: #77756a;
+      --dim: #aaa699;
+      --lime: #d7ff76
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #161513;
+      color: var(--ink);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace
+    }
+
+    body {
+      image-rendering: pixelated
+    }
+
+    #game {
+      position: fixed;
+      inset: 0
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+      outline: none;
+      touch-action: none
+    }
+
+    .hud {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      text-shadow: 2px 2px 0 #13120f;
+    }
+
+    .topline {
+      position: absolute;
+      left: clamp(14px, 3vw, 38px);
+      right: clamp(14px, 3vw, 38px);
+      top: clamp(14px, 3vh, 30px);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px
+    }
+
+    .brand {
+      font-weight: 900;
+      letter-spacing: .08em;
+      font-size: clamp(13px, 1.4vw, 17px);
+      line-height: 1.3
+    }
+
+    .brand span {
+      display: block;
+      color: var(--dim);
+      font-size: 10px;
+      letter-spacing: .16em;
+      font-weight: 500;
+      margin-top: 4px
+    }
+
+    .status {
+      border: 1px solid #aaa58d66;
+      background: #191916d9;
+      padding: 9px 12px;
+      font-size: 11px;
+      color: var(--dim);
+      letter-spacing: .07em;
+      min-width: 100px;
+      text-align: right
+    }
+
+    .objective {
+      position: absolute;
+      left: clamp(14px, 3vw, 38px);
+      top: 100px;
+      max-width: 265px;
+      background: #191916d9;
+      border-left: 2px solid var(--lime);
+      padding: 12px 14px;
+      line-height: 1.6;
+      font-size: 11px;
+      color: var(--dim)
+    }
+
+    .objective b {
+      display: block;
+      color: var(--ink);
+      font-size: 12px;
+      margin-bottom: 3px
+    }
+
+    .objective .done {
+      color: var(--lime)
+    }
+
+    .crosshair {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 14px;
+      height: 14px;
+      transform: translate(-50%, -50%);
+      opacity: .8
+    }
+
+    .crosshair:before,
+    .crosshair:after {
+      content: "";
+      position: absolute;
+      background: #f5f1e6;
+      box-shadow: 1px 1px #222
+    }
+
+    .crosshair:before {
+      height: 2px;
+      width: 14px;
+      top: 6px;
+      left: 0
+    }
+
+    .crosshair:after {
+      width: 2px;
+      height: 14px;
+      left: 6px;
+      top: 0
+    }
+
+    .interaction {
+      position: absolute;
+      left: 50%;
+      bottom: clamp(70px, 11vh, 110px);
+      transform: translateX(-50%);
+      background: #191916ed;
+      border: 1px solid #77756a;
+      padding: 11px 15px;
+      white-space: nowrap;
+      text-align: center;
+      opacity: 0;
+      transition: opacity .08s;
+      font-size: 11px;
+      max-width: 92vw
+    }
+
+    .interaction.show {
+      opacity: 1
+    }
+
+    .interaction b {
+      color: var(--lime)
+    }
+
+    .bottomline {
+      position: absolute;
+      left: clamp(14px, 3vw, 38px);
+      right: clamp(14px, 3vw, 38px);
+      bottom: clamp(13px, 2.6vh, 26px);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: end;
+      color: #bab5a8;
+      font-size: 10px;
+      letter-spacing: .04em
+    }
+
+    .hint {
+      border: 1px solid #aaa58d55;
+      background: #191916bd;
+      padding: 8px 10px
+    }
+
+    .bottomline .right {
+      text-align: right;
+      max-width: 45%;
+      line-height: 1.5
+    }
+
+    .screen {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: radial-gradient(ellipse at 50% 38%, #333026bb 0%, #121210f5 72%)
+    }
+
+    .screen.hidden {
+      display: none
+    }
+
+    .card {
+      width: min(600px, 100%);
+      border: 1px solid #77756a;
+      background: #171715f2;
+      padding: clamp(22px, 5vw, 46px);
+      box-shadow: 8px 8px 0 #080807;
+      position: relative
+    }
+
+    .eyebrow {
+      color: var(--lime);
+      font-size: 10px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      margin-bottom: 20px
+    }
+
+    .title {
+      font-size: clamp(38px, 8vw, 76px);
+      line-height: .88;
+      letter-spacing: -.09em;
+      font-weight: 900;
+      margin: 0 0 22px
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: #bbb6a9;
+      line-height: 1.8;
+      max-width: 430px;
+      margin: 0 0 26px
+    }
+
+    .separator {
+      height: 1px;
+      background: #5d5a50;
+      margin: 25px 0
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 18px;
+      color: #a8a497;
+      font-size: 10px;
+      line-height: 1.5
+    }
+
+    .controls b {
+      color: #f0ebdf;
+      font-weight: 700
+    }
+
+    .primary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      width: 100%;
+      border: 1px solid var(--lime);
+      background: var(--lime);
+      color: #171715;
+      padding: 15px 16px;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      cursor: pointer;
+      text-align: left
+    }
+
+    .primary span {
+      font-size: 18px
+    }
+
+    .primary:hover {
+      background: #e5ffac
+    }
+
+    .footnote {
+      color: #706e64;
+      font-size: 9px;
+      line-height: 1.7;
+      margin-top: 15px
+    }
+
+    .toast {
+      position: fixed;
+      z-index: 4;
+      left: 50%;
+      top: 75px;
+      transform: translateX(-50%) translateY(-10px);
+      opacity: 0;
+      pointer-events: none;
+      border: 1px solid #77756a;
+      background: #191916f2;
+      padding: 10px 14px;
+      font-size: 11px;
+      max-width: 90vw;
+      text-align: center;
+      transition: opacity .2s, transform .2s
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0)
+    }
+
+    .touch-controls {
+      display: none;
+      position: fixed;
+      z-index: 3;
+      left: 18px;
+      bottom: 65px;
+      gap: 6px;
+      pointer-events: auto;
+      user-select: none;
+      -webkit-user-select: none
+    }
+
+    .touch-col {
+      display: flex;
+      justify-content: center;
+      gap: 6px
+    }
+
+    .touch-controls button,
+    .touch-action {
+      width: 47px;
+      height: 43px;
+      border: 1px solid #aaa58d88;
+      background: #191916bb;
+      color: #f0ebdf;
+      font: inherit;
+      font-size: 15px;
+      touch-action: none
+    }
+
+    .touch-controls button:active,
+    .touch-action:active {
+      background: #d7ff76;
+      color: #171715
+    }
+
+    .touch-action {
+      display: none;
+      position: fixed;
+      z-index: 3;
+      right: 20px;
+      bottom: 75px;
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: bold;
+      pointer-events: auto
+    }
+
+    @media (pointer:coarse) {
+      .touch-controls {
+        display: flex;
+        flex-direction: column
+      }
+
+      .touch-action {
+        display: block
+      }
+
+      .bottomline .right {
+        display: none
+      }
+
+      .objective {
+        top: 85px;
+        max-width: 210px;
+        font-size: 10px
+      }
+
+      .status {
+        font-size: 9px;
+        min-width: auto
+      }
+
+      .interaction {
+        bottom: 160px
+      }
+    }
+
+    @media (max-width:480px) {
+      .objective {
+        max-width: 185px;
+        padding: 9px 10px
+      }
+
+      .brand span {
+        font-size: 8px
+      }
+
+      .controls {
+        gap: 8px
+      }
+
+      .card {
+        padding: 24px
+      }
+
+      .title {
+        font-size: 54px
+      }
+
+      .bottomline {
+        font-size: 9px
+      }
+    }
+
+    /* Minimal terminal HUD from the supplied reference HTML. */
+    .screen {
+      background: rgba(0, 0, 0, .45);
+      align-items: flex-start;
+      justify-content: flex-start;
+      padding: clamp(24px, 8vh, 80px) clamp(20px, 8vw, 96px);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+    }
+    .term {
+      font-size: clamp(13px, 1.6vw, 16px);
+      line-height: 1.9;
+      padding: 16px 20px;
+      text-shadow: none;
+      background: rgba(0, 0, 0, .5);
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+      color: #d8d8d0;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+    }
+    .term .dim { color: #8a8a82; font-size: .82em; }
+    .term .gap { height: 1.2em; }
+    .cmd {
+      all: unset;
+      cursor: pointer;
+      color: var(--ink);
+      font: inherit;
+      font-size: 1.1em;
+      text-transform: lowercase;
+    }
+    .cmd .p { color: var(--lime); }
+    .cmd:hover, .cmd:focus-visible { color: var(--lime); }
+    .cur { animation: blink 1s steps(1) infinite; color: var(--lime); }
+    @keyframes blink { 50% { opacity: 0; } }
+    .hud, .term { text-shadow: none; }
+    .status, .objective, .interaction, .hint, .toast, .brand,
+    .touch-controls button, .touch-action {
+      background: rgba(0, 0, 0, .5);
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+      color: #d8d8d0;
+      font: 12px/1.6 ui-monospace, Menlo, Consolas, monospace;
+      letter-spacing: 0;
+      text-transform: lowercase;
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+    }
+    .brand { padding: 6px 10px; font-weight: 400; font-size: 12px; }
+    .brand span { display: inline; margin: 0 0 0 8px; color: #8a8a82; font-size: 12px; letter-spacing: 0; }
+    .status { padding: 6px 10px; min-width: 0; }
+    .objective { padding: 6px 10px; max-width: 260px; color: #c8c8c0; }
+    .objective b { display: inline; color: #8a8a82; font-size: 12px; font-weight: 400; margin: 0; }
+    .objective .done { color: var(--lime); }
+    .interaction { padding: 6px 12px; }
+    .interaction b { color: var(--lime); font-weight: 400; }
+    .hint { padding: 6px 10px; color: #8a8a82; }
+    .toast { padding: 6px 12px; }
+    .crosshair { opacity: .6; width: 8px; height: 8px; }
+    .crosshair:before { width: 8px; top: 3px; }
+    .crosshair:after { height: 8px; left: 3px; }
+    .touch-controls button, .touch-action { border: 0; color: #d8d8d0; }
+    .touch-controls button:active, .touch-action:active {
+      background: rgba(215, 255, 118, .6);
+      color: #000;
+    }
+    .screen.hidden { display: none; }
