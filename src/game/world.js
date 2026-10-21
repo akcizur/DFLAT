@@ -26,20 +26,12 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
       // the bedroom and bathroom each use a clearly framed 1.0–1.2 m doorway.
       // Apartment envelope. The ceiling is omitted so the compact floor plan stays readable.
       box('Podlaha', 0, -.12, 0, 16, .22, 12, M.floor);
-      // Broad low-resolution floorboard bands, with staggered joints for an 8-bit / PS1 hybrid look.
-      for (let z = -5.5, row = 0; z <= 5.5; z += .62, row++) {
-        const tone = row % 2 ? M.wood : M.floor;
-        box('Podlahové prkno', 0, .005, z, 15.72, .018, .58, tone);
-        const offset = row % 2 ? -1.15 : 0;
-        for (let x = -6.75 + offset; x <= 6.75; x += 2.5) {
-          box('Spára podlahy', x, .015, z, .018, .004, .55, M.darkWood);
-        }
-      }
+      // Keep the floor as one uninterrupted surface: no raised plank strips or dark seam boxes.
       // Ceiling plane stays non-shadowing so it does not black out point-lit interior rooms.
       const ceiling = box('Strop', 0, 3.22, 0, 15.9, .1, 11.9, M.white);
       ceiling.castShadow = false;
       ceiling.receiveShadow = false;
-      for (const x of [-6.5, 0, 6.5]) box('Stropní stínová lišta', x, 3.16, 0, .055, .055, 11.5, M.wall2);
+
       const wallH = 3.15, wallT = .24;
       function wall(x, z, sx, sz, material = M.wall) { box('Stěna', x, wallH / 2, z, sx, wallH, sz, material, { collider: true }); }
       // North end of the hallway opens through glass doors to a new loggia.
@@ -141,27 +133,20 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
       box('Nadpraží ložnice', -1, 2.16, 2.4, .26, .12, 1.08, M.wood2);
       for (const z of [1.8, 3.0]) box('Zárubeň koupelny', 1, 1.08, z, .26, 2.16, .12, M.white);
       box('Nadpraží koupelny', 1, 2.16, 2.4, .26, .12, 1.08, M.white);
-      // Main entrance opening: keep both wall wings, but leave a clear centered door span.
-      // The previous full-width upper/lintel pieces visually closed the entrance; build only the header.
-      box('Vstup / levý horní díl', -1.45, 2.67, 5.91, 2.9, 1.0, .18, M.wall);
-      box('Vstup / pravý horní díl', 1.45, 2.67, 5.91, 2.9, 1.0, .18, M.wall);
+      // Main entrance header: one continuous wall piece above the opening, aligned to the wall plane.
+      box('Vstup / nadpraží', 0, 2.72, 5.91, 2.05, .86, .24, M.wall);
       // Solid infill above all interior doorways; the wall continues to the ceiling.
       for (const [x, z] of [[-1, -3.4], [-1, 2.4], [1, -3.4], [1, 2.4]]) {
-        box('Stěna nad dveřmi', x, (2.22 + wallH) / 2, z, .18, wallH - 2.22, 1.2, M.wall);
+        box('Stěna nad dveřmi', x, (2.28 + wallH) / 2, z, .24, wallH - 2.28, 1.2, M.wall);
       }
       // Trim and small visual wall marks.
-      box('Lišta', 0, .10, -5.84, 15.45, .14, .07, M.wood);
+      // North skirting is segmented with the wall geometry so it does not float across openings.
       // Keep the entrance clear: the south baseboard follows only the two solid wall sections.
       box('Lišta', -4.5, .10, 5.84, 7.0, .14, .07, M.wood);
       box('Lišta', 4.5, .10, 5.84, 7.0, .14, .07, M.wood);
       box('Lišta', -7.84, .10, 0, .07, .14, 11.5, M.wood);
       box('Lišta', 7.84, .10, 0, .07, .14, 11.5, M.wood);
-      // Low skirting on both north/south room dividers, split only by the central hall.
-      // Visible skirting on both faces of each cross-wall; each strip is aligned to the wall face.
-      for (const x of [-4.5, 4.5]) {
-        box('Lišta příčky / sever', x, .10, .06, 7.0, .12, .05, M.wood);
-        box('Lišta příčky / jih', x, .10, .24, 7.0, .12, .05, M.wood);
-      }
+      // Avoid continuous decorative strips across room openings; wall edges stay clean.
       // Rugs and a runner that makes the entry-to-center circulation legible.
       box('Chodba / běhoun', 0, .008, 0, 1.35, .02, 9.8, M.cloth);
       box('Obývák / koberec', -4.1, .006, -1.6, 5.1, .025, 3.1, M.rug);
