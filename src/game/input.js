@@ -52,8 +52,8 @@ export function bindInput({ renderer, state, controller, ui }) {
 
   document.addEventListener("mousemove", event => {
     if (document.pointerLockElement === renderer.domElement && state.started && !state.paused) {
-      player.yaw -= event.movementX * 0.0024;
-      player.pitch -= event.movementY * 0.0021;
+      player.yaw -= event.movementX * 0.0019;
+      player.pitch -= event.movementY * 0.0017;
       player.pitch = Math.max(-1.35, Math.min(1.35, player.pitch));
     }
   });
@@ -69,8 +69,8 @@ export function bindInput({ renderer, state, controller, ui }) {
     if (!touchLook || touchLook.id !== event.pointerId) return;
     const dx = event.clientX - touchLook.x;
     const dy = event.clientY - touchLook.y;
-    player.yaw -= dx * 0.006;
-    player.pitch -= dy * 0.004;
+    player.yaw -= dx * 0.0048;
+    player.pitch -= dy * 0.0032;
     player.pitch = Math.max(-1.25, Math.min(1.25, player.pitch));
     touchLook.x = event.clientX;
     touchLook.y = event.clientY;
