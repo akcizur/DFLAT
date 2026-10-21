@@ -34,7 +34,7 @@ export function createPixelPostProcess(THREE, renderer) {
   const profiles = {
     off:   { curvature: 0, chroma: 0, scanline: 0, vignette: 0, noise: 0, jitter: 0, interlace: 0, mask: 0, levels: 0 },
     clean: { curvature: 0.015, chroma: 0.0002, scanline: 0.025, vignette: 0.12, noise: 0.004, jitter: 0, interlace: 0, mask: 0, levels: 0 },
-    crt:   { curvature: 0.075, chroma: 0.0012, scanline: 0.075, vignette: 0.24, noise: 0.012, jitter: 0.0002, interlace: 0.035, mask: 0.035, levels: 0 },
+    crt:   { curvature: 0.035, chroma: 0.00035, scanline: 0.035, vignette: 0.15, noise: 0.004, jitter: 0.00005, interlace: 0.012, mask: 0.012, levels: 0 },
     vhs:   { curvature: 0.055, chroma: 0.0026, scanline: 0.055, vignette: 0.18, noise: 0.035, jitter: 0.0018, interlace: 0.075, mask: 0.015, levels: 0 },
     psx:   { curvature: 0.035, chroma: 0.0008, scanline: 0.04, vignette: 0.16, noise: 0.008, jitter: 0.0001, interlace: 0.02, mask: 0.025, levels: 20 }
   };
@@ -268,11 +268,11 @@ export function createPixelPostProcess(THREE, renderer) {
     displayContext.drawImage(frameCanvas, 0, 0, width, height);
     displayContext.restore();
     displayContext.save();
-    displayContext.globalAlpha = 0.10;
+    displayContext.globalAlpha = 0.035;
     displayContext.fillStyle = "#000000";
-    for (let y = 1; y < height; y += 3) displayContext.fillRect(0, y, width, 1);
+    for (let y = 1; y < height; y += 4) displayContext.fillRect(0, y, width, 1);
     if (!reducedMotion) {
-      displayContext.globalAlpha = 0.012 + Math.sin(timeSeconds * 31) * 0.006;
+      displayContext.globalAlpha = 0.003 + Math.sin(timeSeconds * 4.5) * 0.0015;
       displayContext.fillStyle = "#ffffff";
       displayContext.fillRect(0, 0, width, height);
     }
@@ -297,7 +297,7 @@ export function createPixelPostProcess(THREE, renderer) {
   }
 
   const requestedProfile = new URLSearchParams(window.location.search).get("fx");
-  setProfile(requestedProfile && profiles[requestedProfile] ? requestedProfile : "crt");
+  setProfile(requestedProfile && profiles[requestedProfile] ? requestedProfile : "clean");
   renderer.getSize(size);
   setSize(size.x, size.y);
   return { setSize, renderScene, present, triggerZoom, setProfile, getProfile, profiles, dispose };

@@ -600,3 +600,78 @@
 @keyframes mono-tv-flicker { 0%,96%,100% { opacity:1; } 97% { opacity:.94; } 98% { opacity:1; } }
 @keyframes mono-cursor { 0%,48% { opacity:1; } 49%,100% { opacity:.15; } }
 @media (prefers-reduced-motion: reduce) { #startScreen.tv-bios-mode .term, #startScreen.tv-bios-mode .cur, .tv-bios-footer { animation:none; } }
+
+
+/* Calm cinematic pass: keep the room readable and the interface out of the way. */
+#game, #screenCanvas, #pixelDisplayCanvas { touch-action: none; }
+.hud { opacity: .88; }
+.status, .objective, .interaction, .hint, .toast, .brand {
+  background: rgba(12, 13, 15, .34);
+  border: 1px solid rgba(220, 226, 228, .09);
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgba(0,0,0,.08);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  text-transform: none;
+}
+.brand span { display: block; margin: 2px 0 0; font-size: 9px; opacity: .72; }
+.objective { max-width: 290px; padding: 10px 12px; line-height: 1.55; }
+.status { border-radius: 8px; }
+.interaction { border-radius: 999px; }
+.crosshair { opacity: .35; }
+.pause-button, .fullscreen-button {
+  position: fixed; z-index: 8; top: max(14px, env(safe-area-inset-top));
+  width: 42px; height: 42px; display: grid; place-items: center;
+  border: 1px solid rgba(235,240,242,.18); border-radius: 50%;
+  background: rgba(16,18,20,.34); color: rgba(245,247,247,.88);
+  font: 20px/1 system-ui, sans-serif; cursor: pointer;
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  transition: background .18s ease, border-color .18s ease, transform .18s ease;
+}
+.pause-button { right: max(64px, calc(env(safe-area-inset-right) + 64px)); }
+.fullscreen-button { right: max(14px, env(safe-area-inset-right)); }
+.pause-button:hover, .fullscreen-button:hover { background: rgba(38,42,44,.72); border-color: rgba(245,247,247,.34); }
+.pause-button:active, .fullscreen-button:active { transform: scale(.96); }
+#touchLookZone { display: none; }
+@media (pointer: coarse) {
+  .touch-controls {
+    display: block; left: max(18px, env(safe-area-inset-left)); bottom: max(22px, env(safe-area-inset-bottom));
+    width: 142px; height: 142px; z-index: 6; touch-action: none;
+  }
+  .virtual-stick { position: absolute; inset: 0; touch-action: none; }
+  .stick-ring {
+    position: absolute; inset: 0; border: 1px solid rgba(230,238,240,.24); border-radius: 50%;
+    background: radial-gradient(circle, rgba(230,238,240,.035), rgba(5,8,10,.14));
+    box-shadow: inset 0 0 28px rgba(0,0,0,.12);
+  }
+  .stick-knob {
+    position: absolute; left: 50%; top: 50%; width: 52px; height: 52px;
+    border: 1px solid rgba(235,241,243,.38); border-radius: 50%;
+    background: rgba(205,218,222,.16); transform: translate(-50%,-50%);
+    box-shadow: 0 4px 18px rgba(0,0,0,.16); pointer-events: none;
+  }
+  .touch-action {
+    display: block; z-index: 7; right: max(22px, env(safe-area-inset-right));
+    bottom: max(24px, env(safe-area-inset-bottom)); width: 66px; height: 66px;
+    border: 1px solid rgba(230,238,240,.2); border-radius: 50%;
+    background: rgba(16,18,20,.36); color: rgba(245,247,247,.9);
+    font: 10px/1.3 system-ui, sans-serif; letter-spacing: .04em;
+    -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  }
+  #touchLookZone {
+    display: block; position: fixed; z-index: 2; top: 18%; right: 0; bottom: 15%; width: 53%;
+    touch-action: none; background: transparent;
+  }
+  .pause-button, .fullscreen-button { z-index: 9; width: 38px; height: 38px; }
+  .pause-button { right: max(60px, calc(env(safe-area-inset-right) + 60px)); }
+  .fullscreen-button { right: max(12px, env(safe-area-inset-right)); }
+  .interaction { bottom: 112px; }
+  .bottomline .hint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pause-button, .fullscreen-button { transition: none; }
+}
+
+body.fullscreen-fallback { overflow: hidden; }
+body.fullscreen-fallback #game { position: fixed; inset: 0; width: 100vw; height: 100dvh; z-index: 1; }
+body.fullscreen-fallback .hud { position: fixed; inset: 0; }
