@@ -59,7 +59,9 @@ The generated collection contains an eight-node perimeter with mitered 200 mm co
 
 The staircase uses two switch-back flights per storey. Each intermediate floor slab has a matching stairwell opening, and the roof slab has a separate smaller hatch with a fixed ladder extending from the top floor to above the roof. The roof top is approximately 47.8 m above the base. The 17 floor/roof panels are built as 16 repeated floor slabs plus one roof panel, separate from the foundation.
 
-`tools/generate_socialist_block_17.py` keeps wall/floor Arrays editable, applies precise Boolean cut-outs to the slab openings, and defines the complete `wall_faces` and `v_slab` geometry. The Blender file is generated when the script is run in Blender; the website does not load this model automatically.
+The facade has repeated horizontal belt courses, narrow vertical panel joints, and downpipes at the outer chamfers. A parapet with overhanging coping, three ventilation housings and raised exhausts finish the roof. The street front gets a concrete arrival apron and approach path; the entrance is labelled `VCHOD 01` and includes a simple intercom. Materials now have Principled shaders, and the scene opens with an orthographic portrait camera, architectural area lighting and a ground/street context for a first render.
+
+`tools/generate_socialist_block_17.py` keeps wall/floor Arrays editable, applies precise Boolean cut-outs to the slab openings, and defines the complete `wall_faces` and `v_slab` geometry. The Blender file is generated when the script is run in Blender; the website does not load this model automatically. Blender itself must be installed to render or visually inspect the generated scene.
 
 ## Architecture
 
