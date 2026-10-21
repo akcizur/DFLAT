@@ -48,8 +48,10 @@ renderer.setPixelRatio(1);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.22;
-renderer.shadowMap.enabled = !LOW_POWER;
+renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
+renderer.shadowMap.autoUpdate = true;
+renderer.toneMappingExposure = 1.12;
 renderer.domElement.id = "screenCanvas";
 renderer.domElement.tabIndex = 0;
 mount.appendChild(renderer.domElement);
@@ -77,6 +79,14 @@ const state = {
 const ui = createUI();
 const { M, mat } = createMaterials(THREE);
 const world = createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui });
+// Low-resolution shadow maps preserve the pixel-art look while adding readable contact shadows.
+scene.traverse(object => {
+  if (object.isLight && object.castShadow) {
+    object.shadow.mapSize.set(LOW_POWER ? 256 : 512, LOW_POWER ? 256 : 512);
+    object.shadow.bias = -0.00035;
+    object.shadow.normalBias = 0.025;
+  }
+});
 const controller = createPlayerController({
   camera,
   colliders: world.colliders,
