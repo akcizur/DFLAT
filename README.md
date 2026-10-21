@@ -24,7 +24,8 @@ bun run preview
 
 - **60 Hz simulation and render target:** keyboard/mouse movement, camera synchronization, door easing, object animation, UI and the world render loop target 60 FPS.
 - **Low-resolution pixel raster:** the apartment renders into a compact WebGL canvas with antialiasing disabled and nearest-neighbour scaling for sharp PS1-style pixels.
-- **60 Hz Canvas2D CRT compositor:** the current WebGL frame is copied to a presentation canvas with nearest-neighbour sampling and subtle scanlines. A restrained, low-amplitude phosphor flicker is disabled for reduced-motion users. No custom GLSL, glow or shadow effects are used in the compositor.
+- **Depth-aware Gaussian blur:** the GPU depth buffer drives a symmetric Gaussian-like 13-tap filter. Nearby geometry stays sharp; blur fades in at 2.0 m and reaches full strength by about 3.2 m. Nearest sampling preserves the blocky pixel raster.
+- **60 Hz Canvas2D CRT presentation:** the processed WebGL frame is copied to a presentation canvas with nearest-neighbour sampling and thin scanlines. Low-amplitude flicker is disabled for reduced-motion users; no bloom or compositor shadows are used.
 - **Pixel textures and baked-light gradients:** compact nearest-filtered textures blend quantized warm/cool gradients and deterministic dither. A shared low-energy procedural light map adds stable, baked-style light pools; real lamps, sun lighting and shadowing still contribute depth.
 
 The 60 FPS setting is a target, not a guarantee; actual performance depends on GPU, browser, display refresh rate and scene complexity.
@@ -47,9 +48,9 @@ The deployment workflow builds the static site into `dist/` and deploys to [akci
 - `index.html` — game shell, centered BIOS menus and HUD.
 - `styles.css`, `styles-cinematic.css` — responsive pixel/CRT interface.
 - `assets/bg-scene-hq.png` — high-resolution panoramic exterior environment.
-- `src/main.js` — 60 Hz fixed-step game loop, 15 FPS scene raster and presentation cadence.
+- `src/main.js` — 60 Hz fixed-step simulation, low-resolution scene raster and presentation cadence.
 - `vendor/three.module.min.js` — local Three.js r169 fallback for unbundled static branch hosting; its MIT license is included beside it.
-- `src/game/pixel-post.js` — two saved frame buffers and a shader-free progressive Canvas2D scanline compositor.
+- `src/game/pixel-post.js` — depth-texture Gaussian blur pass plus Canvas2D CRT scanline presentation.
 - `src/game/materials.js` — pixel-gradient materials and procedural baked-light map.
 - `src/game/world.js` — apartment geometry, lights, collision volumes and interactables.
 - `src/game/player.js` — movement, collision response and camera synchronization.
