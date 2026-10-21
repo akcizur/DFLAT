@@ -94,7 +94,7 @@ if (!blenderGenerator.includes('boolean.solver = "EXACT"')) fail("Stairwell and 
 if (!blenderGenerator.includes("STAIR_FLIGHTS_PER_STOREY = 2") || !blenderGenerator.includes("STEPS_PER_FLIGHT = 8")) fail("Blender generator must create switch-back stairs between storeys");
 if (!blenderGenerator.includes("STAIRWELL_SIZE = (3.98, 3.93)")) fail("Floor slabs must include the stairwell opening");
 if (!blenderGenerator.includes("ROOF_HATCH_SIZE = (1.05, 1.05)") || !blenderGenerator.includes("def _build_roof_ladder(")) fail("Roof must have a ladder hatch and fixed ladder");
-if (!blenderGenerator.includes('"Fixed ladder from top floor to roof hatch"')) fail("Roof ladder object must be included in the generated collection");
+if (!blenderGenerator.includes("Fixed ladder from top floor to roof hatch")) fail("Roof ladder object must be included in the generated collection");
 const materialsSource = await readFile(path.join(root, "src/game/materials.js"), "utf8");
 if (!materialsSource.includes("function bakedLightTexture()") || !materialsSource.includes("lightMapIntensity")) {
   fail("procedural baked-light gradients are not configured on the material palette");
