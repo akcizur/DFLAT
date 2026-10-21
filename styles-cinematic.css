@@ -254,3 +254,218 @@
   #startScreen.tv-bios-mode .term, #pauseScreen .term,
   #startScreen.tv-bios-mode .tv-bios-title { animation: none !important; }
 }
+
+
+/* DFLAT minimal BIOS interface: plain text, no monitor frame or decorative panels. */
+:root {
+  --crt-amber: #ffba62;
+  --crt-hot: #ffe0ad;
+  --crt-red: #ff493d;
+  --crt-dim: #966a39;
+}
+#bootScreen.boot-screen {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(22px, 5vw, 60px);
+  color: var(--crt-amber);
+  background: #070503;
+  font: clamp(12px, 1.25vw, 14px)/1.9 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  text-shadow: 0 0 7px rgba(255, 166, 64, .25);
+  transform-origin: center center;
+  animation: bios-boot-transition 2.45s steps(1, end) forwards;
+}
+#bootScreen .boot-noise,
+#bootScreen .boot-logo { display: none !important; }
+#bootScreen .bios {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  align-content: start;
+  gap: 0;
+  text-shadow: 0 0 5px rgba(255, 166, 64, .25);
+}
+#bootScreen .bios > div {
+  opacity: 0;
+  transform: translateY(3px);
+  animation: bios-line-appear .2s steps(5, end) both;
+}
+#bootScreen .bios > div:nth-child(1) { animation-delay: .12s; color: var(--crt-hot); }
+#bootScreen .bios > div:nth-child(2) { animation-delay: .30s; }
+#bootScreen .bios > div:nth-child(3) { animation-delay: .48s; }
+#bootScreen .bios > div:nth-child(4) { animation-delay: .66s; }
+#bootScreen .bios > div:nth-child(5) { animation-delay: .84s; }
+#bootScreen .bios span { color: var(--crt-dim); }
+#bootScreen .boot-footer {
+  position: relative;
+  z-index: 3;
+  color: var(--crt-dim);
+  font-size: 10px;
+  letter-spacing: .13em;
+  opacity: 0;
+  animation: bios-line-appear .2s steps(5, end) 1.12s both;
+}
+
+#startScreen.tv-bios-mode {
+  z-index: 12;
+  display: grid;
+  place-items: center;
+  padding: clamp(22px, 6vw, 64px);
+  color: var(--crt-amber);
+  background: #070503;
+  text-shadow: 0 0 6px rgba(255, 166, 64, .22);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  transform: none;
+  filter: none;
+  opacity: 0;
+  animation: bios-menu-appear .34s steps(6, end) 2.08s both;
+}
+#startScreen.tv-bios-mode .term,
+#pauseScreen .term {
+  position: relative;
+  width: min(430px, 100%);
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--crt-amber);
+  font: 13px/1.9 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  text-shadow: 0 0 5px rgba(255, 166, 64, .22);
+  animation: none;
+}
+#startScreen.tv-bios-mode .term:before,
+#startScreen.tv-bios-mode .term:after,
+#pauseScreen .term:before,
+#pauseScreen .term:after { display: none; }
+#startScreen.tv-bios-mode .dim,
+#pauseScreen .dim {
+  position: static;
+  color: var(--crt-dim);
+  font-size: 10px;
+  letter-spacing: .09em;
+}
+#startScreen.tv-bios-mode .tv-bios-title {
+  margin: 22px 0 0;
+  color: var(--crt-hot);
+  font-size: clamp(28px, 5vw, 42px);
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: .13em;
+  text-shadow: 0 0 8px rgba(255, 166, 64, .32);
+  animation: none;
+}
+#startScreen.tv-bios-mode .tv-bios-subtitle {
+  margin-top: 7px;
+  color: var(--crt-dim);
+  font-size: 10px;
+  letter-spacing: .14em;
+}
+#startScreen.tv-bios-mode .tv-bios-rule {
+  margin: 14px 0;
+  color: #62421f;
+}
+#startScreen.tv-bios-mode .tv-bios-info {
+  color: #e6ad67;
+  font-size: 11px;
+  line-height: 1.9;
+}
+#startScreen.tv-bios-mode .gap,
+#pauseScreen .gap { height: 1em; }
+#startScreen.tv-bios-mode .cmd,
+#pauseScreen .cmd {
+  all: unset;
+  display: inline-block;
+  color: var(--crt-hot);
+  font: inherit;
+  letter-spacing: .05em;
+  cursor: pointer;
+  text-shadow: 0 0 6px rgba(255, 166, 64, .3);
+}
+#startScreen.tv-bios-mode .cmd .p,
+#pauseScreen .cmd .p,
+#startScreen.tv-bios-mode .cur,
+#pauseScreen .cur { color: var(--crt-red); }
+#startScreen.tv-bios-mode .cmd:hover,
+#startScreen.tv-bios-mode .cmd:focus-visible,
+#pauseScreen .cmd:hover,
+#pauseScreen .cmd:focus-visible {
+  color: #fff0d8;
+  outline: none;
+  text-shadow: 0 0 9px rgba(255, 73, 61, .65);
+}
+#startScreen.tv-bios-mode .cmd:focus-visible,
+#pauseScreen .cmd:focus-visible { text-decoration: underline; text-underline-offset: 4px; }
+#startScreen.tv-bios-mode .tv-bios-footer {
+  margin-top: 16px;
+  color: var(--crt-dim);
+  font-size: 10px;
+  letter-spacing: .08em;
+  animation: none;
+}
+#startScreen.tv-bios-mode.transition-out {
+  animation: none;
+  opacity: 0;
+  transform: translateY(-4px) scale(1.005);
+  filter: blur(1px);
+  pointer-events: none;
+  transition: opacity .2s steps(5, end), transform .2s ease, filter .2s ease;
+}
+
+#pauseScreen {
+  z-index: 13;
+  display: grid;
+  place-items: center;
+  padding: clamp(22px, 6vw, 64px);
+  background: rgba(7, 5, 3, .93);
+  color: var(--crt-amber);
+  opacity: 1;
+  transform: none;
+  transition: opacity .18s steps(5, end), transform .18s ease;
+}
+#pauseScreen:not(.hidden):not(.transition-out) {
+  animation: bios-menu-appear .18s steps(5, end) both;
+}
+#pauseScreen.transition-out {
+  opacity: 0;
+  transform: translateY(-3px);
+  pointer-events: none;
+}
+#pauseScreen .term { width: min(430px, 100%); }
+#pauseScreen .cmd { margin: 0; }
+
+@keyframes bios-boot-transition {
+  0% { opacity: 1; transform: scaleY(.015); filter: brightness(2.2); }
+  7% { opacity: 1; transform: scaleY(1); filter: none; }
+  12%, 79% { opacity: 1; transform: scaleY(1); }
+  88% { opacity: .72; }
+  96%, 100% { opacity: 0; visibility: hidden; transform: scaleY(.99); filter: blur(1px); }
+}
+@keyframes bios-line-appear {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes bios-menu-appear {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 520px) {
+  #startScreen.tv-bios-mode,
+  #pauseScreen { padding: 24px; }
+  #startScreen.tv-bios-mode .term,
+  #pauseScreen .term { width: 100%; font-size: 12px; }
+  #startScreen.tv-bios-mode .tv-bios-title { font-size: 30px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #bootScreen.boot-screen,
+  #bootScreen .bios > div,
+  #bootScreen .boot-footer,
+  #startScreen.tv-bios-mode,
+  #pauseScreen:not(.hidden):not(.transition-out) { animation-duration: .01ms !important; animation-delay: 0s !important; }
+  #startScreen.tv-bios-mode.transition-out,
+  #pauseScreen { transition-duration: .01ms !important; }
+}
