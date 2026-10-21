@@ -5,6 +5,7 @@ export function createPlayerController({ camera, colliders, interactables, state
   camera.rotation.order = "YXZ";
   let walkTime = 0;
   let walkBlend = 0;
+  let cameraX = player.x, cameraY = 1.68, cameraZ = player.z;
 
   const keysDown = Object.create(null);
 
@@ -47,14 +48,23 @@ export function createPlayerController({ camera, colliders, interactables, state
     item.action();
   }
 
-  function syncCamera() {
-    // Gentle player-like head sway: fades smoothly when movement starts/stops.
-    const moving = Object.values(keysDown).some(Boolean) && state.started && !state.paused;
-    walkBlend += ((moving ? 1 : 0) - walkBlend) * 0.12;
-    if (moving) walkTime += 0.12;
-    const bob = Math.sin(walkTime) * 0.035 * walkBlend;
-    const sway = Math.sin(walkTime * 0.5) * 0.012 * walkBlend;
-    camera.position.set(player.x + Math.cos(player.yaw) * sway, 1.68 + bob, player.z - Math.sin(player.yaw) * sway);
+  function syncCamera(deltaTime = 1 / 60) {
+    // Eased first-person follow plus restrained head bob while actually moving.
+    const desiredMoving = state.started && !state.paused &&
+      (Math.abs(player.x - cameraX) + Math.abs(player.z - cameraZ) > 0.0005 ||
+       Object.values(keysDown).some(Boolean));
+    const blend = 1 - Math.exp(-deltaTime * 8);
+    walkBlend += ((desiredMoving ? 1 : 0) - walkBlend) * (1 - Math.exp(-deltaTime * 5));
+    if (desiredMoving) walkTime += deltaTime * 10.5;
+    const bob = Math.sin(walkTime) * 0.027 * walkBlend;
+    const sway = Math.sin(walkTime * 0.5) * 0.009 * walkBlend;
+    const targetX = player.x + Math.cos(player.yaw) * sway;
+    const targetY = 1.68 + bob;
+    const targetZ = player.z - Math.sin(player.yaw) * sway;
+    cameraX += (targetX - cameraX) * blend;
+    cameraY += (targetY - cameraY) * blend;
+    cameraZ += (targetZ - cameraZ) * blend;
+    camera.position.set(cameraX, cameraY, cameraZ);
     camera.rotation.order = "YXZ";
     camera.rotation.y = player.yaw;
     camera.rotation.x = player.pitch;
@@ -80,7 +90,7 @@ export function createPlayerController({ camera, colliders, interactables, state
       }
     }
 
-    syncCamera();
+    syncCamera(deltaTime);
     return nearestInteractable();
   }
 
