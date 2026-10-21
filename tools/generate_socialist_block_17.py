@@ -1,11 +1,11 @@
-"""Build a clean 17-storey socialist-era apartment block in Blender.
+"""Generate an editable 17-storey socialist-era apartment block in Blender.
 
 Run:
     blender --background --python tools/generate_socialist_block_17.py
 
-The scene contains a closed octagonal perimeter shell with 200 mm walls, repeated
-interior partitions, 200 mm floor/ceiling panels, and non-destructive Array
-modifiers with exactly 17 storeys spaced 2.8 m apart.
+The model includes properly mitered eight-node perimeter corners, real window
+openings with frames/glazing, a ground-floor entrance opening, repeated flights
+of stairs, floor-slab stairwell cut-outs, and a roof hatch with a fixed ladder.
 """
 import bpy
 import math
@@ -17,11 +17,39 @@ FLOOR_TO_FLOOR = 2.8
 WALL_THICKNESS = 0.20
 PARTITION_THICKNESS = 0.18
 SLAB_THICKNESS = 0.20
-WALL_BOTTOM = SLAB_THICKNESS
-WALL_TOP = FLOOR_TO_FLOOR
 
-# Eight ordered floor-plan nodes, in metres. The chamfered corners keep the
-# outline recognisably panel-built while retaining one continuous perimeter.
+WINDOW_WIDTH = 1.30
+WINDOW_SILL = 1.00
+WINDOW_HEAD = 2.18
+WINDOW_FRAME_WIDTH = 0.055
+
+DOOR_WIDTH = 1.80
+DOOR_HEIGHT = 2.25
+DOOR_TOP = SLAB_THICKNESS + DOOR_HEIGHT
+
+STAIR_FLIGHTS_PER_STOREY = 2
+STEPS_PER_FLIGHT = 8
+STAIR_TREAD = 0.28
+STAIR_WIDTH = 1.00
+STAIR_X_LEFT = 2.15
+STAIR_X_RIGHT = 3.35
+STAIR_START_Y = -2.15
+STAIR_MIDDLE_Y = 0.88
+STAIR_LANDING_DEPTH = 0.96
+STAIR_LANDING_THICKNESS = 0.12
+
+# The large floor openings admit the switch-back flights. The smaller roof hatch
+# is positioned beside the top landing so the fixed ladder clears the stair runs.
+STAIRWELL_CENTER = (3.70, -0.35)
+STAIRWELL_SIZE = (4.15, 4.00)
+ROOF_HATCH_CENTER = (4.95, 0.75)
+ROOF_HATCH_SIZE = (1.05, 1.05)
+LADDER_WIDTH = 0.62
+LADDER_RAIL_DEPTH = 0.055
+LADDER_RUNG_DEPTH = 0.045
+
+# Eight ordered plan nodes. Adjacent facade strips share the exact same miter
+# endpoints, avoiding gaps or overlapping square-ended walls at chamfer corners.
 wall_nodes = [
     (-7.2, -6.0),
     (7.2, -6.0),
@@ -46,19 +74,23 @@ def _add(a, b):
     return (a[0] + b[0], a[1] + b[1])
 
 
-def _mul(a, scalar):
-    return (a[0] * scalar, a[1] * scalar)
+def _mul(v, scalar):
+    return (v[0] * scalar, v[1] * scalar)
 
 
 def _normalize(v):
     length = math.hypot(v[0], v[1])
     if length < 1e-9:
-        raise ValueError("Floor plan contains two identical neighbouring nodes.")
+        raise ValueError("Geometry contains two identical neighbouring points.")
     return (v[0] / length, v[1] / length)
 
 
+def _lerp2(a, b, t):
+    return (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
+
+
 def _offset_polygon(points, distance):
-    """Offset a convex polygon; positive distance moves outward."""
+    """Offset a convex polygon using line intersections at each corner."""
     area = sum(
         points[i][0] * points[(i + 1) % len(points)][1]
         - points[(i + 1) % len(points)][0] * points[i][1]
@@ -86,7 +118,6 @@ def _offset_polygon(points, distance):
         denominator = _cross(direction_before, direction_after)
 
         if abs(denominator) < 1e-9:
-            # Collinear segments need no corner intersection.
             result.append(line_a)
             continue
 
@@ -96,8 +127,36 @@ def _offset_polygon(points, distance):
     return result
 
 
+def _append_vertical_prism(vertices, faces, quad, z0, z1):
+    """Append a closed prism whose cross-section is a four-point XY quad."""
+    base = len(vertices)
+    vertices.extend((x, y, z0) for x, y in quad)
+    vertices.extend((x, y, z1) for x, y in quad)
+    faces.extend([
+        (base + 3, base + 2, base + 1, base + 0),  # Bottom
+        (base + 4, base + 5, base + 6, base + 7),  # Top
+        (base + 0, base + 1, base + 5, base + 4),
+        (base + 1, base + 2, base + 6, base + 5),
+        (base + 2, base + 3, base + 7, base + 6),
+        (base + 3, base + 0, base + 4, base + 7),
+    ])
+
+
+def _append_axis_box(vertices, faces, center, dimensions):
+    """Append a closed axis-aligned box to a shared mesh."""
+    cx, cy, cz = center
+    sx, sy, sz = dimensions
+    quad = [
+        (cx - sx * 0.5, cy - sy * 0.5),
+        (cx + sx * 0.5, cy - sy * 0.5),
+        (cx + sx * 0.5, cy + sy * 0.5),
+        (cx - sx * 0.5, cy + sy * 0.5),
+    ]
+    _append_vertical_prism(vertices, faces, quad, cz - sz * 0.5, cz + sz * 0.5)
+
+
 def _append_prism(vertices, faces, p0, p1, thickness, z0, z1, end_extension=None):
-    """Append one closed rectangular wall panel between two plan points."""
+    """Append a closed, wall-thickness prism following a plan segment."""
     direction = _normalize(_sub(p1, p0))
     half = thickness * 0.5
     extension = half if end_extension is None else end_extension
@@ -105,27 +164,244 @@ def _append_prism(vertices, faces, p0, p1, thickness, z0, z1, end_extension=None
     end = _add(p1, _mul(direction, extension))
     normal = (-direction[1], direction[0])
     offset = _mul(normal, half)
-    a = _add(start, offset)
-    b = _add(end, offset)
-    c = _sub(end, offset)
-    d = _sub(start, offset)
-    points = (a, b, c, d)
-    base = len(vertices)
+    quad = (
+        _sub(start, offset),
+        _sub(end, offset),
+        _add(end, offset),
+        _add(start, offset),
+    )
+    _append_vertical_prism(vertices, faces, quad, z0, z1)
 
-    for x, y in points:
-        vertices.append((x, y, z0))
-    for x, y in points:
-        vertices.append((x, y, z1))
 
-    # Consistent winding: bottom, top, and all four side faces.
-    faces.extend([
-        (base + 0, base + 1, base + 2, base + 3),
-        (base + 4, base + 7, base + 6, base + 5),
-        (base + 0, base + 4, base + 5, base + 1),
-        (base + 1, base + 5, base + 6, base + 2),
-        (base + 2, base + 6, base + 7, base + 3),
-        (base + 3, base + 7, base + 4, base + 0),
-    ])
+def _append_facade_cell(vertices, faces, outer0, outer1, inner0, inner1, t0, t1, z0, z1):
+    """Create one solid wall cell bounded by shared mitered facade edges."""
+    quad = (
+        _lerp2(outer0, outer1, t0),
+        _lerp2(outer0, outer1, t1),
+        _lerp2(inner0, inner1, t1),
+        _lerp2(inner0, inner1, t0),
+    )
+    _append_vertical_prism(vertices, faces, quad, z0, z1)
+
+
+def _append_centered_facade_prism(
+    vertices, faces, outer0, outer1, inner0, inner1, t0, t1, z0, z1, depth
+):
+    """Add a thin frame or pane centred through the facade-wall thickness."""
+    outer_a = _lerp2(outer0, outer1, t0)
+    outer_b = _lerp2(outer0, outer1, t1)
+    inner_a = _lerp2(inner0, inner1, t0)
+    inner_b = _lerp2(inner0, inner1, t1)
+    normal_a = _normalize(_sub(inner_a, outer_a))
+    normal_b = _normalize(_sub(inner_b, outer_b))
+    center_a = _mul(_add(outer_a, inner_a), 0.5)
+    center_b = _mul(_add(outer_b, inner_b), 0.5)
+    half_depth = depth * 0.5
+    quad = (
+        _sub(center_a, _mul(normal_a, half_depth)),
+        _sub(center_b, _mul(normal_b, half_depth)),
+        _add(center_b, _mul(normal_b, half_depth)),
+        _add(center_a, _mul(normal_a, half_depth)),
+    )
+    _append_vertical_prism(vertices, faces, quad, z0, z1)
+
+
+def _window_intervals(edge_index, length):
+    """Return normalised window ranges for long facades; chamfers stay solid."""
+    if length < 8.0:
+        return []
+
+    if edge_index == 0:
+        # Four windows on the entrance facade leave a wide, clear doorway bay.
+        centers = (0.12, 0.34, 0.66, 0.88)
+    elif length > 12.0:
+        centers = (0.10, 0.30, 0.50, 0.70, 0.90)
+    else:
+        centers = (0.20, 0.50, 0.80)
+
+    half_t = WINDOW_WIDTH / (2.0 * length)
+    return [(center - half_t, center + half_t) for center in centers]
+
+
+def _build_facade_segment(vertices, faces, edge_index, outer, inner, include_entry):
+    """Build one facade with true through-openings, including the entrance."""
+    next_index = (edge_index + 1) % len(wall_nodes)
+    outer0, outer1 = outer[edge_index], outer[next_index]
+    inner0, inner1 = inner[edge_index], inner[next_index]
+    length = math.dist(wall_nodes[edge_index], wall_nodes[next_index])
+    windows = _window_intervals(edge_index, length)
+    openings = [
+        (t0, t1, WINDOW_SILL, WINDOW_HEAD)
+        for t0, t1 in windows
+    ]
+
+    if include_entry and edge_index == 0:
+        half_door_t = DOOR_WIDTH / (2.0 * length)
+        openings.append((0.5 - half_door_t, 0.5 + half_door_t, SLAB_THICKNESS, DOOR_TOP))
+
+    if not openings:
+        _append_facade_cell(
+            vertices, faces, outer0, outer1, inner0, inner1,
+            0.0, 1.0, SLAB_THICKNESS, FLOOR_TO_FLOOR,
+        )
+        return
+
+    t_breaks = [0.0, 1.0]
+    z_breaks = [SLAB_THICKNESS, FLOOR_TO_FLOOR]
+    for t0, t1, z0, z1 in openings:
+        t_breaks.extend((t0, t1))
+        z_breaks.extend((z0, z1))
+    t_breaks = sorted(set(round(value, 10) for value in t_breaks))
+    z_breaks = sorted(set(round(value, 10) for value in z_breaks))
+
+    for ti in range(len(t_breaks) - 1):
+        t0, t1 = t_breaks[ti], t_breaks[ti + 1]
+        if t1 - t0 < 1e-8:
+            continue
+        t_mid = (t0 + t1) * 0.5
+
+        for zi in range(len(z_breaks) - 1):
+            z0, z1 = z_breaks[zi], z_breaks[zi + 1]
+            if z1 - z0 < 1e-8:
+                continue
+            z_mid = (z0 + z1) * 0.5
+            inside_opening = any(
+                open_t0 < t_mid < open_t1 and open_z0 < z_mid < open_z1
+                for open_t0, open_t1, open_z0, open_z1 in openings
+            )
+            if inside_opening:
+                continue
+
+            _append_facade_cell(
+                vertices, faces, outer0, outer1, inner0, inner1,
+                t0, t1, z0, z1,
+            )
+
+
+def _build_wall_mesh(include_entry=False):
+    if len(wall_nodes) != 8:
+        raise ValueError("The perimeter must be defined by exactly eight nodes.")
+
+    outer = _offset_polygon(wall_nodes, WALL_THICKNESS * 0.5)
+    inner = _offset_polygon(wall_nodes, -WALL_THICKNESS * 0.5)
+    wall_vertices = []
+    wall_faces = []
+
+    for edge_index in range(len(wall_nodes)):
+        _build_facade_segment(
+            wall_vertices, wall_faces, edge_index, outer, inner, include_entry
+        )
+
+    # Interior walls share the same mesh and floor pitch as the outer shell.
+    # Gaps in the partitions form doorways to the hallway and stairwell.
+    partition_face_start = len(wall_faces)
+    partitions = [
+        # Hallway sides with doorway gaps.
+        ((-1.0, -6.0), (-1.0, -4.0)),
+        ((-1.0, -2.8), (-1.0, -1.2)),
+        ((-1.0, -0.1), (-1.0, 1.8)),
+        ((-1.0, 3.0), (-1.0, 6.0)),
+        ((1.0, -6.0), (1.0, -4.0)),
+        ((1.0, -2.8), (1.0, -0.55)),
+        ((1.0, 0.55), (1.0, 1.8)),
+        ((1.0, 3.0), (1.0, 6.0)),
+        # Room separator to the west of the hall.
+        ((-8.0, 0.15), (-1.0, 0.15)),
+        # Stair core west wall has a clear doorway at y=0.25..1.25.
+        ((1.8, -2.25), (1.8, 0.25)),
+        ((1.8, 1.25), (1.8, 1.5)),
+        # Stair core east wall and the room separator are joined.
+        ((5.6, -2.25), (5.6, 1.5)),
+        ((1.0, 0.15), (1.8, 0.15)),
+        ((5.6, 0.15), (8.0, 0.15)),
+    ]
+
+    for start, end in partitions:
+        _append_prism(
+            wall_vertices, wall_faces, start, end,
+            PARTITION_THICKNESS, SLAB_THICKNESS, FLOOR_TO_FLOOR,
+        )
+
+    return wall_vertices, wall_faces, partition_face_start
+
+
+def _build_window_accessories(outer, inner):
+    frame_vertices, frame_faces = [], []
+    glass_vertices, glass_faces = [], []
+
+    for edge_index in range(len(wall_nodes)):
+        next_index = (edge_index + 1) % len(wall_nodes)
+        outer0, outer1 = outer[edge_index], outer[next_index]
+        inner0, inner1 = inner[edge_index], inner[next_index]
+        length = math.dist(wall_nodes[edge_index], wall_nodes[next_index])
+        if length < 1e-8:
+            continue
+
+        for t0, t1 in _window_intervals(edge_index, length):
+            frame_t = WINDOW_FRAME_WIDTH / length
+            pane_inset_t = 0.10 / length
+            # Metal frame: two jambs and sill/header bars, inset inside the cutout.
+            for a0, a1 in (
+                (t0, min(t0 + frame_t, t1)),
+                (max(t1 - frame_t, t0), t1),
+            ):
+                _append_centered_facade_prism(
+                    frame_vertices, frame_faces, outer0, outer1, inner0, inner1,
+                    a0, a1, WINDOW_SILL, WINDOW_HEAD, 0.07,
+                )
+            _append_centered_facade_prism(
+                frame_vertices, frame_faces, outer0, outer1, inner0, inner1,
+                t0, t1, WINDOW_SILL, WINDOW_SILL + WINDOW_FRAME_WIDTH, 0.07,
+            )
+            _append_centered_facade_prism(
+                frame_vertices, frame_faces, outer0, outer1, inner0, inner1,
+                t0, t1, WINDOW_HEAD - WINDOW_FRAME_WIDTH, WINDOW_HEAD, 0.07,
+            )
+            # A smaller inset pane leaves the surrounding wall opening visible.
+            _append_centered_facade_prism(
+                glass_vertices, glass_faces, outer0, outer1, inner0, inner1,
+                t0 + pane_inset_t, t1 - pane_inset_t,
+                WINDOW_SILL + 0.10, WINDOW_HEAD - 0.10, 0.025,
+            )
+
+    return frame_vertices, frame_faces, glass_vertices, glass_faces
+
+
+def _build_slab_mesh():
+    # v_slab contains eight bottom and eight top vertices of the 200 mm panel.
+    outline = _offset_polygon(wall_nodes, WALL_THICKNESS * 0.5)
+    count = len(outline)
+    v_slab = [(x, y, 0.0) for x, y in outline]
+    v_slab.extend((x, y, SLAB_THICKNESS) for x, y in outline)
+    slab_faces = [
+        tuple(reversed(range(count))),  # Bottom
+        tuple(count + i for i in range(count)),  # Top
+    ]
+    for i in range(count):
+        j = (i + 1) % count
+        slab_faces.append((i, j, count + j, count + i))
+    return v_slab, slab_faces
+
+
+def _apply_boolean_cut(obj, name, center, dimensions, collection):
+    """Apply a precise Boolean cut to a simple base mesh before its Array."""
+    cutter_vertices, cutter_faces = [], []
+    _append_axis_box(cutter_vertices, cutter_faces, center, dimensions)
+    cutter = _make_mesh_object(
+        name + " | temporary cutter",
+        cutter_vertices, cutter_faces, collection, None,
+    )
+
+    boolean = obj.modifiers.new(name=name, type="BOOLEAN")
+    boolean.operation = "DIFFERENCE"
+    boolean.solver = "EXACT"
+    boolean.object = cutter
+
+    bpy.ops.object.select_all(action="DESELECT")
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.modifier_apply(modifier=boolean.name)
+    bpy.data.objects.remove(cutter, do_unlink=True)
 
 
 def _make_mesh_object(name, vertices, faces, collection, material):
@@ -140,18 +416,19 @@ def _make_mesh_object(name, vertices, faces, collection, material):
     return obj
 
 
-def _make_material(name, colour, roughness=0.88):
+def _make_material(name, colour, roughness=0.88, metallic=0.0):
     material = bpy.data.materials.get(name)
     if material is None:
         material = bpy.data.materials.new(name)
     material.diffuse_color = (colour[0], colour[1], colour[2], 1.0)
     material.roughness = roughness
+    material.metallic = metallic
     return material
 
 
-def _add_array(obj, name):
+def _add_array(obj, name, count):
     modifier = obj.modifiers.new(name=name, type="ARRAY")
-    modifier.count = FLOOR_COUNT
+    modifier.count = count
     modifier.use_relative_offset = False
     modifier.use_constant_offset = True
     modifier.constant_offset_displace = (0.0, 0.0, FLOOR_TO_FLOOR)
@@ -159,78 +436,253 @@ def _add_array(obj, name):
     return modifier
 
 
-def _build_wall_mesh():
-    count = len(wall_nodes)
-    if count != 8:
-        raise ValueError("The perimeter must be defined by exactly eight nodes.")
+def _assign_partition_material(obj, partition_face_start):
+    for polygon in obj.data.polygons:
+        if polygon.index >= partition_face_start:
+            polygon.material_index = 1
 
-    outer = _offset_polygon(wall_nodes, WALL_THICKNESS * 0.5)
-    inner = _offset_polygon(wall_nodes, -WALL_THICKNESS * 0.5)
 
-    # Four indexed rings: outer bottom, outer top, inner bottom, inner top.
-    # wall_faces is fully populated for all eight perimeter segments.
-    wall_vertices = []
-    wall_faces = []
-    wall_vertices.extend((x, y, WALL_BOTTOM) for x, y in outer)
-    wall_vertices.extend((x, y, WALL_TOP) for x, y in outer)
-    wall_vertices.extend((x, y, WALL_BOTTOM) for x, y in inner)
-    wall_vertices.extend((x, y, WALL_TOP) for x, y in inner)
+def _append_oriented_stair_rail(vertices, faces, x_center, y0, z0, y1, z1, width, depth):
+    """Append a rectangular beam following a sloped Y/Z line."""
+    dy, dz = y1 - y0, z1 - z0
+    length = math.hypot(dy, dz)
+    if length < 1e-8:
+        return
+    perpendicular_y, perpendicular_z = -dz / length, dy / length
+    base = len(vertices)
 
-    for i in range(count):
-        j = (i + 1) % count
-        wall_faces.extend([
-            (i, j, count + j, count + i),  # Outside face
-            (2 * count + j, 2 * count + i, 3 * count + i, 3 * count + j),  # Inside
-            (count + i, count + j, 3 * count + j, 3 * count + i),  # Top edge
-            (j, i, 2 * count + i, 2 * count + j),  # Bottom edge
-        ])
+    for y, z in ((y0, z0), (y1, z1)):
+        for sign_x, sign_p in ((-1, -1), (1, -1), (1, 1), (-1, 1)):
+            vertices.append((
+                x_center + sign_x * width * 0.5,
+                y + sign_p * perpendicular_y * depth * 0.5,
+                z + sign_p * perpendicular_z * depth * 0.5,
+            ))
 
-    # Internal walls form a central hall and four basic room zones. Each wall is
-    # a closed prism; small end overlaps meet adjacent walls without visible gaps.
-    partitions = [
-        # Hallway side walls, with two consistent door openings in each side.
-        ((-1.0, -6.0), (-1.0, -4.0)),
-        ((-1.0, -2.8), (-1.0, 1.8)),
-        ((-1.0, 3.0), (-1.0, 6.0)),
-        ((1.0, -6.0), (1.0, -4.0)),
-        ((1.0, -2.8), (1.0, 1.8)),
-        ((1.0, 3.0), (1.0, 6.0)),
-        # Room separators beside the hall.
-        ((-8.0, 0.15), (-1.0, 0.15)),
-        ((1.0, 0.15), (8.0, 0.15)),
-    ]
+    faces.extend([
+        (base + 3, base + 2, base + 1, base + 0),
+        (base + 4, base + 5, base + 6, base + 7),
+        (base + 0, base + 1, base + 5, base + 4),
+        (base + 1, base + 2, base + 6, base + 5),
+        (base + 2, base + 3, base + 7, base + 6),
+        (base + 3, base + 0, base + 4, base + 7),
+    ])
 
-    for start, end in partitions:
-        _append_prism(
-            wall_vertices,
-            wall_faces,
-            start,
-            end,
-            PARTITION_THICKNESS,
-            WALL_BOTTOM,
-            WALL_TOP,
+
+def _append_stair_flight(vertices, faces, rail_vertices, rail_faces,
+                         x_start, bottom_z, y_start, direction, top_z):
+    rise = (top_z - bottom_z) / STEPS_PER_FLIGHT
+    landing_y = y_start + direction * STEPS_PER_FLIGHT * STAIR_TREAD
+
+    for step in range(STEPS_PER_FLIGHT):
+        tread_center_y = y_start + direction * (step + 0.5) * STAIR_TREAD
+        step_top = bottom_z + (step + 1) * rise
+        step_base = bottom_z
+        if direction < 0:
+            step_base = bottom_z
+        _append_axis_box(
+            vertices, faces,
+            (x_start + STAIR_WIDTH * 0.5, tread_center_y,
+             (step_base + step_top) * 0.5),
+            (STAIR_WIDTH, STAIR_TREAD + 0.015, step_top - step_base),
         )
 
-    return wall_vertices, wall_faces
+    # Metal handrails on both sides of the flight.
+    rail_z0 = bottom_z + 0.88
+    rail_z1 = top_z + 0.82
+    for x_center in (x_start + 0.035, x_start + STAIR_WIDTH - 0.035):
+        _append_oriented_stair_rail(
+            rail_vertices, rail_faces, x_center,
+            y_start - direction * 0.10, rail_z0,
+            landing_y - direction * 0.02, rail_z1,
+            0.045, 0.045,
+        )
+
+        # Five simple balusters per rail keep the stair readable at a distance.
+        for post_index in range(5):
+            fraction = post_index / 4.0
+            y = y_start + direction * (0.16 + fraction * (STEPS_PER_FLIGHT - 1) * STAIR_TREAD)
+            step_z = bottom_z + (fraction * (top_z - bottom_z))
+            rail_z = rail_z0 + fraction * (rail_z1 - rail_z0)
+            _append_axis_box(
+                rail_vertices, rail_faces,
+                (x_center, y, (step_z + 0.16 + rail_z) * 0.5),
+                (0.045, 0.045, max(0.12, rail_z - step_z - 0.16)),
+            )
 
 
-def _build_slab_mesh():
-    # v_slab is the complete 16-vertex panel: eight bottom and eight top nodes.
-    # The slab is a closed extrusion of the real-thickness perimeter footprint.
-    outline = _offset_polygon(wall_nodes, WALL_THICKNESS * 0.5)
-    count = len(outline)
-    v_slab = [(x, y, 0.0) for x, y in outline]
-    v_slab.extend((x, y, SLAB_THICKNESS) for x, y in outline)
+def _build_stair_mesh():
+    stair_vertices, stair_faces = [], []
+    rail_vertices, rail_faces = [], []
+    bottom_z = SLAB_THICKNESS
+    middle_z = bottom_z + FLOOR_TO_FLOOR * 0.5
+    upper_z = bottom_z + FLOOR_TO_FLOOR
 
-    slab_faces = [
-        tuple(reversed(range(count))),  # Bottom
-        tuple(count + i for i in range(count)),  # Top
-    ]
-    for i in range(count):
-        j = (i + 1) % count
-        slab_faces.append((i, j, count + j, count + i))
+    # Ground-level landing; each repeated staircase begins at the next floor.
+    _append_axis_box(
+        stair_vertices, stair_faces,
+        (STAIR_X_LEFT + 1.60, -1.82, bottom_z - STAIR_LANDING_THICKNESS * 0.5),
+        (3.20, STAIR_LANDING_DEPTH, STAIR_LANDING_THICKNESS),
+    )
 
-    return v_slab, slab_faces
+    _append_stair_flight(
+        stair_vertices, stair_faces, rail_vertices, rail_faces,
+        STAIR_X_LEFT, bottom_z, STAIR_START_Y, 1.0, middle_z,
+    )
+    # Half-landing at the 1.4 m midpoint.
+    _append_axis_box(
+        stair_vertices, stair_faces,
+        (STAIR_X_LEFT + 1.60, 0.55, middle_z - STAIR_LANDING_THICKNESS * 0.5),
+        (3.20, STAIR_LANDING_DEPTH, STAIR_LANDING_THICKNESS),
+    )
+    _append_stair_flight(
+        stair_vertices, stair_faces, rail_vertices, rail_faces,
+        STAIR_X_RIGHT, middle_z, STAIR_MIDDLE_Y, -1.0, upper_z,
+    )
+
+    rail_face_start = len(stair_faces)
+    stair_vertices.extend(rail_vertices)
+    stair_faces.extend(rail_faces)
+    return stair_vertices, stair_faces, rail_face_start
+
+
+def _build_entrance_details(collection, concrete, door_material, glass, metal):
+    frame_vertices, frame_faces = [], []
+    door_vertices, door_faces = [], []
+    door_glass_vertices, door_glass_faces = [], []
+    handle_vertices, handle_faces = [], []
+
+    door_center_z = SLAB_THICKNESS + DOOR_HEIGHT * 0.5
+    jamb_x = DOOR_WIDTH * 0.5 - 0.04
+    for x in (-jamb_x, jamb_x):
+        _append_axis_box(
+            frame_vertices, frame_faces,
+            (x, -6.0, door_center_z),
+            (0.08, 0.16, DOOR_HEIGHT),
+        )
+    _append_axis_box(
+        frame_vertices, frame_faces,
+        (0.0, -6.0, DOOR_TOP - 0.02),
+        (DOOR_WIDTH, 0.16, 0.08),
+    )
+
+    # Small concrete canopy and two brackets above the entrance.
+    _append_axis_box(
+        frame_vertices, frame_faces,
+        (0.0, -6.42, 2.58), (2.50, 0.75, 0.12),
+    )
+    for x in (-1.02, 1.02):
+        _append_axis_box(
+            frame_vertices, frame_faces,
+            (x, -6.32, 2.25), (0.07, 0.10, 0.54),
+        )
+
+    # Three shallow approach steps, rising from grade to the entrance threshold.
+    _append_axis_box(
+        frame_vertices, frame_faces,
+        (0.0, -6.285, 0.10), (2.20, 0.34, 0.20),
+    )
+    _append_axis_box(
+        frame_vertices, frame_faces,
+        (0.0, -6.625, 0.05), (2.20, 0.34, 0.10),
+    )
+    _append_axis_box(
+        frame_vertices, frame_faces,
+        (0.0, -6.965, 0.025), (2.20, 0.34, 0.05),
+    )
+
+    # Closed door leaf sits inside the real wall opening.
+    _append_axis_box(
+        door_vertices, door_faces,
+        (0.0, -6.0, SLAB_THICKNESS + 1.06),
+        (1.62, 0.055, 2.12),
+    )
+    _append_axis_box(
+        door_glass_vertices, door_glass_faces,
+        (0.0, -6.034, SLAB_THICKNESS + 1.10),
+        (0.68, 0.016, 1.20),
+    )
+    _append_axis_box(
+        handle_vertices, handle_faces,
+        (0.66, -6.043, SLAB_THICKNESS + 1.03),
+        (0.035, 0.025, 0.12),
+    )
+
+    _make_mesh_object(
+        "03 | Entrance surround, canopy and approach steps",
+        frame_vertices, frame_faces, collection, concrete,
+    )
+    _make_mesh_object(
+        "04 | Ground-floor entrance door",
+        door_vertices, door_faces, collection, door_material,
+    )
+    _make_mesh_object(
+        "05 | Entrance door glass",
+        door_glass_vertices, door_glass_faces, collection, glass,
+    )
+    _make_mesh_object(
+        "06 | Door handle",
+        handle_vertices, handle_faces, collection, metal,
+    )
+
+
+def _build_roof_ladder(collection, metal):
+    vertices, faces = [], []
+    top_floor_z = SLAB_THICKNESS + (FLOOR_COUNT - 1) * FLOOR_TO_FLOOR
+    roof_top_z = FLOOR_COUNT * FLOOR_TO_FLOOR + SLAB_THICKNESS
+    ladder_x, ladder_y = ROOF_HATCH_CENTER
+    rail_offset = LADDER_WIDTH * 0.5 - LADDER_RAIL_DEPTH * 0.5
+
+    # Side rails reach above the roof so the ladder can be climbed out safely.
+    for x in (ladder_x - rail_offset, ladder_x + rail_offset):
+        _append_axis_box(
+            vertices, faces,
+            (x, ladder_y, (top_floor_z + roof_top_z + 0.38) * 0.5),
+            (LADDER_RAIL_DEPTH, LADDER_RAIL_DEPTH,
+             roof_top_z - top_floor_z + 0.38),
+        )
+
+    rung_count = int((roof_top_z - top_floor_z - 0.24) / 0.28) + 1
+    for rung_index in range(rung_count):
+        z = top_floor_z + 0.14 + rung_index * 0.28
+        if z > roof_top_z - 0.06:
+            continue
+        _append_axis_box(
+            vertices, faces,
+            (ladder_x, ladder_y, z),
+            (LADDER_WIDTH - 0.08, LADDER_RUNG_DEPTH, LADDER_RUNG_DEPTH),
+        )
+
+    # Raised metal border marks the hatch opening on the roof surface.
+    hatch_x, hatch_y = ROOF_HATCH_CENTER
+    hatch_w, hatch_d = ROOF_HATCH_SIZE
+    z_frame = roof_top_z + 0.035
+    frame_thickness = 0.055
+    _append_axis_box(
+        vertices, faces,
+        (hatch_x, hatch_y - hatch_d * 0.5, z_frame),
+        (hatch_w + frame_thickness, frame_thickness, 0.07),
+    )
+    _append_axis_box(
+        vertices, faces,
+        (hatch_x, hatch_y + hatch_d * 0.5, z_frame),
+        (hatch_w + frame_thickness, frame_thickness, 0.07),
+    )
+    _append_axis_box(
+        vertices, faces,
+        (hatch_x - hatch_w * 0.5, hatch_y, z_frame),
+        (frame_thickness, hatch_d, 0.07),
+    )
+    _append_axis_box(
+        vertices, faces,
+        (hatch_x + hatch_w * 0.5, hatch_y, z_frame),
+        (frame_thickness, hatch_d, 0.07),
+    )
+
+    _make_mesh_object(
+        "09 | Fixed ladder from top floor to roof hatch",
+        vertices, faces, collection, metal,
+    )
 
 
 def _clear_previous_build():
@@ -254,25 +706,48 @@ def build():
     concrete = _make_material("DFLAT | light concrete", (0.52, 0.50, 0.46))
     partition_material = _make_material("DFLAT | interior concrete", (0.61, 0.59, 0.54))
     slab_material = _make_material("DFLAT | floor slab", (0.43, 0.42, 0.39))
+    frame_material = _make_material("DFLAT | window frames", (0.30, 0.32, 0.31), metallic=0.35)
+    glass_material = _make_material("DFLAT | dark window glass", (0.075, 0.13, 0.15), roughness=0.28, metallic=0.18)
+    stair_material = _make_material("DFLAT | stair concrete", (0.47, 0.45, 0.41))
+    metal_material = _make_material("DFLAT | dark metal", (0.18, 0.20, 0.20), roughness=0.42, metallic=0.65)
+    door_material = _make_material("DFLAT | entrance door", (0.16, 0.23, 0.22), roughness=0.52)
 
-    wall_vertices, wall_faces = _build_wall_mesh()
-    wall_object = _make_mesh_object(
-        "01 | Perimeter shell + interior partitions | 17 floors",
-        wall_vertices,
-        wall_faces,
-        collection,
-        concrete,
+    # Ground-floor shell contains the only exterior doorway. Typical floors are
+    # a separate 16-copy Array, so the entrance never repeats on upper storeys.
+    ground_vertices, ground_faces, ground_partition_start = _build_wall_mesh(include_entry=True)
+    ground_walls = _make_mesh_object(
+        "01 | Ground-floor perimeter and partitions",
+        ground_vertices, ground_faces, collection, concrete,
     )
-    wall_object.data.materials.append(partition_material)
-    # The first 32 faces form the outer ring; all subsequent prism faces are partitions.
-    perimeter_face_count = len(wall_nodes) * 4
-    for polygon in wall_object.data.polygons:
-        if polygon.index >= perimeter_face_count:
-            polygon.material_index = 1
-    # Perimeter and partitions deliberately share a single mesh/Array, so every
-    # storey uses the same exact 2.8 m vertical increment.
-    _add_array(wall_object, "17 storeys | 2.8 m spacing")
+    ground_walls.data.materials.append(partition_material)
+    _assign_partition_material(ground_walls, ground_partition_start)
 
+    upper_vertices, upper_faces, upper_partition_start = _build_wall_mesh(include_entry=False)
+    upper_walls = _make_mesh_object(
+        "02 | Upper floors perimeter and partitions | 16 copies",
+        upper_vertices, upper_faces, collection, concrete,
+    )
+    upper_walls.data.materials.append(partition_material)
+    _assign_partition_material(upper_walls, upper_partition_start)
+    upper_walls.location.z = FLOOR_TO_FLOOR
+    _add_array(upper_walls, "Upper storeys | 2.8 m pitch", FLOOR_COUNT - 1)
+
+    # Real window holes are formed in each facade mesh; separate frames/panes
+    # sit inside the cutouts and are repeated across all 17 storeys.
+    outer = _offset_polygon(wall_nodes, WALL_THICKNESS * 0.5)
+    inner = _offset_polygon(wall_nodes, -WALL_THICKNESS * 0.5)
+    frame_v, frame_f, glass_v, glass_f = _build_window_accessories(outer, inner)
+    window_frames = _make_mesh_object(
+        "07 | Window frames | 17 storeys", frame_v, frame_f, collection, frame_material,
+    )
+    window_glass = _make_mesh_object(
+        "08 | Window glazing | 17 storeys", glass_v, glass_f, collection, glass_material,
+    )
+    _add_array(window_frames, "Window frame repeat | 17 floors", FLOOR_COUNT)
+    _add_array(window_glass, "Window glass repeat | 17 floors", FLOOR_COUNT)
+
+    # Concrete panels: one full foundation, 16 floor slabs with a stairwell
+    # opening, plus a separate roof panel with only the smaller ladder hatch.
     v_slab, slab_faces = _build_slab_mesh()
     slab_mesh = bpy.data.meshes.new("v_slab | 200 mm closed panel")
     slab_mesh.from_pydata(v_slab, [], slab_faces)
@@ -280,35 +755,83 @@ def build():
     slab_mesh.update(calc_edges=True)
     slab_mesh.materials.append(slab_material)
 
-    # Ground/foundation panel.
     foundation = bpy.data.objects.new("00 | Foundation slab | 200 mm", slab_mesh)
     collection.objects.link(foundation)
-    foundation.location.z = 0.0
 
-    # Exactly 17 ceiling/floor panels: one above every repeated wall storey,
-    # including the top roof panel. The ground slab is a separate foundation.
-    ceiling_array = bpy.data.objects.new(
-        "02 | Floor and roof slabs | 17 panels",
-        slab_mesh.copy(),
+    floor_array = bpy.data.objects.new("10 | Intermediate floor slabs | 16 panels", slab_mesh.copy())
+    collection.objects.link(floor_array)
+    _apply_boolean_cut(
+        floor_array,
+        "Stairwell shaft cut-out",
+        (STAIRWELL_CENTER[0], STAIRWELL_CENTER[1], SLAB_THICKNESS * 0.5),
+        (STAIRWELL_SIZE[0], STAIRWELL_SIZE[1], 1.0),
+        collection,
     )
-    collection.objects.link(ceiling_array)
-    ceiling_array.location.z = FLOOR_TO_FLOOR
-    _add_array(ceiling_array, "17 slabs | 2.8 m spacing")
+    floor_array.location.z = FLOOR_TO_FLOOR
+    _add_array(floor_array, "16 floors | stairwell opening", FLOOR_COUNT - 1)
 
-    # Keep the generated geometry easy to inspect in the viewport.
+    roof = bpy.data.objects.new("11 | Roof slab with ladder hatch | 200 mm", slab_mesh.copy())
+    collection.objects.link(roof)
+    _apply_boolean_cut(
+        roof,
+        "Roof ladder hatch cut-out",
+        (ROOF_HATCH_CENTER[0], ROOF_HATCH_CENTER[1], SLAB_THICKNESS * 0.5),
+        (ROOF_HATCH_SIZE[0], ROOF_HATCH_SIZE[1], 1.0),
+        collection,
+    )
+    roof.location.z = FLOOR_COUNT * FLOOR_TO_FLOOR
+
+    stair_vertices, stair_faces, rail_face_start = _build_stair_mesh()
+    stairs = _make_mesh_object(
+        "12 | Switch-back stairs and handrails | 16 flights",
+        stair_vertices, stair_faces, collection, stair_material,
+    )
+    stairs.data.materials.append(metal_material)
+    for polygon in stairs.data.polygons:
+        if polygon.index >= rail_face_start:
+            polygon.material_index = 1
+    _add_array(stairs, "Stairs between all 17 storeys | 2.8 m pitch", FLOOR_COUNT - 1)
+
+    # Top-floor bridge links the final stair landing to the fixed roof ladder.
+    top_floor_z = SLAB_THICKNESS + (FLOOR_COUNT - 1) * FLOOR_TO_FLOOR
+    access_vertices, access_faces = [], []
+    _append_axis_box(
+        access_vertices, access_faces,
+        (4.55, -0.10, top_floor_z - STAIR_LANDING_THICKNESS * 0.5),
+        (1.20, 2.50, STAIR_LANDING_THICKNESS),
+    )
+    _make_mesh_object(
+        "13 | Top-floor landing to roof ladder",
+        access_vertices, access_faces, collection, stair_material,
+    )
+
+    _build_entrance_details(
+        collection, concrete, door_material, glass_material, metal_material,
+    )
+    _build_roof_ladder(collection, metal_material)
+
     bpy.ops.object.select_all(action="DESELECT")
-    wall_object.select_set(True)
-    bpy.context.view_layer.objects.active = wall_object
+    upper_walls.select_set(True)
+    bpy.context.view_layer.objects.active = upper_walls
 
-    print("DFLAT block generated:")
-    print("  perimeter nodes: %d" % len(wall_nodes))
+    window_count_per_floor = sum(
+        len(_window_intervals(i, math.dist(wall_nodes[i], wall_nodes[(i + 1) % len(wall_nodes)])))
+        for i in range(len(wall_nodes))
+    )
+    print("DFLAT 17-storey block generated:")
+    print("  mitered perimeter nodes: %d" % len(wall_nodes))
     print("  perimeter wall thickness: %.3f m" % WALL_THICKNESS)
     print("  floor-to-floor spacing: %.3f m" % FLOOR_TO_FLOOR)
-    print("  repeated storeys: %d" % FLOOR_COUNT)
-    print("  nominal roof height: %.3f m" % (FLOOR_COUNT * FLOOR_TO_FLOOR + SLAB_THICKNESS))
-    print("  wall faces: %d" % len(wall_faces))
+    print("  storeys: %d (ground floor + %d upper floors)" % (FLOOR_COUNT, FLOOR_COUNT - 1))
+    print("  window openings per storey: %d" % window_count_per_floor)
+    print("  entrance cut-out: %.2f m wide x %.2f m high" % (DOOR_WIDTH, DOOR_HEIGHT))
+    print("  switch-back stair runs: %d" % (FLOOR_COUNT - 1))
+    print("  stairwell floor cut-outs: %d" % (FLOOR_COUNT - 1))
+    print("  roof hatch: %.2f m x %.2f m" % ROOF_HATCH_SIZE)
+    print("  top of roof slab: %.3f m" % (FLOOR_COUNT * FLOOR_TO_FLOOR + SLAB_THICKNESS))
+    print("  wall faces (ground): %d" % len(ground_faces))
     print("  slab vertices (v_slab): %d" % len(v_slab))
-    print("  slab faces: %d" % len(slab_faces))
+    print("  slab faces before openings: %d" % len(slab_faces))
 
 
 if __name__ == "__main__":
