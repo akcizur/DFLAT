@@ -42,17 +42,68 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
       for (const x of [-6.5, 0, 6.5]) box('Stropní stínová lišta', x, 3.16, 0, .055, .055, 11.5, M.wall2);
       const wallH = 3.15, wallT = .24;
       function wall(x, z, sx, sz, material = M.wall) { box('Stěna', x, wallH / 2, z, sx, wallH, sz, material, { collider: true }); }
-      wall(-8, 0, wallT, 12); wall(8, 0, wallT, 12); wall(0, -6, 16, wallT);
+      wall(0, -6, 16, wallT, M.wall);
+      // Build exterior walls around real window openings. All wall sections share one material.
+      const exteriorGlass = new THREE.MeshStandardMaterial({
+        color: 0xa9c2d4, roughness: 0.28, metalness: 0.03,
+        transparent: true, opacity: 0.32, side: THREE.DoubleSide
+      });
+      function exteriorSide(x, openings) {
+        const minZ = -6, maxZ = 6;
+        const inward = x < 0 ? 1 : -1;
+        const ordered = [...openings].sort((a, b) => a.z - b.z);
+        let cursor = minZ;
+        for (const opening of ordered) {
+          const start = opening.z - opening.width / 2;
+          const end = opening.z + opening.width / 2;
+          if (start > cursor) wall(x, (cursor + start) / 2, wallT, start - cursor, M.wall);
+
+          const sill = opening.sill ?? 0.82;
+          const top = opening.top ?? 2.72;
+          const isBalcony = opening.kind === "balcony";
+          if (sill > 0.02) {
+            box("Obvodová stěna / parapet", x, sill / 2, opening.z, wallT, sill, opening.width, M.wall,
+              isBalcony ? {} : { collider: true });
+          }
+          if (top < wallH) {
+            box("Obvodová stěna / nad oknem", x, (wallH + top) / 2, opening.z, wallT, wallH - top, opening.width, M.wall,
+              isBalcony ? {} : { collider: true });
+          }
+
+          const frameX = x + inward * 0.14;
+          if (!isBalcony) {
+            box("Okno / sklo", x + inward * 0.125, (sill + top) / 2, opening.z,
+              0.035, top - sill, Math.max(0.12, opening.width - 0.12), exteriorGlass);
+            box("Okno / středová příčka", frameX, (sill + top) / 2, opening.z,
+              0.07, top - sill, 0.055, M.white);
+          }
+          box("Okno / rám horní", frameX, top, opening.z, 0.08, 0.08, opening.width + 0.10, M.white);
+          box("Okno / rám spodní", frameX, sill, opening.z, 0.08, 0.08, opening.width + 0.10, M.white);
+          for (const z of [start, end]) {
+            box("Okno / rám boční", frameX, (sill + top) / 2, z, 0.08, top - sill + 0.10, 0.08, M.white);
+          }
+          cursor = end;
+        }
+        if (cursor < maxZ) wall(x, (cursor + maxZ) / 2, wallT, maxZ - cursor, M.wall);
+      }
+      exteriorSide(-8, [
+        { z: -3.1, width: 2.25, sill: 0.85, top: 2.72, label: "obývák" },
+        { z: 3.45, width: 1.8, sill: 0.05, top: 2.72, kind: "balcony", label: "ložnice" }
+      ]);
+      exteriorSide(8, [
+        { z: -3.15, width: 2.25, sill: 0.85, top: 2.72, label: "kuchyně" },
+        { z: 3.1, width: 2.25, sill: 0.85, top: 2.72, label: "koupelna" }
+      ]);
       wall(-4.5, 6, 7, wallT); wall(4.5, 6, 7, wallT); // open entry gap in the middle
       // Four separate zones lead off one central hall: living, kitchen, bedroom and bathroom.
       // Cross-walls divide north/south rooms; the side walls of the hall have one doorway per room.
-      wall(-4.5, .15, 7.0, .18, M.wall2); wall(4.5, .15, 7.0, .18, M.wall2);
+      wall(-4.5, .15, 7.0, .18, M.wall); wall(4.5, .15, 7.0, .18, M.wall);
       // West side of the hall: living doorway z=-4..-2.8; bedroom doorway z=1.8..3.0.
-      wall(-1, -5.0, .18, 2.0, M.wall2); wall(-1, -1.325, .18, 2.95, M.wall2);
-      wall(-1, 1.02, .18, 1.56, M.wall2); wall(-1, 4.5, .18, 3.0, M.wall2);
+      wall(-1, -5.0, .18, 2.0, M.wall); wall(-1, -1.325, .18, 2.95, M.wall);
+      wall(-1, 1.02, .18, 1.56, M.wall); wall(-1, 4.5, .18, 3.0, M.wall);
       // East side of the hall: matching openings into kitchen and bathroom.
-      wall(1, -5.0, .18, 2.0, M.wall2); wall(1, -1.325, .18, 2.95, M.wall2);
-      wall(1, 1.02, .18, 1.56, M.wall2); wall(1, 4.5, .18, 3.0, M.wall2);
+      wall(1, -5.0, .18, 2.0, M.wall); wall(1, -1.325, .18, 2.95, M.wall);
+      wall(1, 1.02, .18, 1.56, M.wall); wall(1, 4.5, .18, 3.0, M.wall);
       // Decorative jambs and lintels. These frame openings without adding collision blockers.
       for (const z of [-4.0, -2.8]) box('Zárubeň obýváku', -1, 1.08, z, .26, 2.16, .12, M.wood2);
       box('Nadpraží obýváku', -1, 2.16, -3.4, .26, .12, 1.08, M.wood2);
@@ -62,6 +113,10 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
       box('Nadpraží ložnice', -1, 2.16, 2.4, .26, .12, 1.08, M.wood2);
       for (const z of [1.8, 3.0]) box('Zárubeň koupelny', 1, 1.08, z, .26, 2.16, .12, M.white);
       box('Nadpraží koupelny', 1, 2.16, 2.4, .26, .12, 1.08, M.white);
+      // Solid infill above all interior doorways; the wall continues to the ceiling.
+      for (const [x, z] of [[-1, -3.4], [-1, 2.4], [1, -3.4], [1, 2.4]]) {
+        box('Stěna nad dveřmi', x, (2.22 + wallH) / 2, z, .18, wallH - 2.22, 1.2, M.wall);
+      }
       // Trim and small visual wall marks.
       box('Lišta', 0, .10, -5.84, 15.45, .14, .07, M.wood);
       // Keep the entrance clear: the south baseboard follows only the two solid wall sections.
@@ -96,11 +151,33 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
       box('Obrazovka TV', -4.05, 1.49, -5.58, 1.60, .86, .018, M.screen);
       box('LED tečka', -3.25, 1.0, -5.56, .035, .035, .025, M.yellow);
       interact('tv', 'Televize', 'Na obrazovce se jen odráží pokoj.', -4.05, -4.55, () => { ui.showToast('Televize je vypnutá. V odrazu vypadá byt větší.'); }, 2.3);
-      // Window in the left wall, represented as a luminous plane and chunky frame.
-      box('Okno', -7.82, 2.0, -3.1, .025, 1.45, 2.25, M.glass);
-      for (const y of [1.25, 2.75]) box('Rám okna', -7.78, y, -3.1, .12, .10, 2.45, M.white);
-      for (const z of [-4.25, -1.95]) box('Rám okna', -7.78, 2.0, z, .12, 1.55, .10, M.white);
-      box('Příčka okna', -7.75, 2.0, -3.1, .12, 1.45, .10, M.white);
+      // Bedroom balcony: a hinged glass door, walkable floor and collidable guard rails.
+      const balconyDoorPivot = addGroup(-7.86, 0, 2.55);
+      localBox(balconyDoorPivot, 0, 1.35, 0.90, 0.065, 2.62, 1.68, exteriorGlass);
+      localBox(balconyDoorPivot, 0.045, 1.20, 1.57, 0.04, 0.18, 0.04, M.metal);
+      const balconyDoorCollider = { minX: -8.15, maxX: -7.74, minZ: 2.55, maxZ: 4.35, door: true };
+      colliders.push(balconyDoorCollider);
+      box('Balkon / podlaha', -9.0, -0.045, 3.45, 2.0, 0.12, 2.18, M.dark);
+      box('Balkon / vnější zábradlí', -9.96, 0.58, 3.45, 0.08, 1.16, 2.18, M.metal, { collider: true });
+      box('Balkon / horní madlo', -9.0, 1.12, 2.40, 1.92, 0.08, 0.08, M.metal, { collider: true });
+      box('Balkon / horní madlo', -9.0, 1.12, 4.50, 1.92, 0.08, 0.08, M.metal, { collider: true });
+      box('Balkon / boční zábradlí', -9.0, 0.58, 2.40, 1.92, 1.16, 0.08, M.metal, { collider: true });
+      box('Balkon / boční zábradlí', -9.0, 0.58, 4.50, 1.92, 1.16, 0.08, M.metal, { collider: true });
+      for (let z = 2.52; z <= 4.38; z += 0.31) {
+        box('Balkon / svislá příčka', -9.96, 0.58, z, 0.06, 1.08, 0.055, M.metal);
+      }
+      interact('balconyDoor', 'Balkonové dveře', 'Skleněné dveře vedou na balkon.', -7.05, 3.45, () => {
+        if (!state.balconyDoorOpen) {
+          state.balconyDoorOpen = true;
+          balconyDoorPivot.rotation.y = 1.2;
+          balconyDoorCollider.minX = 30;
+          balconyDoorCollider.maxX = 31;
+          ui.showToast('Balkonové dveře jsou otevřené.');
+        } else {
+          ui.showToast('Vstup na balkon je volný.');
+        }
+      }, 2.35);
+
       // Plants.
       function addPlant(x, z, scale = 1) { const g = addGroup(x, 0, z); cylinder(g, 0, .28, 0, .22 * scale, .28 * scale, .55 * scale, M.wood2, 5); for (let i = 0; i < 5; i++) { const a = i * Math.PI * 2 / 5; sphere(g, Math.cos(a) * .17 * scale, .64 * scale, Math.sin(a) * .17 * scale, .22 * scale, M.plant, 1); } sphere(g, 0, .82 * scale, 0, .23 * scale, M.leaf, 1); addCollider(x, z, .55 * scale, .55 * scale); return g; }
       addPlant(-6.75, -4.65, 1.15); addPlant(-6.7, -.55, .8); addPlant(7, -1.2, .8);

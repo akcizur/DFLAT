@@ -8,6 +8,19 @@ import { bindInput } from "./game/input.js";
 const mount = document.getElementById("game");
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x25231f);
+const panoramaLoader = new THREE.TextureLoader();
+panoramaLoader.load(
+  new URL("../assets/city-sunset.webp", import.meta.url).href,
+  texture => {
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.mapping = THREE.EquirectangularReflectionMapping;
+    scene.background = texture;
+    scene.backgroundBlurriness = 0;
+    scene.backgroundIntensity = 1.08;
+  },
+  undefined,
+  error => console.warn("The Flat: panorama background could not be loaded.", error)
+);
 scene.fog = new THREE.Fog(0x25231f, 12, 29);
 
 const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.08, 70);
@@ -46,7 +59,8 @@ const state = {
   doorOpen: false,
   finished: false,
   started: false,
-  paused: false
+  paused: false,
+  balconyDoorOpen: false
 };
 const ui = createUI();
 const { M, mat } = createMaterials(THREE);
