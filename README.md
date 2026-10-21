@@ -22,12 +22,12 @@ bun run preview
 
 ## Pixel rendering model
 
-- **60 Hz simulation:** keyboard/mouse movement, camera synchronization, door easing, object animation and UI state update on a fixed 60 Hz step.
-- **15 FPS world raster:** the apartment is rasterized into a low-resolution buffer fifteen times per second.
-- **60 Hz pixel compositor:** Canvas2D presents the captured WebGL frame and progressively reveals it from top to bottom over the previous frame with a restrained amber scan line and pixelated sampling. It uses no custom GLSL shader, so a fragment-shader compile issue cannot blank the game.
+- **60 Hz simulation and render target:** keyboard/mouse movement, camera synchronization, door easing, object animation, UI and the world render loop target 60 FPS.
+- **Low-resolution pixel raster:** the apartment renders into a compact WebGL canvas with antialiasing disabled and nearest-neighbour scaling for sharp PS1-style pixels.
+- **60 Hz Canvas2D CRT compositor:** the current WebGL frame is copied to a presentation canvas with nearest-neighbour sampling and subtle scanlines. A restrained, low-amplitude phosphor flicker is disabled for reduced-motion users. No custom GLSL, glow or shadow effects are used in the compositor.
 - **Pixel textures and baked-light gradients:** compact nearest-filtered textures blend quantized warm/cool gradients and deterministic dither. A shared low-energy procedural light map adds stable, baked-style light pools; real lamps, sun lighting and shadowing still contribute depth.
 
-The 15 FPS target describes the scene raster. Actual rate can be lower if the device cannot render in time. The presentation pass is separately capped at 60 Hz.
+The 60 FPS setting is a target, not a guarantee; actual performance depends on GPU, browser, display refresh rate and scene complexity.
 
 ## GitHub Pages
 

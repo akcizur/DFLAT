@@ -53,11 +53,12 @@ if (packageJson.devDependencies?.vite !== "6.4.5") fail("Vite must be installed 
 const mainSource = await readFile(path.join(root, "src/main.js"), "utf8");
 if (/from\s+["']https?:\/\//i.test(mainSource)) fail("runtime modules must be bundled locally; remove CDN imports");
 if (!mainSource.includes("const SIMULATION_HZ = 60")) fail("game simulation must target 60 Hz");
-if (!mainSource.includes("const SCENE_RENDER_HZ = 15")) fail("scene raster must target 15 FPS");
+if (!mainSource.includes("const SCENE_RENDER_HZ = 60")) fail("scene raster must target 60 FPS");
 if (!mainSource.includes("postFx.renderScene(scene, camera")) fail("scene must use the buffered progressive pixel renderer");
 if (!mainSource.includes("postFx.present(now / 1000)")) fail("pixel compositor must present independently from scene raster");
 const compositorSource = await readFile(path.join(root, "src/game/pixel-post.js"), "utf8");
 if (!compositorSource.includes('getContext("2d"')) fail("stable Canvas2D pixel compositor is required");
+if (compositorSource.includes("shadowBlur") || compositorSource.includes("shadowColor")) fail("CRT compositor must not use glow or shadows");
 if (compositorSource.includes("new THREE.ShaderMaterial")) fail("presentation must not depend on the custom GLSL shader");
 if (!mainSource.includes("preserveDrawingBuffer: true")) fail("WebGL frame buffer must be preserved for pixel compositing");
 if (!mainSource.includes('object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone())')) fail("mesh UV2 channels are required for baked light maps");
