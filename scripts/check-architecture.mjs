@@ -96,6 +96,15 @@ if (!blenderGenerator.includes("STAIRWELL_SIZE = (3.98, 3.93)")) fail("Floor sla
 if (!blenderGenerator.includes("rail_vertex_offset = len(stair_vertices)") || !blenderGenerator.includes("index + rail_vertex_offset")) fail("Stair handrails must use valid shared-mesh vertex indices");
 if (!blenderGenerator.includes("ROOF_HATCH_SIZE = (1.05, 1.05)") || !blenderGenerator.includes("def _build_roof_ladder(")) fail("Roof must have a ladder hatch and fixed ladder");
 if (!blenderGenerator.includes("Fixed ladder from top floor to roof hatch")) fail("Roof ladder object must be included in the generated collection");
+if (!blenderGenerator.includes("def _build_exterior_finish(")) fail("Blender generator must add finished exterior details");
+if (!blenderGenerator.includes("Repeated horizontal facade belt courses") || !blenderGenerator.includes("Fine vertical facade panel joints")) fail("Facade panel rhythm and joints must be modelled");
+if (!blenderGenerator.includes("Continuous roof parapet") || !blenderGenerator.includes("Overhanging parapet coping")) fail("Roof perimeter must have a parapet and coping");
+if (!blenderGenerator.includes("Eight full-height rainwater downpipes")) fail("Exterior rainwater downpipes are required");
+if (!blenderGenerator.includes("Rooftop ventilation housings") || !blenderGenerator.includes("Raised roof exhausts")) fail("Rooftop ventilation equipment is required");
+if (!blenderGenerator.includes('text_curve.body = "VCHOD 01"') || !blenderGenerator.includes("21 | Entrance plaque")) fail("Ground entrance needs visible lettering and a plaque");
+if (!blenderGenerator.includes("def _create_scene_preview(") || !blenderGenerator.includes("camera_data.type = \"ORTHO\"")) fail("Generator must create a useful architectural preview camera");
+if (!blenderGenerator.includes("scene.render.resolution_y = 1600") || !blenderGenerator.includes("Large warm key light")) fail("Generator must configure portrait rendering and architectural lighting");
+if (!blenderGenerator.includes('principled.inputs["Base Color"].default_value = rgba')) fail("Generated materials must use their configured colors in rendered output");
 const materialsSource = await readFile(path.join(root, "src/game/materials.js"), "utf8");
 if (!materialsSource.includes("function bakedLightTexture()") || !materialsSource.includes("lightMapIntensity")) {
   fail("procedural baked-light gradients are not configured on the material palette");
