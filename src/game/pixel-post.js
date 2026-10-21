@@ -71,16 +71,22 @@ export function createPixelPostProcess(THREE, renderer) {
       void main() {
         float depth = texture2D(tDepth, vUv).x;
         float distanceToCamera = viewDistance(depth);
-        // Keep objects within ~2 m crisp; gradually blur geometry from 2–3 m onward.
+        // Gaussian-like 13-tap kernel: crisp in the foreground; blur ramps in from 2.0 to 3.2 m.
         float blur = smoothstep(2.0, 3.2, distanceToCamera) * 2.2;
-        vec2 px = 1.0 / resolution;
-        vec4 color = texture2D(tDiffuse, vUv) * 0.227027;
-        color += texture2D(tDiffuse, vUv + vec2(px.x * blur * 1.384615, 0.0)) * 0.158108;
-        color += texture2D(tDiffuse, vUv - vec2(px.x * blur * 1.384615, 0.0)) * 0.158108;
-        color += texture2D(tDiffuse, vUv + vec2(0.0, px.y * blur * 1.384615)) * 0.158108;
-        color += texture2D(tDiffuse, vUv - vec2(0.0, px.y * blur * 1.384615)) * 0.158108;
-        color += texture2D(tDiffuse, vUv + vec2(px.x * blur * 3.230769, 0.0)) * 0.070270;
-        color += texture2D(tDiffuse, vUv - vec2(px.x * blur * 3.230769, 0.0)) * 0.070270;
+        vec2 px = (1.0 / resolution) * blur;
+        vec4 color = texture2D(tDiffuse, vUv) * 0.20;
+        color += texture2D(tDiffuse, vUv + vec2( px.x, 0.0)) * 0.12;
+        color += texture2D(tDiffuse, vUv - vec2( px.x, 0.0)) * 0.12;
+        color += texture2D(tDiffuse, vUv + vec2(0.0,  px.y)) * 0.12;
+        color += texture2D(tDiffuse, vUv - vec2(0.0,  px.y)) * 0.12;
+        color += texture2D(tDiffuse, vUv + vec2( px.x,  px.y)) * 0.06;
+        color += texture2D(tDiffuse, vUv + vec2(-px.x,  px.y)) * 0.06;
+        color += texture2D(tDiffuse, vUv + vec2( px.x, -px.y)) * 0.06;
+        color += texture2D(tDiffuse, vUv + vec2(-px.x, -px.y)) * 0.06;
+        color += texture2D(tDiffuse, vUv + vec2( px.x * 2.0, 0.0)) * 0.02;
+        color += texture2D(tDiffuse, vUv + vec2(-px.x * 2.0, 0.0)) * 0.02;
+        color += texture2D(tDiffuse, vUv + vec2(0.0,  px.y * 2.0)) * 0.02;
+        color += texture2D(tDiffuse, vUv + vec2(0.0, -px.y * 2.0)) * 0.02;
         gl_FragColor = vec4(color.rgb, 1.0);
         #include <colorspace_fragment>
       }
