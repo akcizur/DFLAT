@@ -64,7 +64,15 @@ export function createUI() {
     isStartVisible: () => !startScreen.classList.contains("hidden"),
     showStart: () => startScreen.classList.remove("hidden"),
     hideStart: () => startScreen.classList.add("hidden"),
-    showPause: () => pauseScreen.classList.remove("hidden"),
-    hidePause: () => pauseScreen.classList.add("hidden")
+    showPause: () => pauseScreen.classList.remove("hidden", "transition-out"),
+    hidePause: () => {
+      if (pauseScreen.classList.contains("hidden") || pauseScreen.classList.contains("transition-out")) return;
+      pauseScreen.classList.add("transition-out");
+      window.setTimeout(() => {
+        if (!pauseScreen.classList.contains("transition-out")) return;
+        pauseScreen.classList.add("hidden");
+        pauseScreen.classList.remove("transition-out");
+      }, 220);
+    }
   };
 }
