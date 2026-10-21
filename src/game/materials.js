@@ -66,9 +66,9 @@ export function createMaterials(THREE) {
         const ny = (y - 15.5) / 15.5;
         const warmPool = Math.max(0, 1 - Math.hypot((nx + 0.12) * 0.95, (ny + 0.24) * 0.9));
         const coolEdge = Math.max(0, Math.hypot(nx, ny) - 0.25);
-        const raw = 0.035 + warmPool * 0.055 + Math.max(0, 1 - (y / 31)) * 0.012 - coolEdge * 0.008;
+        const raw = 0.34 + warmPool * 0.30 + Math.max(0, 1 - (y / 31)) * 0.08 - coolEdge * 0.14;
         const dither = (bayer4[y % 4][x % 4] - 7.5) / 16 / 255;
-        const level = Math.max(0.018, Math.min(0.12, Math.round((raw + dither) * 64) / 64));
+        const level = Math.max(0.18, Math.min(0.82, Math.round((raw + dither) * 64) / 64));
         const offset = (y * 32 + x) * 4;
         image.data[offset] = Math.round(Math.min(0.14, level * 1.13) * 255);
         image.data[offset + 1] = Math.round(Math.min(0.12, level * 0.96) * 255);
@@ -109,7 +109,7 @@ export function createMaterials(THREE) {
   for (const material of new Set(Object.values(M))) {
     if (material?.isMeshStandardMaterial) {
       material.lightMap = bakedLightMap;
-      material.lightMapIntensity = 0.42;
+      material.lightMapIntensity = 0.22;
       material.needsUpdate = true;
     }
   }

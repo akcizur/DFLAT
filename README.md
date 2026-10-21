@@ -24,7 +24,7 @@ bun run preview
 
 - **60 Hz simulation:** keyboard/mouse movement, camera synchronization, door easing, object animation and UI state update on a fixed 60 Hz step.
 - **15 FPS world raster:** the apartment is rasterized into a low-resolution buffer fifteen times per second.
-- **60 Hz pixel compositor:** the latest frame is progressively revealed from top to bottom over the previous frame with a restrained amber scan line, nearest-pixel sampling, dither and chunky glow. This keeps the slow, stepped look without reducing controller update rate.
+- **60 Hz pixel compositor:** Canvas2D presents the captured WebGL frame and progressively reveals it from top to bottom over the previous frame with a restrained amber scan line and pixelated sampling. It uses no custom GLSL shader, so a fragment-shader compile issue cannot blank the game.
 - **Pixel textures and baked-light gradients:** compact nearest-filtered textures blend quantized warm/cool gradients and deterministic dither. A shared low-energy procedural light map adds stable, baked-style light pools; real lamps, sun lighting and shadowing still contribute depth.
 
 The 15 FPS target describes the scene raster. Actual rate can be lower if the device cannot render in time. The presentation pass is separately capped at 60 Hz.
@@ -48,7 +48,7 @@ The deployment workflow builds the static site into `dist/` and deploys to [akci
 - `styles.css`, `styles-cinematic.css` — responsive pixel/CRT interface.
 - `assets/bg-scene-hq.png` — high-resolution panoramic exterior environment.
 - `src/main.js` — 60 Hz fixed-step game loop, 15 FPS scene raster and presentation cadence.
-- `src/game/pixel-post.js` — ping-pong frame buffers and progressive scanline compositor.
+- `src/game/pixel-post.js` — two saved frame buffers and a shader-free progressive Canvas2D scanline compositor.
 - `src/game/materials.js` — pixel-gradient materials and procedural baked-light map.
 - `src/game/world.js` — apartment geometry, lights, collision volumes and interactables.
 - `src/game/player.js` — movement, collision response and camera synchronization.

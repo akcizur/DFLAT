@@ -51,6 +51,10 @@ if (!mainSource.includes("const SIMULATION_HZ = 60")) fail("game simulation must
 if (!mainSource.includes("const SCENE_RENDER_HZ = 15")) fail("scene raster must target 15 FPS");
 if (!mainSource.includes("postFx.renderScene(scene, camera")) fail("scene must use the buffered progressive pixel renderer");
 if (!mainSource.includes("postFx.present(now / 1000)")) fail("pixel compositor must present independently from scene raster");
+const compositorSource = await readFile(path.join(root, "src/game/pixel-post.js"), "utf8");
+if (!compositorSource.includes('getContext("2d"')) fail("stable Canvas2D pixel compositor is required");
+if (compositorSource.includes("new THREE.ShaderMaterial")) fail("presentation must not depend on the custom GLSL shader");
+if (!mainSource.includes("preserveDrawingBuffer: true")) fail("WebGL frame buffer must be preserved for pixel compositing");
 
 const materialsSource = await readFile(path.join(root, "src/game/materials.js"), "utf8");
 if (!materialsSource.includes("function bakedLightTexture()") || !materialsSource.includes("lightMapIntensity")) {

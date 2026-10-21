@@ -1,160 +1,178 @@
-// Low-resolution pixel compositor for Three.js r169.
-//
-// The world is rasterized only 15 times per second. A very cheap full-screen pass
-// presents at 60 Hz and reveals each saved frame in a horizontal scan, like pixels
-// being loaded into a slow retro display. The scan uses two nearest-filtered buffers.
+// Stable pixel compositor for Three.js r169.
+// The real 3D scene is rendered at 15 FPS into the existing low-resolution WebGL canvas.
+// A Canvas2D presentation layer displays the saved frame at 60 Hz and reveals each new
+// image progressively from top to bottom. No custom GLSL shader is required, so shader
+// compilation failures cannot turn the game into a black screen.
 export function createPixelPostProcess(THREE, renderer) {
-  const makeTarget = () => {
-    const target = new THREE.WebGLRenderTarget(1, 1, {
-      minFilter: THREE.NearestFilter,
-      magFilter: THREE.NearestFilter,
-      format: THREE.RGBAFormat,
-      type: THREE.UnsignedByteType,
-      depthBuffer: true,
-      stencilBuffer: false
-    });
-    target.texture.generateMipmaps = false;
-    // Keep the world buffer in linear space; the final pass applies tone mapping
-    // and converts to the display color space exactly once.
-    target.texture.colorSpace = THREE.NoColorSpace;
-    return target;
-  };
+  const displayCanvas = document.createElement("canvas");
+  displayCanvas.id = "pixelDisplayCanvas";
+  displayCanvas.setAttribute("aria-hidden", "true");
+  const displayContext = displayCanvas.getContext("2d", { alpha: false, desynchronized: true });
 
-  const targets = [makeTarget(), makeTarget()];
-  const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-  const uniforms = {
-    tDiffuse: { value: targets[0].texture },
-    tPrevious: { value: targets[0].texture },
-    uResolution: { value: new THREE.Vector2(1, 1) },
-    uTime: { value: 0 },
-    uBloomStrength: { value: 0.15 },
-    uSaturation: { value: 0.91 },
-    uScanProgress: { value: 1 },
-    uScanGlow: { value: reducedMotion ? 0 : 1 },
-    uZoom: { value: 0 }
-  };
+  // Very old or constrained browsers can still play the game, without the scan effect.
+  if (!displayContext) {
+    return {
+      setSize() {},
+      renderScene(scene, camera) { renderer.render(scene, camera); },
+      present() {},
+      triggerZoom() {},
+      dispose() {}
+    };
+  }
 
-  const material = new THREE.ShaderMaterial({
-    uniforms,
-    vertexShader: `
-      varying vec2 vUv;
-      void main() {
-        vUv = uv;
-        gl_Position = vec4(position.xy, 0.0, 1.0);
-      }
-    `,
-    fragmentShader: `
-      precision highp float;
-      uniform sampler2D tDiffuse;
-      uniform sampler2D tPrevious;
-      uniform vec2 uResolution;
-      uniform float uTime;
-      uniform float uBloomStrength;
-      uniform float uSaturation;
-      uniform float uScanProgress;
-      uniform float uScanGlow;
-      uniform float uZoom;
-      varying vec2 vUv;
+  const reduceMotionQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+  const reducedMotion = Boolean(reduceMotionQuery?.matches);
+  const buffers = [0, 1].map(() => ({
+    canvas: document.createElement("canvas"),
+    context: null
+  }));
 
-      float luminance(vec3 c) {
-        return dot(c, vec3(0.2126, 0.7152, 0.0722));
-      }
-      vec3 acesFit(vec3 x) {
-        x = max(x, vec3(0.0));
-        return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0);
-      }
-      float toSrgb(float c) {
-        c = max(c, 0.0);
-        return c <= 0.0031308 ? 12.92 * c : 1.055 * pow(c, 1.0 / 2.4) - 0.055;
-      }
-      vec3 toSrgb(vec3 c) {
-        return vec3(toSrgb(c.r), toSrgb(c.g), toSrgb(c.b));
-      }
-
-      vec3 scenePixel(vec2 p) {
-        p = clamp(p, vec2(0.001), vec2(0.999));
-        float scanY = 1.0 - uScanProgress;
-        float loaded = step(scanY, p.y);
-        return mix(texture2D(tPrevious, p).rgb, texture2D(tDiffuse, p).rgb, loaded);
-      }
-      vec3 brightTap(vec2 p) {
-        vec3 c = scenePixel(p);
-        return c * smoothstep(0.64, 0.94, luminance(c));
-      }
-
-      void main() {
-        vec2 texel = 1.0 / max(uResolution, vec2(1.0));
-        // A damped camera pulse can be triggered by the start/pause UI.
-        vec2 uv = (vUv - 0.5) / max(0.82, 1.0 + uZoom) + 0.5;
-        uv = clamp(uv, vec2(0.001), vec2(0.999));
-        vec3 base = scenePixel(uv);
-
-        // Chunky nearest-filtered glow: small taps bloom without smearing pixel edges.
-        vec3 bloom =
-          brightTap(uv + vec2(texel.x, 0.0)) * 0.18 +
-          brightTap(uv - vec2(texel.x, 0.0)) * 0.18 +
-          brightTap(uv + vec2(0.0, texel.y)) * 0.18 +
-          brightTap(uv - vec2(0.0, texel.y)) * 0.18 +
-          brightTap(uv + vec2(texel.x * 2.0, 0.0)) * 0.08 +
-          brightTap(uv - vec2(texel.x * 2.0, 0.0)) * 0.08 +
-          brightTap(uv + vec2(0.0, texel.y * 2.0)) * 0.08 +
-          brightTap(uv - vec2(0.0, texel.y * 2.0)) * 0.08;
-        base += bloom * uBloomStrength * (0.98 + 0.02 * sin(uTime * 0.7));
-
-        // Gentle warmth around bright scenery, quantized to render-pixel scale.
-        float sunDistance = length((uv - vec2(0.82, 0.20)) * vec2(1.0, 1.15));
-        float sunMask = smoothstep(0.20, 0.72, luminance(base)) * (1.0 - smoothstep(0.12, 0.82, sunDistance));
-        float rayA = exp(-abs(uv.y - (0.20 + (uv.x - 0.82) * 0.27)) * 84.0);
-        float rayB = exp(-abs(uv.y - (0.275 + (uv.x - 0.82) * 0.27)) * 108.0);
-        float rays = (rayA + rayB * 0.65) * sunMask;
-        base += vec3(0.92, 0.70, 0.42) * rays * 0.035;
-
-        float gray = luminance(base);
-        base = mix(vec3(gray), base, uSaturation);
-        base = max((base - vec3(0.12)) * 1.04 + vec3(0.12), vec3(0.0));
-
-        // Tiny deterministic dither is locked to source pixels, not CSS pixels.
-        float dither = (mod(floor(gl_FragCoord.x) + floor(gl_FragCoord.y) * 3.0, 4.0) - 1.5) / 768.0;
-        base += vec3(dither);
-
-        // Load line descends through the frame. Amber glow is only a few source pixels wide.
-        float scanY = 1.0 - uScanProgress;
-        float lineDistance = abs(vUv.y - scanY);
-        float lineWidth = max(texel.y * 1.25, 0.002);
-        float lineGlow = (1.0 - smoothstep(lineWidth, lineWidth * 2.5, lineDistance)) *
-                         (1.0 - step(0.999, uScanProgress)) * uScanGlow;
-        base += vec3(1.0, 0.30, 0.055) * lineGlow * 0.085;
-
-        base = acesFit(base);
-        float vignette = smoothstep(0.28, 0.78, length(vUv - 0.5));
-        base *= 1.0 - vignette * 0.09;
-        gl_FragColor = vec4(clamp(toSrgb(base), 0.0, 1.0), 1.0);
-      }
-    `,
-    depthTest: false,
-    depthWrite: false,
-    toneMapped: false
-  });
-
-  const postScene = new THREE.Scene();
-  const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
-  quad.frustumCulled = false;
-  postScene.add(quad);
-  const postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 2);
-  postCamera.position.z = 1;
-
+  let width = 1;
+  let height = 1;
   let currentIndex = -1;
   let previousIndex = 0;
   let lastSceneRenderTime = 0;
   let zoomStart = -1000;
   let zoomAmount = 0;
+
   const size = new THREE.Vector2();
 
-  function setSize(width, height) {
-    const w = Math.max(1, Math.floor(width));
-    const h = Math.max(1, Math.floor(height));
-    for (const target of targets) target.setSize(w, h);
-    uniforms.uResolution.value.set(w, h);
+  function configureContext(context) {
+    context.imageSmoothingEnabled = false;
+  }
+
+  buffers.forEach(buffer => {
+    buffer.context = buffer.canvas.getContext("2d", { alpha: false });
+    if (buffer.context) configureContext(buffer.context);
+  });
+
+  if (buffers.some(buffer => !buffer.context)) {
+    return {
+      setSize() {},
+      renderScene(scene, camera) { renderer.render(scene, camera); },
+      present() {},
+      triggerZoom() {},
+      dispose() {}
+    };
+  }
+
+  displayCanvas.style.position = "absolute";
+  displayCanvas.style.inset = "0";
+  displayCanvas.style.width = "100%";
+  displayCanvas.style.height = "100%";
+  displayCanvas.style.zIndex = "1";
+  displayCanvas.style.pointerEvents = "none";
+  displayCanvas.style.imageRendering = "pixelated";
+  displayCanvas.style.filter = "contrast(1.06) saturate(1.07)";
+  displayCanvas.style.display = "block";
+
+  const mount = renderer.domElement.parentElement;
+  if (mount) mount.appendChild(displayCanvas);
+
+  // Opacity keeps the WebGL canvas as the interaction/pointer-lock target while the
+  // 2D canvas above it presents the captured low-resolution image.
+  renderer.domElement.style.position = "absolute";
+  renderer.domElement.style.inset = "0";
+  renderer.domElement.style.zIndex = "0";
+  renderer.domElement.style.opacity = "0";
+
+  function setSize(nextWidth, nextHeight) {
+    width = Math.max(1, Math.floor(nextWidth));
+    height = Math.max(1, Math.floor(nextHeight));
+    displayCanvas.width = width;
+    displayCanvas.height = height;
+    displayContext.imageSmoothingEnabled = false;
+
+    for (const buffer of buffers) {
+      buffer.canvas.width = width;
+      buffer.canvas.height = height;
+      configureContext(buffer.context);
+      buffer.context.fillStyle = "#080604";
+      buffer.context.fillRect(0, 0, width, height);
+    }
+
+    // Don't expose an empty frame during a resize; the next scene render will refill it.
+    currentIndex = -1;
+    previousIndex = 0;
+  }
+
+  function renderScene(scene, camera, timeSeconds = performance.now() / 1000) {
+    // Always render to the browser-visible WebGL canvas; no render targets/shaders.
+    renderer.setRenderTarget(null);
+    renderer.render(scene, camera);
+
+    const nextIndex = currentIndex < 0 ? 0 : 1 - currentIndex;
+    const buffer = buffers[nextIndex];
+    buffer.context.clearRect(0, 0, width, height);
+    buffer.context.drawImage(renderer.domElement, 0, 0, width, height);
+
+    if (currentIndex < 0) {
+      // Duplicate the first frame into both buffers, avoiding an initial blank flash.
+      buffers[1 - nextIndex].context.clearRect(0, 0, width, height);
+      buffers[1 - nextIndex].context.drawImage(buffer.canvas, 0, 0, width, height);
+      previousIndex = nextIndex;
+    } else {
+      previousIndex = currentIndex;
+    }
+
+    currentIndex = nextIndex;
+    lastSceneRenderTime = timeSeconds;
+  }
+
+  function present(timeSeconds = performance.now() / 1000) {
+    if (currentIndex < 0) return;
+
+    const current = buffers[currentIndex].canvas;
+    const previous = buffers[previousIndex].canvas;
+    const elapsed = timeSeconds - zoomStart;
+    const zoom = elapsed >= 0 && elapsed < 1.15
+      ? zoomAmount * Math.exp(-elapsed * 4.8) * Math.cos(elapsed * 8.0)
+      : 0;
+    const progress = reducedMotion
+      ? 1
+      : Math.max(0, Math.min(1, (timeSeconds - lastSceneRenderTime) / (1 / 15)));
+    const loadedHeight = Math.max(0, Math.min(height, Math.floor(height * progress)));
+
+    displayContext.setTransform(1, 0, 0, 1, 0, 0);
+    displayContext.clearRect(0, 0, width, height);
+    displayContext.save();
+
+    if (zoom !== 0) {
+      const scale = 1 + zoom;
+      displayContext.translate(width / 2, height / 2);
+      displayContext.scale(scale, scale);
+      displayContext.translate(-width / 2, -height / 2);
+    }
+
+    displayContext.drawImage(previous, 0, 0, width, height);
+    if (loadedHeight > 0) {
+      displayContext.save();
+      displayContext.beginPath();
+      displayContext.rect(0, 0, width, loadedHeight);
+      displayContext.clip();
+      displayContext.drawImage(current, 0, 0, width, height);
+      displayContext.restore();
+    }
+    displayContext.restore();
+
+    // Restrained stepped CRT scanlines are composited cheaply at presentation rate.
+    displayContext.save();
+    displayContext.globalAlpha = 0.095;
+    displayContext.fillStyle = "#160b04";
+    for (let y = 3; y < height; y += 4) displayContext.fillRect(0, y, width, 1);
+    displayContext.restore();
+
+    // A chunky amber load line marks the current boundary as the new pixels arrive.
+    if (!reducedMotion && progress < 0.999) {
+      const y = Math.min(height - 1, loadedHeight);
+      displayContext.save();
+      displayContext.globalAlpha = 0.82;
+      displayContext.shadowColor = "#ff9c3b";
+      displayContext.shadowBlur = Math.max(2, height / 180);
+      displayContext.fillStyle = "#ffb85c";
+      displayContext.fillRect(0, y, width, Math.max(1, Math.ceil(height / 220)));
+      displayContext.restore();
+    }
   }
 
   function triggerZoom(amount = 0.05) {
@@ -163,44 +181,13 @@ export function createPixelPostProcess(THREE, renderer) {
     zoomStart = performance.now() / 1000;
   }
 
-  function renderScene(scene, camera, timeSeconds = 0) {
-    const nextIndex = currentIndex < 0 ? 0 : 1 - currentIndex;
-    const previousTarget = renderer.getRenderTarget();
-    renderer.setRenderTarget(targets[nextIndex]);
-    renderer.clear();
-    renderer.render(scene, camera);
-    renderer.setRenderTarget(previousTarget);
-
-    previousIndex = currentIndex < 0 ? nextIndex : currentIndex;
-    currentIndex = nextIndex;
-    lastSceneRenderTime = timeSeconds;
-  }
-
-  function present(timeSeconds = 0) {
-    if (currentIndex < 0) return;
-
-    uniforms.tDiffuse.value = targets[currentIndex].texture;
-    uniforms.tPrevious.value = targets[previousIndex].texture;
-    uniforms.uTime.value = timeSeconds;
-
-    const elapsed = timeSeconds - zoomStart;
-    uniforms.uZoom.value = elapsed >= 0 && elapsed < 1.15
-      ? zoomAmount * Math.exp(-elapsed * 4.8) * Math.cos(elapsed * 8.0)
-      : 0;
-
-    const renderIntervalSeconds = 1 / 15;
-    uniforms.uScanProgress.value = Math.max(0, Math.min(1,
-      (timeSeconds - lastSceneRenderTime) / renderIntervalSeconds
-    ));
-
-    renderer.setRenderTarget(null);
-    renderer.render(postScene, postCamera);
-  }
-
   function dispose() {
-    targets.forEach(target => target.dispose());
-    material.dispose();
-    quad.geometry.dispose();
+    displayCanvas.remove();
+    // Restore the underlying canvas if this compositor is torn down.
+    renderer.domElement.style.opacity = "";
+    renderer.domElement.style.position = "";
+    renderer.domElement.style.inset = "";
+    renderer.domElement.style.zIndex = "";
   }
 
   renderer.getSize(size);

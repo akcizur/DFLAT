@@ -43,14 +43,15 @@ const LOW_POWER = matchMedia("(pointer:coarse)").matches;
 const renderer = new THREE.WebGLRenderer({
   antialias: false,
   alpha: false,
+  preserveDrawingBuffer: true,
   powerPreference: "high-performance"
 });
 renderer.setPixelRatio(1);
 renderer.domElement.style.imageRendering = "pixelated";
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-// Scene color stays linear in the low-resolution buffers; the pixel compositor
-// applies a single ACES-style curve when the final frame is presented.
-renderer.toneMapping = THREE.NoToneMapping;
+// Use Three.js's tested built-in tone mapping before copying the finished scene
+// to the 2D presentation canvas. The pixel compositor performs no custom GLSL.
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.BasicShadowMap;
 renderer.shadowMap.autoUpdate = true;
@@ -88,15 +89,13 @@ const state = {
   balconyDoorOpen: false
 };
 const ui = createUI();
-const { M, mat, bakedLightMap } = createMaterials(THREE);
+const { M, mat } = createMaterials(THREE);
 const world = createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui });
 
-// Give every mesh a UV2 channel for the shared procedural baked-light gradient.
-// The low-frequency amber/cool light map complements real lights and contact shadows.
+// Keep the world geometry and real point/directional lights unchanged. The baked-look
+// palette lives in the pixel texture gradients; this avoids adding a required UV2
+// attribute to geometry that was originally built for the stable renderer.
 scene.traverse(object => {
-  if (object.isMesh && object.geometry?.attributes?.uv && !object.geometry.attributes.uv2) {
-    object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone());
-  }
   if (object.isLight && object.castShadow) {
     object.shadow.mapSize.set(LOW_POWER ? 192 : 384, LOW_POWER ? 192 : 384);
     object.shadow.bias = -0.00035;
@@ -104,7 +103,6 @@ scene.traverse(object => {
     object.shadow.radius = 0;
   }
 });
-if (bakedLightMap) bakedLightMap.needsUpdate = true;
 const controller = createPlayerController({
   camera,
   colliders: world.colliders,
