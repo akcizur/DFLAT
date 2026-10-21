@@ -40,8 +40,8 @@ STAIR_LANDING_THICKNESS = 0.12
 
 # The large floor openings admit the switch-back flights. The smaller roof hatch
 # is positioned beside the top landing so the fixed ladder clears the stair runs.
-STAIRWELL_CENTER = (3.70, -0.35)
-STAIRWELL_SIZE = (4.15, 4.00)
+STAIRWELL_CENTER = (3.70, -0.375)
+STAIRWELL_SIZE = (3.98, 3.93)
 ROOF_HATCH_CENTER = (4.95, 0.75)
 ROOF_HATCH_SIZE = (1.05, 1.05)
 LADDER_WIDTH = 0.62
@@ -541,8 +541,12 @@ def _build_stair_mesh():
     )
 
     rail_face_start = len(stair_faces)
+    rail_vertex_offset = len(stair_vertices)
     stair_vertices.extend(rail_vertices)
-    stair_faces.extend(rail_faces)
+    stair_faces.extend(
+        tuple(index + rail_vertex_offset for index in face)
+        for face in rail_faces
+    )
     return stair_vertices, stair_faces, rail_face_start
 
 
