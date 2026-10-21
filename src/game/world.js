@@ -276,6 +276,56 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
         }
       }, 2.2);
   
+  
+      // Distant low-poly city LOD: simple silhouettes sit beyond the balcony/window openings,
+      // in front of the panoramic sky sphere. No collision, animation, or shadow cost.
+      const skyline = new THREE.Group();
+      skyline.name = 'Distant city / low-poly LOD';
+      const skylineMats = [
+        new THREE.MeshStandardMaterial({ color: 0x454653, roughness: 1, metalness: 0 }),
+        new THREE.MeshStandardMaterial({ color: 0x55515b, roughness: 1, metalness: 0 }),
+        new THREE.MeshStandardMaterial({ color: 0x66545a, roughness: 1, metalness: 0 }),
+        new THREE.MeshStandardMaterial({ color: 0x343946, roughness: 1, metalness: 0 })
+      ];
+      const skylineSeed = (n) => {
+        const v = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+        return v - Math.floor(v);
+      };
+      function skylineBlock(x, z, width, depth, height, material, index) {
+        const building = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), material);
+        building.position.set(x, height / 2 - .15, z);
+        building.name = 'Distant skyline block';
+        building.castShadow = false;
+        building.receiveShadow = false;
+        skyline.add(building);
+        // A few larger roof blocks break up the silhouette without expensive window meshes.
+        if (index % 4 === 0 && height > 5) {
+          const rooftop = new THREE.Mesh(new THREE.BoxGeometry(width * .28, height * .08, depth * .32), material);
+          rooftop.position.set(x + width * .12, height + height * .04 - .15, z);
+          rooftop.castShadow = false;
+          rooftop.receiveShadow = false;
+          skyline.add(rooftop);
+        }
+      }
+      let skylineIndex = 0;
+      for (const side of [-1, 1]) {
+        for (let i = 0; i < 13; i++) {
+          const z = -24 + i * 3.9;
+          const width = 2.2 + skylineSeed(i + side * 19) * 3.6;
+          const depth = 2.2 + skylineSeed(i + side * 43) * 2.8;
+          const height = 4 + skylineSeed(i + side * 71) * 13;
+          skylineBlock(side * (14 + skylineSeed(i + side * 97) * 5), z, width, depth, height, skylineMats[(i + (side > 0 ? 1 : 0)) % skylineMats.length], skylineIndex++);
+        }
+      }
+      for (let i = 0; i < 15; i++) {
+        const x = -23 + i * 3.25;
+        const width = 2.0 + skylineSeed(i + 111) * 3.4;
+        const depth = 2.2 + skylineSeed(i + 222) * 2.6;
+        const height = 5 + skylineSeed(i + 333) * 15;
+        skylineBlock(x, -17 - skylineSeed(i + 444) * 5, width, depth, height, skylineMats[(i + 2) % skylineMats.length], skylineIndex++);
+      }
+      scene.add(skyline);
+
       // Reference rendering setup: hemisphere fill, PCF sun shadows on desktop, warm room pools.
       scene.add(new THREE.HemisphereLight(0xc7d1d8, 0x332b24, 1.05));
       const sun = new THREE.DirectionalLight(0xffd7b0, 1.9);
@@ -314,5 +364,5 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
       cylinder(ceilingLamp, 0, 2.84, 0, .42, .3, .25, lampShade, 6);
       sphere(ceilingLamp, 0, 2.72, 0, .16, lampGlow, 1);
 
-  return { colliders, interactables, meshesToAnimate };
+  return { colliders, interactables, meshesToAnimate, doorAnimations };
 }
