@@ -4,7 +4,6 @@ import { createApartment } from "./game/world.js";
 import { createPlayerController } from "./game/player.js";
 import { createUI } from "./game/ui.js";
 import { bindInput } from "./game/input.js";
-import { createPixelPostProcess } from "./game/pixel-post.js";
 
 const mount = document.getElementById("game");
 const scene = new THREE.Scene();
@@ -17,12 +16,6 @@ new THREE.TextureLoader().load(
   new URL("../assets/bg-scene-hq.png", import.meta.url).href,
   texture => {
     texture.colorSpace = THREE.SRGBColorSpace;
-    // Use the same panorama as a restrained image-based lighting source for material reflections.
-    const environment = texture.clone();
-    environment.mapping = THREE.EquirectangularReflectionMapping;
-    environment.needsUpdate = true;
-    scene.environment = environment;
-    scene.environmentIntensity = 0.16;
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
     const skyMaterial = new THREE.MeshBasicMaterial({
@@ -53,25 +46,23 @@ const renderer = new THREE.WebGLRenderer({
 });
 renderer.setPixelRatio(1);
 renderer.domElement.style.imageRendering = "pixelated";
-// Tone mapping and display conversion run once in the final pixel shader.
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.NoToneMapping;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.BasicShadowMap;
 renderer.shadowMap.autoUpdate = true;
-// Keep the canvas unfiltered; all grading happens before nearest-neighbour upscale.
-renderer.domElement.style.filter = "none";
+// Very subtle analog-like frame persistence for motion, kept deliberately restrained.
+renderer.domElement.style.filter = 'contrast(1.06) saturate(1.04)';
+renderer.toneMappingExposure = 1.12;
 renderer.domElement.id = "screenCanvas";
 renderer.domElement.tabIndex = 0;
 mount.appendChild(renderer.domElement);
-const pixelPost = createPixelPostProcess(THREE, renderer);
 
 function resize() {
   const pixelScale = LOW_POWER ? 3.4 : 3.05;
   const width = Math.max(200, Math.floor(innerWidth / pixelScale));
   const height = Math.max(125, Math.floor(innerHeight / pixelScale));
   renderer.setSize(width, height, false);
-  pixelPost.setSize(width, height);
   renderer.domElement.style.width = "100%";
   renderer.domElement.style.height = "100%";
   camera.aspect = innerWidth / innerHeight;
@@ -107,7 +98,7 @@ const controller = createPlayerController({
   state,
   ui
 });
-bindInput({ renderer, state, controller, ui, postFx: pixelPost });
+bindInput({ renderer, state, controller, ui });
 
 const clockStart = performance.now();
 let previous = clockStart;
@@ -161,7 +152,7 @@ function animate(now) {
 
   ui.setInteraction(nearest, state);
   ui.tick(now, clockStart);
-  pixelPost.render(scene, camera, now / 1000);
+  renderer.render(scene, camera);
 }
 
 ui.updateObjective(state);
