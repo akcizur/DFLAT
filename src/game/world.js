@@ -278,7 +278,7 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
   
       // Reference rendering setup: hemisphere fill, PCF sun shadows on desktop, warm room pools.
       scene.add(new THREE.HemisphereLight(0xc7d1d8, 0x332b24, 1.05));
-      const sun = new THREE.DirectionalLight(0xbfd7ff, 1.65);
+      const sun = new THREE.DirectionalLight(0xffd7b0, 1.9);
       sun.position.set(-4, 7, 5);
       sun.castShadow = !LOW_POWER;
       sun.shadow.mapSize.set(1024, 1024);
@@ -290,10 +290,10 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
       sun.shadow.camera.far = 25;
       sun.shadow.bias = -0.0005;
       scene.add(sun);
-      const warm = new THREE.PointLight(0xffd29a, 42, 18, 2);
+      const warm = new THREE.PointLight(0xffd29a, 34, 18, 2);
       warm.position.set(0, 2.82, -.4);
       scene.add(warm);
-      const livingLight = new THREE.PointLight(0xffd29a, 16, 10, 2);
+      const livingLight = new THREE.PointLight(0xffc58c, 18, 11, 2);
       livingLight.position.set(-4.2, 2.55, -2.8);
       scene.add(livingLight);
       const kitchenLight = new THREE.PointLight(0xffe8bd, 22, 11, 2);
