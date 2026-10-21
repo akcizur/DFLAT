@@ -141,6 +141,10 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
       box('Nadpraží ložnice', -1, 2.16, 2.4, .26, .12, 1.08, M.wood2);
       for (const z of [1.8, 3.0]) box('Zárubeň koupelny', 1, 1.08, z, .26, 2.16, .12, M.white);
       box('Nadpraží koupelny', 1, 2.16, 2.4, .26, .12, 1.08, M.white);
+      // Main entrance opening: keep both wall wings, but leave a clear centered door span.
+      // The previous full-width upper/lintel pieces visually closed the entrance; build only the header.
+      box('Vstup / levý horní díl', -1.45, 2.67, 5.91, 2.9, 1.0, .18, M.wall);
+      box('Vstup / pravý horní díl', 1.45, 2.67, 5.91, 2.9, 1.0, .18, M.wall);
       // Solid infill above all interior doorways; the wall continues to the ceiling.
       for (const [x, z] of [[-1, -3.4], [-1, 2.4], [1, -3.4], [1, 2.4]]) {
         box('Stěna nad dveřmi', x, (2.22 + wallH) / 2, z, .18, wallH - 2.22, 1.2, M.wall);

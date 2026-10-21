@@ -51,6 +51,8 @@ renderer.toneMapping = THREE.NoToneMapping;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.BasicShadowMap;
 renderer.shadowMap.autoUpdate = true;
+// Very subtle analog-like frame persistence for motion, kept deliberately restrained.
+renderer.domElement.style.filter = 'contrast(1.015) saturate(0.96)';
 renderer.toneMappingExposure = 1.0;
 renderer.domElement.id = "screenCanvas";
 renderer.domElement.tabIndex = 0;
@@ -107,6 +109,29 @@ function animate(now) {
   previous = now;
 
   const nearest = controller.update(deltaTime);
+  // Subtle per-object luminance shimmer: tiny, slow, phase-shifted so the room feels
+  // like a worn PS1/CRT capture rather than a visibly vibrating scene.
+  const shimmer = 0.012 + Math.sin(now * 0.0017) * 0.004;
+  if (!scene.userData.shimmerMaterials) {
+    const mats = new Set();
+    scene.traverse(object => {
+      if (!object.isMesh || object.name === "HQ sky image background") return;
+      for (const material of (Array.isArray(object.material) ? object.material : [object.material])) {
+        if (material && material.color && !mats.has(material)) {
+          mats.add(material);
+          if (material.emissive) {
+            material.userData.baseEmissiveIntensity = material.emissiveIntensity;
+            material.userData.shimmerPhase = (object.id % 17) * 0.37;
+          }
+        }
+      }
+    });
+    scene.userData.shimmerMaterials = [...mats].filter(material => material.emissive);
+  }
+  for (const material of scene.userData.shimmerMaterials) {
+    const phase = material.userData.shimmerPhase || 0;
+    material.emissiveIntensity = (material.userData.baseEmissiveIntensity || 0) + shimmer * (0.5 + 0.5 * Math.sin(now * 0.0022 + phase));
+  }
   for (const item of world.meshesToAnimate) {
     item.object.position.y = item.baseY + Math.sin(now * 0.002 + item.phase) * 0.045;
     item.object.rotation.y = 0.45 + Math.sin(now * 0.001) * 0.18;

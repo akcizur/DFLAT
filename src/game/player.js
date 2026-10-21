@@ -4,7 +4,6 @@ export function createPlayerController({ camera, colliders, interactables, state
   camera.position.set(player.x, 1.68, player.z);
   camera.rotation.order = "YXZ";
   let walkTime = 0;
-  let velocityX = 0, velocityZ = 0;
   let cameraYaw = player.yaw, cameraPitch = player.pitch;
   let walkBlend = 0;
   let cameraX = player.x, cameraY = 1.68, cameraZ = player.z;
@@ -55,7 +54,7 @@ export function createPlayerController({ camera, colliders, interactables, state
     const desiredMoving = state.started && !state.paused &&
       (Math.abs(player.x - cameraX) + Math.abs(player.z - cameraZ) > 0.0005 ||
        Object.values(keysDown).some(Boolean));
-    const blend = 1 - Math.exp(-deltaTime * 3.1);
+    const blend = 1 - Math.exp(-deltaTime * 18);
     walkBlend += ((desiredMoving ? 1 : 0) - walkBlend) * (1 - Math.exp(-deltaTime * 3.2));
     if (desiredMoving) walkTime += deltaTime * 7.2;
     const bob = Math.sin(walkTime) * 0.012 * walkBlend;
@@ -68,7 +67,7 @@ export function createPlayerController({ camera, colliders, interactables, state
     cameraZ += (targetZ - cameraZ) * blend;
     camera.position.set(cameraX, cameraY, cameraZ);
     camera.rotation.order = "YXZ";
-    const lookBlend = 1 - Math.exp(-deltaTime * 14);
+    const lookBlend = 1;
     let yawDelta = player.yaw - cameraYaw;
     yawDelta = Math.atan2(Math.sin(yawDelta), Math.cos(yawDelta));
     cameraYaw += yawDelta * lookBlend;
@@ -89,12 +88,9 @@ export function createPlayerController({ camera, colliders, interactables, state
 
       const length = Math.hypot(forward, strafe);
       if (length > 0) { forward /= length; strafe /= length; }
-      const targetVX = (-Math.sin(player.yaw) * forward + Math.cos(player.yaw) * strafe) * player.speed;
-      const targetVZ = (-Math.cos(player.yaw) * forward - Math.sin(player.yaw) * strafe) * player.speed;
-      const inertia = 1 - Math.exp(-deltaTime * 7.0);
-      velocityX += (targetVX - velocityX) * inertia;
-      velocityZ += (targetVZ - velocityZ) * inertia;
-      movePlayer(velocityX * deltaTime, velocityZ * deltaTime);
+      const dx = (-Math.sin(player.yaw) * forward + Math.cos(player.yaw) * strafe) * player.speed * deltaTime;
+      const dz = (-Math.cos(player.yaw) * forward - Math.sin(player.yaw) * strafe) * player.speed * deltaTime;
+      movePlayer(dx, dz);
     }
 
     syncCamera(deltaTime);
