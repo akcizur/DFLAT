@@ -85,8 +85,16 @@ if (!blenderGenerator.includes("v_slab = [(x, y, 0.0) for x, y in outline]")) fa
 if (!blenderGenerator.includes("FLOOR_COUNT = 17")) fail("Blender generator must build exactly 17 storeys");
 if (!blenderGenerator.includes("FLOOR_TO_FLOOR = 2.8")) fail("Blender generator storey spacing must be 2.8 metres");
 if (!blenderGenerator.includes("WALL_THICKNESS = 0.20")) fail("Blender generator perimeter panel thickness must be 200 mm");
-if (!blenderGenerator.includes("modifier.count = FLOOR_COUNT")) fail("Blender Array modifier must repeat the geometry exactly 17 times");
+if (!blenderGenerator.includes("modifier.count = count")) fail("Blender Array helper must accept explicit repeat counts");
+if (!blenderGenerator.includes('_add_array(upper_walls, "Upper storeys | 2.8 m pitch", FLOOR_COUNT - 1)')) fail("Ground floor and 16 upper floors must total 17 storeys without duplicating the entrance");
 if (!blenderGenerator.includes("modifier.constant_offset_displace = (0.0, 0.0, FLOOR_TO_FLOOR)")) fail("Blender Array modifier must use a 2.8 m vertical offset");
+if (!blenderGenerator.includes("WINDOW_WIDTH = 1.30") || !blenderGenerator.includes("def _build_facade_segment(")) fail("Blender generator must make real window openings in facade geometry");
+if (!blenderGenerator.includes("include_entry=True") || !blenderGenerator.includes("DOOR_WIDTH = 1.80")) fail("Ground-floor facade must have a separate actual entrance opening");
+if (!blenderGenerator.includes('boolean.solver = "EXACT"')) fail("Stairwell and roof-hatch cuts must use Blender's exact Boolean solver");
+if (!blenderGenerator.includes("STAIR_FLIGHTS_PER_STOREY = 2") || !blenderGenerator.includes("STEPS_PER_FLIGHT = 8")) fail("Blender generator must create switch-back stairs between storeys");
+if (!blenderGenerator.includes("STAIRWELL_SIZE = (4.15, 4.00)")) fail("Floor slabs must include the stairwell opening");
+if (!blenderGenerator.includes("ROOF_HATCH_SIZE = (1.05, 1.05)") || !blenderGenerator.includes("def _build_roof_ladder(")) fail("Roof must have a ladder hatch and fixed ladder");
+if (!blenderGenerator.includes('"Fixed ladder from top floor to roof hatch"')) fail("Roof ladder object must be included in the generated collection");
 const materialsSource = await readFile(path.join(root, "src/game/materials.js"), "utf8");
 if (!materialsSource.includes("function bakedLightTexture()") || !materialsSource.includes("lightMapIntensity")) {
   fail("procedural baked-light gradients are not configured on the material palette");
