@@ -143,12 +143,12 @@ export function createPixelPostProcess(THREE, renderer) {
         vec2 rgbShift = vec2(chroma * (0.35 + r2), 0.0);
         float depth = texture2D(tDepth, clamp(uv, 0.001, 0.999)).x;
         float distanceToCamera = viewDistance(depth);
-        float blur = smoothstep(2.0, 3.2, distanceToCamera) * 2.2;
         vec3 color = sampleScene(clamp(uv, 0.001, 0.999));
         if (chroma > 0.0) {
           // Two inexpensive edge samples add RGB separation without tripling the blur kernel.
-          color.r = texture2D(tDiffuse, clamp(uv + rgbShift, 0.001, 0.999)).r;
-          color.b = texture2D(tDiffuse, clamp(uv - rgbShift, 0.001, 0.999)).b;
+          float splitAmount = clamp(chroma * 150.0, 0.0, 0.5);
+          color.r = mix(color.r, texture2D(tDiffuse, clamp(uv + rgbShift, 0.001, 0.999)).r, splitAmount);
+          color.b = mix(color.b, texture2D(tDiffuse, clamp(uv - rgbShift, 0.001, 0.999)).b, splitAmount);
         }
 
         float scan = 0.5 + 0.5 * sin(vUv.y * resolution.y * 3.14159265);
