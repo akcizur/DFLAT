@@ -1,0 +1,109 @@
+// Keyboard, pointer lock and touch controls. No game-world logic lives here.
+export function bindInput({ renderer, state, controller, ui }) {
+  const { player, keysDown, doInteract } = controller;
+  let touchLook = null;
+
+  function lockPointer() {
+    if (renderer.domElement.requestPointerLock) renderer.domElement.requestPointerLock();
+  }
+
+  function startGame() {
+    state.started = true;
+    ui.hideStart();
+    state.paused = false;
+    ui.hidePause();
+    renderer.domElement.focus();
+    if (matchMedia("(pointer:fine)").matches) lockPointer();
+  }
+
+  function pauseGame() {
+    if (!state.started || state.finished) return;
+    state.paused = true;
+    ui.showPause();
+    if (document.pointerLockElement) document.exitPointerLock();
+  }
+
+  function resumeGame() {
+    state.paused = false;
+    ui.hidePause();
+    if (matchMedia("(pointer:fine)").matches) lockPointer();
+  }
+
+  document.getElementById("startButton").addEventListener("click", startGame);
+  document.getElementById("resumeButton").addEventListener("click", resumeGame);
+  document.getElementById("touchAction").addEventListener("click", doInteract);
+
+  document.addEventListener("keydown", event => {
+    if (event.code !== "Enter") return;
+    if (ui.isStartVisible()) {
+      event.preventDefault();
+      startGame();
+    } else if (state.paused) {
+      event.preventDefault();
+      resumeGame();
+    }
+  });
+
+  renderer.domElement.addEventListener("click", () => {
+    if (state.started && !state.paused && !document.pointerLockElement && matchMedia("(pointer:fine)").matches) {
+      lockPointer();
+    }
+  });
+
+  document.addEventListener("mousemove", event => {
+    if (document.pointerLockElement === renderer.domElement && state.started && !state.paused) {
+      player.yaw -= event.movementX * 0.0024;
+      player.pitch -= event.movementY * 0.0021;
+      player.pitch = Math.max(-1.35, Math.min(1.35, player.pitch));
+    }
+  });
+
+  // Touch drag controls looking; the directional buttons control walking.
+  renderer.domElement.addEventListener("pointerdown", event => {
+    if (event.pointerType === "touch" && state.started && !state.paused) {
+      touchLook = { id: event.pointerId, x: event.clientX, y: event.clientY };
+    }
+  });
+
+  renderer.domElement.addEventListener("pointermove", event => {
+    if (!touchLook || touchLook.id !== event.pointerId) return;
+    const dx = event.clientX - touchLook.x;
+    const dy = event.clientY - touchLook.y;
+    player.yaw -= dx * 0.006;
+    player.pitch -= dy * 0.004;
+    player.pitch = Math.max(-1.25, Math.min(1.25, player.pitch));
+    touchLook.x = event.clientX;
+    touchLook.y = event.clientY;
+  });
+
+  addEventListener("pointerup", event => {
+    if (touchLook && touchLook.id === event.pointerId) touchLook = null;
+  });
+
+  addEventListener("keydown", event => {
+    if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.code)) event.preventDefault();
+    if (event.code === "Escape" && state.started && !state.finished) {
+      if (state.paused) resumeGame();
+      else pauseGame();
+      return;
+    }
+    keysDown[event.code] = true;
+    if (event.code === "KeyE" && !event.repeat && state.started && !state.paused) doInteract();
+  });
+
+  addEventListener("keyup", event => { keysDown[event.code] = false; });
+
+  document.querySelectorAll("[data-key]").forEach(button => {
+    const code = button.dataset.key;
+    const down = event => { event.preventDefault(); keysDown[code] = true; };
+    const up = event => { event.preventDefault(); keysDown[code] = false; };
+    button.addEventListener("pointerdown", down);
+    button.addEventListener("pointerup", up);
+    button.addEventListener("pointercancel", up);
+    button.addEventListener("pointerleave", up);
+  });
+
+  addEventListener("blur", () => {
+    for (const key in keysDown) keysDown[key] = false;
+  });
+}
