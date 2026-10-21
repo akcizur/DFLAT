@@ -1041,7 +1041,7 @@ def build():
     _add_array(upper_walls, "Upper storeys | 2.8 m pitch", FLOOR_COUNT - 1)
 
     # Real window holes are formed in each facade mesh; separate frames/panes
-    # sit inside the cutouts and are repeated across all 17 storeys.
+    # sit inside the cutouts and are repeated across all eight storeys.
     outer = _offset_polygon(wall_nodes, WALL_THICKNESS * 0.5)
     inner = _offset_polygon(wall_nodes, -WALL_THICKNESS * 0.5)
     frame_v, frame_f, glass_v, glass_f = _build_window_accessories(outer, inner)
