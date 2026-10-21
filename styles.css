@@ -552,3 +552,51 @@
 @media (prefers-reduced-motion: reduce) {
   .boot-screen, .boot-logo, .boot-screen:after, .boot-noise, #startScreen:not(.hidden), #pauseScreen:not(.hidden) { animation-duration:.01ms; }
 }
+
+
+/* Alternate monochrome BIOS displayed inside a vintage CRT television. */
+#startScreen.tv-bios-mode {
+  z-index: 12;
+  background: #050505;
+  color: #f0f0f0;
+  display: grid;
+  place-items: center;
+  padding: 5vw;
+  font-family: "Courier New", ui-monospace, monospace;
+}
+#startScreen.tv-bios-mode .term {
+  position: relative;
+  width: min(780px, 92vw);
+  min-height: min(500px, 74vh);
+  padding: clamp(22px, 5vw, 48px);
+  border: 2px solid #d7d7d7;
+  border-radius: 48px / 34px;
+  background: radial-gradient(ellipse at center, #262626 0%, #111 68%, #050505 100%);
+  box-shadow: inset 0 0 28px #000, 0 0 0 8px #171717, 0 0 0 10px #777, 0 0 36px #000;
+  text-shadow: 0 0 4px #fff;
+  overflow: hidden;
+  animation: mono-tv-flicker 5s steps(1,end) infinite;
+}
+#startScreen.tv-bios-mode .term:before {
+  content:""; position:absolute; inset:0; pointer-events:none; z-index:3;
+  border-radius:inherit;
+  background: repeating-linear-gradient(to bottom, transparent 0 2px, #0009 3px 4px);
+  opacity:.5;
+}
+#startScreen.tv-bios-mode .term:after {
+  content:""; position:absolute; inset:-20%; pointer-events:none; z-index:2;
+  background: radial-gradient(ellipse, transparent 48%, #000d 100%);
+}
+.tv-bios-title { position:relative; z-index:4; margin:26px 0 18px; font-size:clamp(22px,4vw,38px); font-weight:bold; letter-spacing:.08em; }
+.tv-bios-title span { display:block; margin-top:8px; font-size:10px; font-weight:normal; letter-spacing:.18em; }
+.tv-bios-rule { position:relative; z-index:4; color:#aaa; margin:12px 0; overflow:hidden; white-space:nowrap; }
+.tv-bios-info { position:relative; z-index:4; line-height:2; font-size:clamp(11px,1.8vw,14px); color:#dedede; }
+#startScreen.tv-bios-mode .cmd { position:relative; z-index:4; color:#fff; border:1px solid #888; padding:12px 16px; background:#202020; }
+#startScreen.tv-bios-mode .cmd:hover, #startScreen.tv-bios-mode .cmd:focus-visible { background:#eee; color:#111; outline:2px solid #fff; }
+#startScreen.tv-bios-mode .cmd .p { color:#fff; }
+#startScreen.tv-bios-mode .cur { animation: mono-cursor 1s steps(1,end) infinite; }
+.tv-bios-footer { position:relative; z-index:4; margin-top:24px; font-size:11px; letter-spacing:.08em; animation: mono-cursor 1s steps(1,end) infinite; }
+#startScreen.tv-bios-mode .dim { position:relative; z-index:4; color:#aaa; font-size:10px; letter-spacing:.08em; }
+@keyframes mono-tv-flicker { 0%,96%,100% { opacity:1; } 97% { opacity:.94; } 98% { opacity:1; } }
+@keyframes mono-cursor { 0%,48% { opacity:1; } 49%,100% { opacity:.15; } }
+@media (prefers-reduced-motion: reduce) { #startScreen.tv-bios-mode .term, #startScreen.tv-bios-mode .cur, .tv-bios-footer { animation:none; } }
