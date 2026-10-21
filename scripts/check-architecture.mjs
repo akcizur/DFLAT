@@ -65,7 +65,7 @@ if (!compositorSource.includes("new THREE.WebGLRenderTarget")) fail("depth-aware
 if (!compositorSource.includes("new THREE.DepthTexture")) fail("depth-aware blur needs a depth texture");
 if (!compositorSource.includes("new THREE.ShaderMaterial")) fail("distance-based Gaussian blur shader is required");
 if (!compositorSource.includes("smoothstep(2.0, 3.2, distanceToCamera)")) fail("Gaussian blur must ramp in over approximately 2–3 metres");
-if (!compositorSource.includes("texture2D(tDiffuse, vUv + vec2(-px.x, -px.y))")) fail("Gaussian blur must use a symmetric sample kernel");
+if (!compositorSource.includes("texture2D(tDiffuse, uv + vec2(-px.x, -px.y))")) fail("Gaussian blur must use a symmetric sample kernel in distorted UV space");
 if (!mainSource.includes("preserveDrawingBuffer: true")) fail("WebGL frame buffer must be preserved for pixel compositing");
 if (!mainSource.includes('object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone())')) fail("mesh UV2 channels are required for baked light maps");
 
