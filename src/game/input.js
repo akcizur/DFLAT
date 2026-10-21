@@ -14,10 +14,15 @@ export function bindInput({ renderer, state, controller, ui, postFx }) {
   function lockPointer() {
     if (renderer.domElement.requestPointerLock) renderer.domElement.requestPointerLock();
   }
-  function setKey(code, value) { keysDown[code] = Boolean(value); }
-  function clearMovement() {
-    for (const code of ["KeyW","KeyA","KeyS","KeyD","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"]) setKey(code, false);
+  const movementCodes = ["KeyW","KeyA","KeyS","KeyD","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"];
+  const sources = { keyboard: Object.create(null), touch: Object.create(null), gamepad: Object.create(null) };
+  function setKey(code, value, source = "keyboard") {
+    if (!movementCodes.includes(code)) { keysDown[code] = Boolean(value); return; }
+    sources[source][code] = Boolean(value);
+    keysDown[code] = Boolean(sources.keyboard[code] || sources.touch[code] || sources.gamepad[code]);
   }
+  function clearSource(source) { for (const code of movementCodes) setKey(code, false, source); }
+  function clearMovement() { clearSource("keyboard"); clearSource("touch"); clearSource("gamepad"); }
   function startGame() {
     if (state.started) return;
     state.started = true;
@@ -99,13 +104,13 @@ export function bindInput({ renderer, state, controller, ui, postFx }) {
     const nx = dx / Math.max(radius, length), ny = dy / Math.max(radius, length);
     moveKnob.style.transform = `translate(calc(-50% + ${nx * radius}px), calc(-50% + ${ny * radius}px))`;
     const x = dx / radius, y = dy / radius;
-    setKey("KeyW", y < -0.22); setKey("KeyS", y > 0.22);
-    setKey("KeyA", x < -0.22); setKey("KeyD", x > 0.22);
+    setKey("KeyW", y < -0.22, "touch"); setKey("KeyS", y > 0.22, "touch");
+    setKey("KeyA", x < -0.22, "touch"); setKey("KeyD", x > 0.22, "touch");
   }
   function releaseStick(event) {
     if (!stickPointer || (event && event.pointerId !== stickPointer)) return;
     stickPointer = null;
-    clearMovement();
+    clearSource("touch");
     moveKnob.style.transform = "translate(-50%, -50%)";
     moveStick.classList.remove("active");
   }
@@ -145,8 +150,8 @@ export function bindInput({ renderer, state, controller, ui, postFx }) {
   // Legacy direction buttons remain supported for accessibility and external layouts.
   document.querySelectorAll("[data-key]").forEach(button => {
     const code = button.dataset.key;
-    const down = event => { event.preventDefault(); setKey(code, true); };
-    const up = event => { event.preventDefault(); setKey(code, false); };
+    const down = event => { event.preventDefault(); setKey(code, true, "touch"); };
+    const up = event => { event.preventDefault(); setKey(code, false, "touch"); };
     button.addEventListener("pointerdown", down);
     button.addEventListener("pointerup", up);
     button.addEventListener("pointercancel", up);
@@ -170,8 +175,8 @@ export function bindInput({ renderer, state, controller, ui, postFx }) {
     if (pad && state.started && !state.paused) {
       const dead = value => Math.abs(value || 0) < 0.16 ? 0 : Math.sign(value) * ((Math.abs(value) - 0.16) / 0.84);
       const lx = dead(pad.axes[0]), ly = dead(pad.axes[1]);
-      setKey("KeyW", ly < -0.2); setKey("KeyS", ly > 0.2);
-      setKey("KeyA", lx < -0.2); setKey("KeyD", lx > 0.2);
+      setKey("KeyW", ly < -0.2, "gamepad"); setKey("KeyS", ly > 0.2, "gamepad");
+      setKey("KeyA", lx < -0.2, "gamepad"); setKey("KeyD", lx > 0.2, "gamepad");
       const rx = dead(pad.axes[2]), ry = dead(pad.axes[3]);
       player.yaw -= rx * sensitivity.padLook / 60;
       player.pitch = Math.max(-1.25, Math.min(1.25, player.pitch + ry * sensitivity.padLook / 60));
