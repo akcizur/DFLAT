@@ -478,3 +478,32 @@
 #pauseScreen::before { display: none !important; }
 #startScreen.tv-bios-mode.hidden,
 #pauseScreen.hidden { display: none !important; }
+
+
+/* Runtime diagnostics: never leave a blank black screen if WebGL/CDN fails. */
+.runtime-error {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 12px;
+  padding: clamp(24px, 7vw, 80px);
+  overflow: auto;
+  background: #080502;
+  color: #ffba62;
+  font: 13px/1.8 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  text-shadow: 0 0 6px rgba(255, 166, 64, .2);
+}
+.runtime-error[hidden] { display: none !important; }
+.runtime-error h1 {
+  margin: 0;
+  color: #ffe0ad;
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: .08em;
+}
+.runtime-error p { max-width: 620px; margin: 0; color: #c28d4c; }
+.runtime-error a { margin-top: 10px; color: #ff493d; text-decoration: none; }
+.runtime-error a:hover, .runtime-error a:focus-visible { color: #ffe0ad; text-decoration: underline; }
