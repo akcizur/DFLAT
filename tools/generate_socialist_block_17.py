@@ -9,6 +9,7 @@ modifiers with exactly 17 storeys spaced 2.8 m apart.
 """
 import bpy
 import math
+import os
 
 COLLECTION_NAME = "DFLAT | Socialist apartment block | 17 floors"
 FLOOR_COUNT = 17
@@ -312,3 +313,8 @@ def build():
 
 if __name__ == "__main__":
     build()
+    output_path = os.path.abspath(
+        os.environ.get("DFLAT_BLOCK_OUTPUT", "DFLAT_socialist_block_17.blend")
+    )
+    bpy.ops.wm.save_as_mainfile(filepath=output_path)
+    print("Saved Blender project: " + output_path)
