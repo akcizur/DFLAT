@@ -10,6 +10,7 @@ of stairs, floor-slab stairwell cut-outs, and a roof hatch with a fixed ladder.
 import bpy
 import math
 import os
+from mathutils import Vector
 
 COLLECTION_NAME = "DFLAT | Socialist apartment block | 17 floors"
 FLOOR_COUNT = 17
@@ -420,9 +421,19 @@ def _make_material(name, colour, roughness=0.88, metallic=0.0):
     material = bpy.data.materials.get(name)
     if material is None:
         material = bpy.data.materials.new(name)
-    material.diffuse_color = (colour[0], colour[1], colour[2], 1.0)
+    rgba = (colour[0], colour[1], colour[2], 1.0)
+    material.diffuse_color = rgba
     material.roughness = roughness
     material.metallic = metallic
+
+    # Match viewport colours with a real Principled shader so background renders
+    # don't silently fall back to Blender's default white material.
+    material.use_nodes = True
+    principled = material.node_tree.nodes.get("Principled BSDF")
+    if principled:
+        principled.inputs["Base Color"].default_value = rgba
+        principled.inputs["Roughness"].default_value = roughness
+        principled.inputs["Metallic"].default_value = metallic
     return material
 
 
@@ -689,6 +700,295 @@ def _build_roof_ladder(collection, metal):
     )
 
 
+def _build_exterior_finish(collection, concrete, facade_detail, metal):
+    """Add facade belt courses, panel joints, rainwater pipes and a finished roof."""
+    roof_top_z = FLOOR_COUNT * FLOOR_TO_FLOOR + SLAB_THICKNESS
+
+    # Thin horizontal belt courses make the 2.8 m panel rhythm readable in silhouette.
+    band_path = _offset_polygon(wall_nodes, WALL_THICKNESS * 0.5 + 0.035)
+    band_vertices, band_faces = [], []
+    for index, start in enumerate(band_path):
+        end = band_path[(index + 1) % len(band_path)]
+        _append_prism(
+            band_vertices, band_faces, start, end, 0.055,
+            FLOOR_TO_FLOOR - 0.13, FLOOR_TO_FLOOR - 0.065,
+            end_extension=0.012,
+        )
+    bands = _make_mesh_object(
+        "14 | Repeated horizontal facade belt courses",
+        band_vertices, band_faces, collection, facade_detail,
+    )
+    _add_array(bands, "Belt course | 17 storeys", FLOOR_COUNT)
+
+    # Subtle vertical panel joints sit in the bays between windows, never across
+    # the ground-floor entrance or glazing. Their Array shares the storey pitch.
+    outer = _offset_polygon(wall_nodes, WALL_THICKNESS * 0.5)
+    inner = _offset_polygon(wall_nodes, -WALL_THICKNESS * 0.5)
+    joint_vertices, joint_faces = [], []
+    for edge_index, start in enumerate(wall_nodes):
+        next_index = (edge_index + 1) % len(wall_nodes)
+        length = math.dist(start, wall_nodes[next_index])
+        windows = _window_intervals(edge_index, length)
+        for window_index in range(len(windows) - 1):
+            seam_t = (windows[window_index][1] + windows[window_index + 1][0]) * 0.5
+            if edge_index == 0 and abs(seam_t - 0.5) < 0.05:
+                continue
+            seam_half_t = 0.010 / length
+            _append_centered_facade_prism(
+                joint_vertices, joint_faces,
+                outer[edge_index], outer[next_index],
+                inner[edge_index], inner[next_index],
+                seam_t - seam_half_t, seam_t + seam_half_t,
+                0.34, FLOOR_TO_FLOOR - 0.24, 0.022,
+            )
+    joints = _make_mesh_object(
+        "15 | Fine vertical facade panel joints",
+        joint_vertices, joint_faces, collection, facade_detail,
+    )
+    _add_array(joints, "Panel joints | 17 storeys", FLOOR_COUNT)
+
+    # Downpipes follow the eight exterior chamfer vertices from roof to grade.
+    pipe_path = _offset_polygon(wall_nodes, WALL_THICKNESS * 0.5 + 0.11)
+    pipe_vertices, pipe_faces = [], []
+    for x, y in pipe_path:
+        _append_axis_box(
+            pipe_vertices, pipe_faces,
+            (x, y, roof_top_z * 0.5),
+            (0.075, 0.075, roof_top_z),
+        )
+    _make_mesh_object(
+        "16 | Eight full-height rainwater downpipes",
+        pipe_vertices, pipe_faces, collection, metal,
+    )
+
+    # A continuous parapet and wider coping finish the roof perimeter.
+    parapet_vertices, parapet_faces = [], []
+    coping_vertices, coping_faces = [], []
+    for index, start in enumerate(wall_nodes):
+        end = wall_nodes[(index + 1) % len(wall_nodes)]
+        _append_prism(
+            parapet_vertices, parapet_faces, start, end, 0.18,
+            roof_top_z, roof_top_z + 0.70,
+            end_extension=0.09,
+        )
+        _append_prism(
+            coping_vertices, coping_faces, start, end, 0.25,
+            roof_top_z + 0.65, roof_top_z + 0.77,
+            end_extension=0.125,
+        )
+    _make_mesh_object(
+        "17 | Continuous roof parapet",
+        parapet_vertices, parapet_faces, collection, concrete,
+    )
+    _make_mesh_object(
+        "18 | Overhanging parapet coping",
+        coping_vertices, coping_faces, collection, facade_detail,
+    )
+
+    # Three modest ventilation housings and raised exhaust necks break up the
+    # otherwise empty roof, while staying well clear of the ladder hatch.
+    equipment_vertices, equipment_faces = [], []
+    exhaust_vertices, exhaust_faces = [], []
+    for x, y, width, depth in (
+        (-4.8, -2.4, 1.65, 1.30),
+        (-1.3, 3.1, 1.45, 1.20),
+        (1.8, -3.3, 1.55, 1.25),
+    ):
+        height = 0.64
+        _append_axis_box(
+            equipment_vertices, equipment_faces,
+            (x, y, roof_top_z + height * 0.5),
+            (width, depth, height),
+        )
+        neck_height = 0.48
+        _append_axis_box(
+            exhaust_vertices, exhaust_faces,
+            (x, y, roof_top_z + height + neck_height * 0.5),
+            (0.42, 0.42, neck_height),
+        )
+        _append_axis_box(
+            exhaust_vertices, exhaust_faces,
+            (x, y, roof_top_z + height + neck_height + 0.035),
+            (0.60, 0.60, 0.07),
+        )
+    _make_mesh_object(
+        "19 | Rooftop ventilation housings",
+        equipment_vertices, equipment_faces, collection, concrete,
+    )
+    _make_mesh_object(
+        "20 | Raised roof exhausts",
+        exhaust_vertices, exhaust_faces, collection, metal,
+    )
+
+
+def _build_entrance_sign(collection, plaque_material, lettering_material, metal):
+    """Add a small legible entrance plaque and a simple intercom."""
+    plaque_vertices, plaque_faces = [], []
+    intercom_vertices, intercom_faces = [], []
+    _append_axis_box(
+        plaque_vertices, plaque_faces,
+        (0.0, -6.20, 2.32),
+        (1.42, 0.075, 0.22),
+    )
+    _append_axis_box(
+        intercom_vertices, intercom_faces,
+        (-1.20, -6.16, 1.48),
+        (0.16, 0.07, 0.28),
+    )
+    _append_axis_box(
+        intercom_vertices, intercom_faces,
+        (-1.20, -6.205, 1.54),
+        (0.045, 0.025, 0.045),
+    )
+    _make_mesh_object(
+        "21 | Entrance plaque",
+        plaque_vertices, plaque_faces, collection, plaque_material,
+    )
+    _make_mesh_object(
+        "22 | Entry intercom",
+        intercom_vertices, intercom_faces, collection, metal,
+    )
+
+    text_curve = bpy.data.curves.new("DFLAT | Entrance lettering", type="FONT")
+    text_curve.body = "VCHOD 01"
+    text_curve.size = 0.115
+    text_curve.extrude = 0.002
+    text_obj = bpy.data.objects.new("23 | Entrance lettering", text_curve)
+    collection.objects.link(text_obj)
+    text_obj.location = (-0.43, -6.245, 2.275)
+    text_obj.rotation_euler = (math.pi * 0.5, 0.0, 0.0)
+    text_curve.materials.append(lettering_material)
+
+
+def _add_area_light(collection, name, location, target, power, size, colour):
+    light_data = bpy.data.lights.new(name=name, type="AREA")
+    light_data.energy = power
+    light_data.shape = "DISK"
+    light_data.size = size
+    light_data.color = colour
+    light_obj = bpy.data.objects.new(name, light_data)
+    collection.objects.link(light_obj)
+    light_obj.location = location
+    light_obj.rotation_euler = (Vector(target) - Vector(location)).to_track_quat("-Z", "Y").to_euler()
+    return light_obj
+
+
+def _create_scene_preview(scene, collection, ground_material, paving_material, asphalt_material):
+    """Remove Blender startup clutter and prepare a useful camera/render on first open."""
+    for default_name in ("Cube", "Camera", "Light"):
+        default_obj = bpy.data.objects.get(default_name)
+        if default_obj:
+            bpy.data.objects.remove(default_obj, do_unlink=True)
+
+    # A matte ground, a concrete arrival apron, a straight approach path, and a
+    # simple street give the high-rise a clear sense of scale and street frontage.
+    ground_vertices = [
+        (-100.0, -100.0, -0.012),
+        (100.0, -100.0, -0.012),
+        (100.0, 100.0, -0.012),
+        (-100.0, 100.0, -0.012),
+    ]
+    ground = _make_mesh_object(
+        "24 | Ground plane",
+        ground_vertices, [(0, 1, 2, 3)], collection, ground_material,
+    )
+
+    apron_vertices, apron_faces = [], []
+    _append_axis_box(
+        apron_vertices, apron_faces,
+        (0.0, -8.15, 0.005), (4.8, 2.25, 0.08),
+    )
+    _make_mesh_object(
+        "25 | Entrance forecourt",
+        apron_vertices, apron_faces, collection, paving_material,
+    )
+
+    path_vertices, path_faces = [], []
+    _append_axis_box(
+        path_vertices, path_faces,
+        (0.0, -14.70, 0.005), (3.5, 13.5, 0.08),
+    )
+    _make_mesh_object(
+        "26 | Front approach path",
+        path_vertices, path_faces, collection, paving_material,
+    )
+
+    road_vertices, road_faces = [], []
+    _append_axis_box(
+        road_vertices, road_faces,
+        (0.0, -25.0, -0.005), (44.0, 7.0, 0.08),
+    )
+    _make_mesh_object(
+        "27 | Street in front of the building",
+        road_vertices, road_faces, collection, asphalt_material,
+    )
+
+    # Remove a stale render camera if it was linked elsewhere, then use an
+    # orthographic portrait view so all seventeen storeys fit in one frame.
+    camera_data = bpy.data.cameras.new("DFLAT | Architectural preview camera")
+    camera_data.type = "ORTHO"
+    camera_data.ortho_scale = 48.0
+    camera_data.lens = 55.0
+    camera_data.clip_start = 0.1
+    camera_data.clip_end = 350.0
+    camera_obj = bpy.data.objects.new("28 | Architectural preview camera", camera_data)
+    collection.objects.link(camera_obj)
+    camera_obj.location = (78.0, -105.0, 87.0)
+    target = (0.0, 0.0, FLOOR_COUNT * FLOOR_TO_FLOOR * 0.5 + 0.2)
+    camera_obj.rotation_euler = (Vector(target) - camera_obj.location).to_track_quat("-Z", "Y").to_euler()
+    scene.camera = camera_obj
+
+    _add_area_light(
+        collection, "29 | Large warm key light",
+        (-28.0, -38.0, 68.0), (0.0, 0.0, 24.0),
+        18000.0, 34.0, (1.0, 0.88, 0.72),
+    )
+    _add_area_light(
+        collection, "30 | Cool front fill",
+        (32.0, -16.0, 42.0), (0.0, 0.0, 24.0),
+        10500.0, 28.0, (0.68, 0.80, 1.0),
+    )
+    _add_area_light(
+        collection, "31 | Roof rim light",
+        (-12.0, 24.0, 58.0), (0.0, 0.0, 25.0),
+        15000.0, 24.0, (1.0, 0.95, 0.84),
+    )
+
+    if scene.world is None:
+        scene.world = bpy.data.worlds.new("DFLAT | Preview world")
+    scene.world.use_nodes = True
+    background = scene.world.node_tree.nodes.get("Background")
+    if background:
+        background.inputs["Color"].default_value = (0.035, 0.045, 0.06, 1.0)
+        background.inputs["Strength"].default_value = 0.45
+
+    # Prefer modern Eevee, with a compatibility fallback for older Blender builds.
+    try:
+        scene.render.engine = "BLENDER_EEVEE_NEXT"
+    except (TypeError, ValueError):
+        try:
+            scene.render.engine = "BLENDER_EEVEE"
+        except (TypeError, ValueError):
+            pass
+
+    scene.render.resolution_x = 1200
+    scene.render.resolution_y = 1600
+    scene.render.resolution_percentage = 100
+    scene.render.image_settings.file_format = "PNG"
+    scene.camera.data.dof.use_dof = False
+
+    try:
+        scene.view_settings.view_transform = "AgX"
+    except (TypeError, ValueError):
+        pass
+
+    # Background runs can still save the UI's initial viewport as camera view.
+    for screen in bpy.data.screens:
+        for area in screen.areas:
+            if area.type == "VIEW_3D":
+                area.spaces.active.region_3d.view_perspective = "CAMERA"
+
+
 def _clear_previous_build():
     old = bpy.data.collections.get(COLLECTION_NAME)
     if old is None:
@@ -715,6 +1015,10 @@ def build():
     stair_material = _make_material("DFLAT | stair concrete", (0.47, 0.45, 0.41))
     metal_material = _make_material("DFLAT | dark metal", (0.18, 0.20, 0.20), roughness=0.42, metallic=0.65)
     door_material = _make_material("DFLAT | entrance door", (0.16, 0.23, 0.22), roughness=0.52)
+    facade_detail_material = _make_material("DFLAT | facade bands and coping", (0.39, 0.38, 0.35), roughness=0.82)
+    ground_material = _make_material("DFLAT | ground", (0.20, 0.22, 0.21), roughness=0.96)
+    paving_material = _make_material("DFLAT | concrete paving", (0.39, 0.38, 0.35), roughness=0.94)
+    asphalt_material = _make_material("DFLAT | asphalt", (0.055, 0.062, 0.068), roughness=0.96)
 
     # Ground-floor shell contains the only exterior doorway. Typical floors are
     # a separate 16-copy Array, so the entrance never repeats on upper storeys.
@@ -812,11 +1116,20 @@ def build():
     _build_entrance_details(
         collection, concrete, door_material, glass_material, metal_material,
     )
+    _build_entrance_sign(
+        collection, frame_material, concrete, metal_material,
+    )
     _build_roof_ladder(collection, metal_material)
+    _build_exterior_finish(
+        collection, concrete, facade_detail_material, metal_material,
+    )
+    _create_scene_preview(
+        scene, collection, ground_material, paving_material, asphalt_material,
+    )
 
+    # Start with a clean camera preview rather than Blender's default cube view.
     bpy.ops.object.select_all(action="DESELECT")
-    upper_walls.select_set(True)
-    bpy.context.view_layer.objects.active = upper_walls
+    bpy.context.view_layer.objects.active = None
 
     window_count_per_floor = sum(
         len(_window_intervals(i, math.dist(wall_nodes[i], wall_nodes[(i + 1) % len(wall_nodes)])))
