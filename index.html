@@ -4,10 +4,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#11100f" />
+  <meta name="theme-color" content="#080502" />
   <title>The Flat — hra o jednom bytě</title>
   <link rel="stylesheet" href="./styles.css" />
-  <link rel="stylesheet" href="./styles-cinematic.css" />
+  <link rel="stylesheet" href="./styles-cinematic.css?v=3" />
 </head>
 
 <body>
@@ -24,51 +24,53 @@
     <div class="crosshair"></div>
     <div class="interaction" id="interaction"><b>E</b> — interagovat</div>
     <div class="bottomline">
-      <div class="hint">WASD / POHYB&nbsp;&nbsp; · &nbsp;&nbsp;MYŠ / ROZHLÉDNUTÍ&nbsp;&nbsp; · &nbsp;&nbsp;E / AKCE
-      </div>
+      <div class="hint">WASD / POHYB&nbsp;&nbsp; · &nbsp;&nbsp;MYŠ / ROZHLÉDNUTÍ&nbsp;&nbsp; · &nbsp;&nbsp;E / AKCE</div>
       <div class="right">MALÝ BYT. DLOUHÝ VEČER.<br>VERZE 0.1 — HRAJ PO SVÉM.</div>
     </div>
   </div>
   <div class="toast" id="toast"></div>
   <div class="touch-controls" id="touchControls" aria-label="Dotykové ovládání">
     <div class="touch-col"><button data-key="KeyW">▲</button></div>
-    <div class="touch-col"><button data-key="KeyA">◀</button><button data-key="KeyS">▼</button><button
-        data-key="KeyD">▶</button></div>
+    <div class="touch-col"><button data-key="KeyA">◀</button><button data-key="KeyS">▼</button><button data-key="KeyD">▶</button></div>
   </div>
   <button class="touch-action" id="touchAction">AKCE<br>E</button>
-  <div class="boot-screen" id="bootScreen" aria-label="Boot intro">
-    <div class="boot-noise"></div>
+
+  <div class="boot-screen" id="bootScreen" aria-label="BIOS boot intro">
     <div class="bios">
-      <div>DFLAT SYSTEM BIOS <span>v0.8.6</span></div>
-      <div>MEMORY TEST ............ 640K OK</div>
-      <div>VIDEO BIOS ............. 8-BIT CRT</div>
-      <div>LOADING REALITY <span class="boot-dots">...</span></div>
+      <div>DFLAT SYSTEM BIOS <span>v0.9.0</span></div>
+      <div>CPU CHECK ............. OK</div>
+      <div>MEMORY TEST ........... 640K OK</div>
+      <div>VIDEO MODE ............ 8-BIT / READY</div>
+      <div>WORLD INIT ............ <span class="boot-dots">...</span></div>
     </div>
-    <div class="boot-logo"><span class="logo-mark">D<span>F</span></span><div>THE FLAT</div><small>AN ORDINARY PLACE / AN UNSTABLE SIGNAL</small></div>
-    <div class="boot-footer">SYSTEM READY // ENTER REALITY</div>
+    <div class="boot-footer">SYSTEM READY // HANDING OFF TO REALITY</div>
   </div>
+
   <div class="screen tv-bios-mode" id="startScreen">
     <div class="term">
-      <div class="dim">DFLAT // SYSTEM ROM 0.8</div>
-      <div class="tv-bios-title">THE FLAT <span>EPISODE 01 / BYT 3B</span></div>
+      <div class="dim">DFLAT SYSTEM BIOS / ROM 0.9.0</div>
+      <div class="tv-bios-title">THE FLAT</div>
+      <div class="tv-bios-subtitle">EPISODE 01 / BYT 3B</div>
       <div class="tv-bios-rule">------------------------------</div>
-      <div class="tv-bios-info">MEMORY CHECK .... OK<br>DISPLAY ......... MONOCHROME<br>REALITY ......... READY</div>
+      <div class="tv-bios-info">MEMORY CHECK .... OK<br>DISPLAY ......... 320x200<br>REALITY ......... STANDBY</div>
       <div class="gap"></div>
       <button class="cmd" id="startButton"><span class="p">&gt;</span> START GAME<span class="cur">_</span></button>
       <div class="gap"></div>
       <div class="dim">WASD MOVE&nbsp;&nbsp; E INTERACT&nbsp;&nbsp; ESC PAUSE</div>
-      <div class="tv-bios-footer">ENTER / CLICK TO BEGIN_</div>
+      <div class="tv-bios-footer">PRESS ENTER TO BEGIN_</div>
     </div>
   </div>
+
   <div class="screen hidden" id="pauseScreen">
     <div class="term">
-      <div class="dim">pauza</div>
+      <div class="dim">DFLAT SYSTEM BIOS / PAUSED</div>
       <div class="gap"></div>
-      <button class="cmd" id="resumeButton"><span class="p">&gt;</span> pokračovat<span class="cur">_</span></button>
+      <button class="cmd" id="resumeButton"><span class="p">&gt;</span> RESUME<span class="cur">_</span></button>
       <div class="gap"></div>
-      <div class="dim">esc / enter = zpět do hry</div>
+      <div class="dim">ESC / ENTER TO CONTINUE</div>
     </div>
   </div>
+
   <script type="module" src="./src/main.js"></script>
 </body>
 
