@@ -1,4 +1,4 @@
-"""Generate an editable 17-storey socialist-era apartment block in Blender.
+"""Generate an editable 8-storey socialist-era apartment block in Blender.
 
 Run:
     blender --background --python tools/generate_socialist_block_17.py
@@ -12,8 +12,8 @@ import math
 import os
 from mathutils import Vector
 
-COLLECTION_NAME = "DFLAT | Socialist apartment block | 17 floors"
-FLOOR_COUNT = 17
+COLLECTION_NAME = "DFLAT | Socialist apartment block | 8 floors"
+FLOOR_COUNT = 8
 FLOOR_TO_FLOOR = 2.8
 WALL_THICKNESS = 0.20
 PARTITION_THICKNESS = 0.18
@@ -718,7 +718,7 @@ def _build_exterior_finish(collection, concrete, facade_detail, metal):
         "14 | Repeated horizontal facade belt courses",
         band_vertices, band_faces, collection, facade_detail,
     )
-    _add_array(bands, "Belt course | 17 storeys", FLOOR_COUNT)
+    _add_array(bands, "Belt course | 8 storeys", FLOOR_COUNT)
 
     # Subtle vertical panel joints sit in the bays between windows, never across
     # the ground-floor entrance or glazing. Their Array shares the storey pitch.
@@ -745,7 +745,7 @@ def _build_exterior_finish(collection, concrete, facade_detail, metal):
         "15 | Fine vertical facade panel joints",
         joint_vertices, joint_faces, collection, facade_detail,
     )
-    _add_array(joints, "Panel joints | 17 storeys", FLOOR_COUNT)
+    _add_array(joints, "Panel joints | 8 storeys", FLOOR_COUNT)
 
     # Downpipes follow the eight exterior chamfer vertices from roof to grade.
     pipe_path = _offset_polygon(wall_nodes, WALL_THICKNESS * 0.5 + 0.11)
@@ -927,7 +927,7 @@ def _create_scene_preview(scene, collection, ground_material, paving_material, a
     # orthographic portrait view so all seventeen storeys fit in one frame.
     camera_data = bpy.data.cameras.new("DFLAT | Architectural preview camera")
     camera_data.type = "ORTHO"
-    camera_data.ortho_scale = 48.0
+    camera_data.ortho_scale = 26.0
     camera_data.lens = 55.0
     camera_data.clip_start = 0.1
     camera_data.clip_end = 350.0
@@ -940,17 +940,17 @@ def _create_scene_preview(scene, collection, ground_material, paving_material, a
 
     _add_area_light(
         collection, "29 | Large warm key light",
-        (-28.0, -38.0, 68.0), (0.0, 0.0, 24.0),
+        (-28.0, -38.0, 68.0), (0.0, 0.0, FLOOR_COUNT * FLOOR_TO_FLOOR * 0.5),
         18000.0, 34.0, (1.0, 0.88, 0.72),
     )
     _add_area_light(
         collection, "30 | Cool front fill",
-        (32.0, -16.0, 42.0), (0.0, 0.0, 24.0),
+        (32.0, -16.0, 42.0), (0.0, 0.0, FLOOR_COUNT * FLOOR_TO_FLOOR * 0.5),
         10500.0, 28.0, (0.68, 0.80, 1.0),
     )
     _add_area_light(
         collection, "31 | Roof rim light",
-        (-12.0, 24.0, 58.0), (0.0, 0.0, 25.0),
+        (-12.0, 24.0, 58.0), (0.0, 0.0, FLOOR_COUNT * FLOOR_TO_FLOOR * 0.5),
         15000.0, 24.0, (1.0, 0.95, 0.84),
     )
 
@@ -1032,7 +1032,7 @@ def build():
 
     upper_vertices, upper_faces, upper_partition_start = _build_wall_mesh(include_entry=False)
     upper_walls = _make_mesh_object(
-        "02 | Upper floors perimeter and partitions | 16 copies",
+        "02 | Upper floors perimeter and partitions | 7 copies",
         upper_vertices, upper_faces, collection, concrete,
     )
     upper_walls.data.materials.append(partition_material)
@@ -1046,13 +1046,13 @@ def build():
     inner = _offset_polygon(wall_nodes, -WALL_THICKNESS * 0.5)
     frame_v, frame_f, glass_v, glass_f = _build_window_accessories(outer, inner)
     window_frames = _make_mesh_object(
-        "07 | Window frames | 17 storeys", frame_v, frame_f, collection, frame_material,
+        "07 | Window frames | 8 storeys", frame_v, frame_f, collection, frame_material,
     )
     window_glass = _make_mesh_object(
-        "08 | Window glazing | 17 storeys", glass_v, glass_f, collection, glass_material,
+        "08 | Window glazing | 8 storeys", glass_v, glass_f, collection, glass_material,
     )
-    _add_array(window_frames, "Window frame repeat | 17 floors", FLOOR_COUNT)
-    _add_array(window_glass, "Window glass repeat | 17 floors", FLOOR_COUNT)
+    _add_array(window_frames, "Window frame repeat | 8 floors", FLOOR_COUNT)
+    _add_array(window_glass, "Window glass repeat | 8 floors", FLOOR_COUNT)
 
     # Concrete panels: one full foundation, 16 floor slabs with a stairwell
     # opening, plus a separate roof panel with only the smaller ladder hatch.
@@ -1098,7 +1098,7 @@ def build():
     for polygon in stairs.data.polygons:
         if polygon.index >= rail_face_start:
             polygon.material_index = 1
-    _add_array(stairs, "Stairs between all 17 storeys | 2.8 m pitch", FLOOR_COUNT - 1)
+    _add_array(stairs, "Stairs between 8 storeys | 2.8 m pitch", FLOOR_COUNT - 1)
 
     # Top-floor bridge links the final stair landing to the fixed roof ladder.
     top_floor_z = SLAB_THICKNESS + (FLOOR_COUNT - 1) * FLOOR_TO_FLOOR
@@ -1135,7 +1135,7 @@ def build():
         len(_window_intervals(i, math.dist(wall_nodes[i], wall_nodes[(i + 1) % len(wall_nodes)])))
         for i in range(len(wall_nodes))
     )
-    print("DFLAT 17-storey block generated:")
+    print("DFLAT 8-storey block generated:")
     print("  mitered perimeter nodes: %d" % len(wall_nodes))
     print("  perimeter wall thickness: %.3f m" % WALL_THICKNESS)
     print("  floor-to-floor spacing: %.3f m" % FLOOR_TO_FLOOR)
@@ -1154,7 +1154,7 @@ def build():
 if __name__ == "__main__":
     build()
     output_path = os.path.abspath(
-        os.environ.get("DFLAT_BLOCK_OUTPUT", "DFLAT_socialist_block_17.blend")
+        os.environ.get("DFLAT_BLOCK_OUTPUT", "DFLAT_socialist_block_8.blend")
     )
     bpy.ops.wm.save_as_mainfile(filepath=output_path)
     print("Saved Blender project: " + output_path)
