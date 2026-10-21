@@ -13,7 +13,7 @@ scene.background = new THREE.Color(0x25231f);
 // This makes the city image visible through window openings and around the apartment.
 const panorama = { mesh: null };
 new THREE.TextureLoader().load(
-  new URL("../assets/city-sunset.webp", import.meta.url).href,
+  new URL("../assets/bg-scene-hq.png", import.meta.url).href,
   texture => {
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.wrapS = THREE.RepeatWrapping;
@@ -26,12 +26,12 @@ new THREE.TextureLoader().load(
       toneMapped: false
     });
     panorama.mesh = new THREE.Mesh(new THREE.SphereGeometry(48, 48, 32), skyMaterial);
-    panorama.mesh.name = "Skutečné obrazové pozadí města";
+    panorama.mesh.name = "HQ sky image background";
     panorama.mesh.renderOrder = -1000;
     scene.add(panorama.mesh);
   },
   undefined,
-  error => console.error("The Flat: city image background failed to load.", error)
+  error => console.error("The Flat: assets/bg-scene-hq.png sky background failed to load.", error)
 );
 scene.fog = new THREE.Fog(0x25231f, 12, 29);
 
