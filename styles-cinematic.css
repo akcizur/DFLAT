@@ -795,3 +795,33 @@
   #startScreen.nexus-menu,
   #startScreen.nexus-menu.transition-out { transition:none !important; }
 }
+
+/* Keep the BIOS intro and main menu on the same exact viewport centre (X/Y). */
+#bootScreen.boot-screen {
+  display: grid;
+  place-items: center;
+  padding: clamp(22px, 5vw, 60px);
+}
+#bootScreen .bios {
+  width: min(680px, 90vw);
+  margin: 0;
+  justify-self: center;
+  align-self: center;
+}
+#bootScreen .boot-footer {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(14px, 3.5vh, 42px);
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  margin: 0;
+  text-align: center;
+  transform: translateX(-50%);
+}
+#startScreen.nexus-menu {
+  display: grid;
+  place-items: center;
+}
+#startScreen.nexus-menu .nexus-monitor {
+  margin: 0;
+}
