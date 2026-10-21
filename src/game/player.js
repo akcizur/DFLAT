@@ -1,6 +1,6 @@
 // First-person movement, collision handling, proximity and camera synchronization.
 export function createPlayerController({ camera, colliders, interactables, state, ui }) {
-  const player = { x: 0, z: 4.95, yaw: Math.PI * 0.02, pitch: -0.04, speed: 1.85, radius: 0.29 };
+  const player = { x: 0, z: 4.95, yaw: Math.PI * 0.02, pitch: -0.04, speed: 2.65, radius: 0.29 };
   camera.position.set(player.x, 1.68, player.z);
   camera.rotation.order = "YXZ";
   let walkTime = 0;
