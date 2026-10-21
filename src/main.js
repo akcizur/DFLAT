@@ -62,8 +62,8 @@ renderer.domElement.id = "screenCanvas";
 renderer.domElement.tabIndex = 0;
 mount.appendChild(renderer.domElement);
 
-// Render the apartment infrequently, then composite the saved pixel buffer at 60 Hz.
-// This separates the intentionally stepped 15 FPS image from responsive game motion.
+// Render the apartment at up to 60 FPS. The low-resolution framebuffer keeps the
+// deliberately pixelated look while camera movement and world animation stay responsive.
 const postFx = createPixelPostProcess(THREE, renderer);
 
 function resize() {
@@ -117,7 +117,7 @@ bindInput({ renderer, state, controller, ui, postFx });
 const clockStart = performance.now();
 const SIMULATION_HZ = 60;
 const SIMULATION_STEP_MS = 1000 / SIMULATION_HZ;
-const SCENE_RENDER_HZ = 15;
+const SCENE_RENDER_HZ = 60;
 const SCENE_RENDER_INTERVAL_MS = 1000 / SCENE_RENDER_HZ;
 const PRESENT_HZ = 60;
 const PRESENT_INTERVAL_MS = 1000 / PRESENT_HZ;
@@ -145,8 +145,7 @@ const shimmerMaterials = (() => {
 })();
 
 function updateSimulation(deltaSeconds, nowMs) {
-  // Movement, look synchronization, doors and UI advance at a fixed 60 Hz,
-  // independently from the slower 15 FPS scene raster.
+  // Movement, look synchronization, doors, UI and world raster target 60 Hz.
   const nearest = controller.update(deltaSeconds);
 
   for (const door of world.doorAnimations) {
@@ -207,8 +206,7 @@ function animate(now) {
     simulationAccumulator %= SIMULATION_STEP_MS;
   }
 
-  // Render a new 3D frame at 15 FPS. The pixel compositor then reveals that frame
-  // line-by-line over the last buffer while being presented at 60 FPS.
+  // Render the 3D world at the same 60 Hz target as the pixel presentation.
   if (now >= nextSceneRenderAt) {
     postFx.renderScene(scene, camera, now / 1000);
     nextSceneRenderAt = now + SCENE_RENDER_INTERVAL_MS;
