@@ -43,6 +43,20 @@ The deployment workflow builds the static site into `dist/` and deploys to [akci
 - `Esc` — pause
 - Touch screens — on-screen movement/action controls and drag-to-look
 
+## Optional Blender building generator
+
+The Blender generator creates a separate, editable 17-storey building massing model; it is a modelling tool and is not imported into the browser game at runtime.
+
+Run it with Blender installed:
+
+```sh
+blender --background --python tools/generate_socialist_block_17.py
+```
+
+The generated collection contains an uninterrupted eight-node perimeter shell with 200 mm outer walls, repeated interior partitions, a separate 200 mm foundation slab and an Array of 17 floor/roof panels. Wall and panel Arrays use an exact 2.8 m vertical pitch. The top roof surface is approximately 47.8 m above the base, including the 200 mm roof panel.
+
+`tools/generate_socialist_block_17.py` defines the complete `wall_faces` and `v_slab` arrays and keeps both Array modifiers editable.
+
 ## Architecture
 
 - `index.html` — game shell, centered BIOS menus and HUD.
@@ -56,7 +70,8 @@ The deployment workflow builds the static site into `dist/` and deploys to [akci
 - `src/game/player.js` — movement, collision response and camera synchronization.
 - `src/game/input.js` — keyboard, pointer lock, mouse/touch look and interaction.
 - `src/game/ui.js` — objective, inventory, notifications, menus and in-game clock.
-- `scripts/check-architecture.mjs` — validates entry points, local dependencies and rendering targets.
+- `scripts/check-architecture.mjs` — validates entry points, local dependencies, rendering targets and the Blender generator settings.
+- `tools/generate_socialist_block_17.py` — standalone Blender script for the complete 17-storey concrete apartment-block massing.
 
 ## Checks
 
