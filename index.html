@@ -648,8 +648,11 @@
     box('Lišta', -7.84, .10, 0, .07, .14, 11.5, M.wood);
     box('Lišta', 7.84, .10, 0, .07, .14, 11.5, M.wood);
     // Low skirting on both north/south room dividers, split only by the central hall.
-    box('Lišta příčky', -4.5, .10, .15, 7.0, .12, .05, M.wood);
-    box('Lišta příčky', 4.5, .10, .15, 7.0, .12, .05, M.wood);
+    // Visible skirting on both faces of each cross-wall; each strip is aligned to the wall face.
+    for (const x of [-4.5, 4.5]) {
+      box('Lišta příčky / sever', x, .10, .06, 7.0, .12, .05, M.wood);
+      box('Lišta příčky / jih', x, .10, .24, 7.0, .12, .05, M.wood);
+    }
     // Rugs and a runner that makes the entry-to-center circulation legible.
     box('Chodba / běhoun', 0, .008, 0, 1.35, .02, 9.8, M.cloth);
     box('Obývák / koberec', -4.1, .006, -1.6, 5.1, .025, 3.1, M.rug);
