@@ -42,7 +42,8 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
       for (const x of [-6.5, 0, 6.5]) box('Stropní stínová lišta', x, 3.16, 0, .055, .055, 11.5, M.wall2);
       const wallH = 3.15, wallT = .24;
       function wall(x, z, sx, sz, material = M.wall) { box('Stěna', x, wallH / 2, z, sx, wallH, sz, material, { collider: true }); }
-      wall(0, -6, 16, wallT, M.wall);
+      // North end of the hallway opens through glass doors to a new loggia.
+      wall(-4.5, -6, 7, wallT, M.wall); wall(4.5, -6, 7, wallT, M.wall);
       // Build exterior walls around real window openings. All wall sections share one material.
       const exteriorGlass = new THREE.MeshStandardMaterial({
         color: 0xa9c2d4, roughness: 0.28, metalness: 0.03,
@@ -104,6 +105,33 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
       // East side of the hall: matching openings into kitchen and bathroom.
       wall(1, -5.0, .18, 2.0, M.wall); wall(1, -1.325, .18, 2.95, M.wall);
       wall(1, 1.02, .18, 1.56, M.wall); wall(1, 4.5, .18, 3.0, M.wall);
+      // Hallway-end loggia doors, with a walkable exterior platform and guard rail.
+      for (const x of [-1.05, 1.05]) box('Zárubeň lodžie', x, 1.45, -6, .12, 2.9, .16, M.white);
+      box('Nadpraží lodžie', 0, 2.9, -6, 2.22, .12, .16, M.white);
+      const loggiaGlass = new THREE.MeshStandardMaterial({ color: 0xa9c2d4, roughness: .24, metalness: .08, transparent: true, opacity: .28, side: THREE.DoubleSide });
+      const loggiaDoorPivot = addGroup(-.98, 0, -5.94);
+      localBox(loggiaDoorPivot, .98, 1.38, -.04, 1.92, 2.70, .07, loggiaGlass);
+      localBox(loggiaDoorPivot, 1.72, 1.38, -.085, .035, .16, .035, M.metal);
+      const loggiaDoorCollider = { minX: -1.12, maxX: 1.12, minZ: -6.18, maxZ: -5.78, door: true };
+      colliders.push(loggiaDoorCollider);
+      box('Lodžie / podlaha', 0, -.045, -7.18, 3.25, .12, 2.2, M.tile);
+      box('Lodžie / čelní zábradlí', 0, .56, -8.22, 3.25, 1.12, .08, M.metal, { collider: true });
+      box('Lodžie / horní madlo', 0, 1.14, -8.22, 3.3, .07, .12, M.metal);
+      for (let x = -1.52; x <= 1.53; x += .31) box('Lodžie / svislá příčka', x, .56, -8.22, .055, 1.04, .055, M.metal);
+      box('Lodžie / levé zábradlí', -1.58, .56, -7.18, .08, 1.12, 2.12, M.metal, { collider: true });
+      box('Lodžie / pravé zábradlí', 1.58, .56, -7.18, .08, 1.12, 2.12, M.metal, { collider: true });
+      interact('loggiaDoor', 'Dveře na lodžii', 'Na konci chodby vedou skleněné dveře na lodžii.', -0.15, -5.0, () => {
+        if (!state.loggiaDoorOpen) {
+          state.loggiaDoorOpen = true;
+          loggiaDoorPivot.rotation.y = -1.15;
+          loggiaDoorCollider.minX = 30;
+          loggiaDoorCollider.maxX = 31;
+          ui.showToast('Dveře na lodžii jsou otevřené.');
+        } else {
+          ui.showToast('Dveře na lodžii jsou otevřené.');
+        }
+      }, 2.3);
+
       // Decorative jambs and lintels. These frame openings without adding collision blockers.
       for (const z of [-4.0, -2.8]) box('Zárubeň obýváku', -1, 1.08, z, .26, 2.16, .12, M.wood2);
       box('Nadpraží obýváku', -1, 2.16, -3.4, .26, .12, 1.08, M.wood2);
@@ -234,18 +262,9 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
       box('Šatní skříň', -7.3, 1.30, 1.8, 1.15, 2.55, 1.45, M.wood, { collider: true });
       for (const z of [1.45, 2.1]) { box('Skříň / dveře', -6.70, 1.3, z, .035, 2.30, .60, M.wood2); box('Skříň / madlo', -6.665, 1.3, z + .18, .035, .34, .035, M.metal); }
       interact('bed', 'Postel', 'Na chvíli by sis mohl lehnout. Ale ještě ne.', -4.8, 3.42, () => { ui.showToast('Zavřeš oči. Z vedlejšího bytu je slyšet televize.'); }, 2.5);
-      // Bathroom objects.
+      // Bathroom intentionally left empty for the next furnishing pass.
       box('Koupelnová dlažba', 5.0, .018, 3.1, 5.5, .02, 4.2, M.tile);
-      box('Pračka', 6.8, .55, 4.65, 1.05, 1.1, .95, M.white, { collider: true });
-      cylinder(addGroup(6.8, 0, 4.155), 0, .56, 0, .31, .31, .04, M.dark, 12);
-      cylinder(addGroup(6.8, 0, 4.12), 0, .56, 0, .22, .22, .045, M.glass, 12);
-      box('Umyvadlo', 4.8, 1.0, 4.72, 1.4, .15, .65, M.ceramic, { collider: true });
-      box('Skříňka pod umyvadlem', 4.8, .5, 4.72, 1.22, .85, .52, M.white, { collider: true });
-      box('Zrcadlo', 4.8, 1.95, 5.77, 1.30, 1.0, .04, M.glass);
-      box('Rám zrcadla', 4.8, 1.95, 5.73, 1.44, 1.12, .06, M.white);
-      box('Toaleta', 3.4, .36, 4.4, .72, .68, .95, M.ceramic, { collider: true });
-      box('Toaleta / nádrž', 3.4, .82, 4.80, .68, .75, .30, M.white);
-      interact('bath', 'Zrcadlo', 'Vypadáš přesně tak, jak ses cítil.', 4.8, 4.72, () => { ui.showToast('Zrcadlo: „Zítra začnu dřív.“'); }, 2.2);
+
       // Shallow shoe storage is mounted to the west side of the entrance hall, away from the walking line.
       box('Předsíň / botník', -.83, .28, 5.15, .34, .48, .85, M.wood, { collider: true });
       box('Botník / sedák', -.83, .56, 5.15, .36, .08, .88, M.cloth);
