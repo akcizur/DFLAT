@@ -429,6 +429,74 @@
         font-size: 9px
       }
     }
+
+    /* Minimal terminal HUD from the supplied reference HTML. */
+    .screen {
+      background: rgba(0, 0, 0, .45);
+      align-items: flex-start;
+      justify-content: flex-start;
+      padding: clamp(24px, 8vh, 80px) clamp(20px, 8vw, 96px);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+    }
+    .term {
+      font-size: clamp(13px, 1.6vw, 16px);
+      line-height: 1.9;
+      padding: 16px 20px;
+      text-shadow: none;
+      background: rgba(0, 0, 0, .5);
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+      color: #d8d8d0;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+    }
+    .term .dim { color: #8a8a82; font-size: .82em; }
+    .term .gap { height: 1.2em; }
+    .cmd {
+      all: unset;
+      cursor: pointer;
+      color: var(--ink);
+      font: inherit;
+      font-size: 1.1em;
+      text-transform: lowercase;
+    }
+    .cmd .p { color: var(--lime); }
+    .cmd:hover, .cmd:focus-visible { color: var(--lime); }
+    .cur { animation: blink 1s steps(1) infinite; color: var(--lime); }
+    @keyframes blink { 50% { opacity: 0; } }
+    .hud, .term { text-shadow: none; }
+    .status, .objective, .interaction, .hint, .toast, .brand,
+    .touch-controls button, .touch-action {
+      background: rgba(0, 0, 0, .5);
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+      color: #d8d8d0;
+      font: 12px/1.6 ui-monospace, Menlo, Consolas, monospace;
+      letter-spacing: 0;
+      text-transform: lowercase;
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+    }
+    .brand { padding: 6px 10px; font-weight: 400; font-size: 12px; }
+    .brand span { display: inline; margin: 0 0 0 8px; color: #8a8a82; font-size: 12px; letter-spacing: 0; }
+    .status { padding: 6px 10px; min-width: 0; }
+    .objective { padding: 6px 10px; max-width: 260px; color: #c8c8c0; }
+    .objective b { display: inline; color: #8a8a82; font-size: 12px; font-weight: 400; margin: 0; }
+    .objective .done { color: var(--lime); }
+    .interaction { padding: 6px 12px; }
+    .interaction b { color: var(--lime); font-weight: 400; }
+    .hint { padding: 6px 10px; color: #8a8a82; }
+    .toast { padding: 6px 12px; }
+    .crosshair { opacity: .6; width: 8px; height: 8px; }
+    .crosshair:before { width: 8px; top: 3px; }
+    .crosshair:after { height: 8px; left: 3px; }
+    .touch-controls button, .touch-action { border: 0; color: #d8d8d0; }
+    .touch-controls button:active, .touch-action:active {
+      background: rgba(215, 255, 118, .6);
+      color: #000;
+    }
+    .screen.hidden { display: none; }
   </style>
 </head>
 
@@ -459,30 +527,22 @@
   </div>
   <button class="touch-action" id="touchAction">AKCE<br>E</button>
   <div class="screen" id="startScreen">
-    <div class="card">
-      <div class="eyebrow">Interaktivní povídka / Česko / 21:07</div>
-      <h1 class="title">THE<br>FLAT<span style="color:var(--lime)">.</span></h1>
-      <p class="subtitle">Jedno patro. Pár pokojů. Věci, které tu zůstaly. Projdi se bytem, prohlédni si předměty a
-        zjisti, jestli jsou klíče tam, kde je obvykle necháváš.</p>
-      <button class="primary" id="startButton">VSTOUPIT DO BYTU <span>↗</span></button>
-      <div class="separator"></div>
-      <div class="controls">
-        <div><b>W A S D</b><br>Pohyb po bytě</div>
-        <div><b>MYŠ</b><br>Rozhlížení</div>
-        <div><b>E</b><br>Prohlédnout / použít</div>
-        <div><b>ESC</b><br>Pauza / kurzor</div>
-      </div>
-      <div class="footnote">3D REALTIME · LOW-POLY · PIXELOVANÝ OBRAZ<br>Hra běží přímo v prohlížeči. Pro nejlepší
-        zážitek použij klávesnici a myš.</div>
+    <div class="term">
+      <div class="dim">the-flat · byt 3b · 21:07</div>
+      <div class="gap"></div>
+      <button class="cmd" id="startButton"><span class="p">&gt;</span> start<span class="cur">_</span></button>
+      <div class="gap"></div>
+      <div class="dim">wasd pohyb · myš rozhlížení · e použít · esc pauza</div>
+      <div class="dim">enter = start</div>
     </div>
   </div>
   <div class="screen hidden" id="pauseScreen">
-    <div class="card" style="max-width:430px">
-      <div class="eyebrow">Pauza / byt 3B</div>
-      <h2 class="title" style="font-size:52px">CHVÍLI<br>KLID.</h2>
-      <p class="subtitle">Byt nikam neuteče.</p><button class="primary" id="resumeButton">POKRAČOVAT
-        <span>↗</span></button>
-      <div class="footnote">Stiskni ESC pro návrat do hry.</div>
+    <div class="term">
+      <div class="dim">pauza</div>
+      <div class="gap"></div>
+      <button class="cmd" id="resumeButton"><span class="p">&gt;</span> pokračovat<span class="cur">_</span></button>
+      <div class="gap"></div>
+      <div class="dim">esc / enter = zpět do hry</div>
     </div>
   </div>
   <script type="module">
@@ -502,12 +562,14 @@
     scene.fog = new THREE.Fog(0x25231f, 12, 29);
     const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.08, 70);
     camera.rotation.order = 'YXZ';
+    const LOW_POWER = matchMedia('(pointer:coarse)').matches;
     const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false, powerPreference: 'high-performance' });
     renderer.setPixelRatio(1);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.22;
-    renderer.shadowMap.enabled = false;
+    renderer.shadowMap.enabled = !LOW_POWER;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.domElement.id = 'screenCanvas';
     renderer.domElement.tabIndex = 0;
     mount.appendChild(renderer.domElement);
@@ -524,15 +586,15 @@
       const geo = new THREE.BoxGeometry(sx, sy, sz);
       const mesh = new THREE.Mesh(geo, material);
       mesh.position.set(x, y, z); mesh.name = name;
-      mesh.castShadow = false; mesh.receiveShadow = false;
+      mesh.castShadow = true; mesh.receiveShadow = true;
       scene.add(mesh);
       if (options.collider) colliders.push({ minX: x - sx / 2, maxX: x + sx / 2, minZ: z - sz / 2, maxZ: z + sz / 2, mesh, dynamic: options.dynamic || false });
       return mesh;
     }
     function addGroup(x = 0, y = 0, z = 0) { const g = new THREE.Group(); g.position.set(x, y, z); scene.add(g); return g; }
-    function localBox(g, x, y, z, sx, sy, sz, material) { const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), material); m.position.set(x, y, z); g.add(m); return m; }
-    function cylinder(g, x, y, z, rt, rb, h, material, segments = 6) { const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, segments), material); m.position.set(x, y, z); g.add(m); return m; }
-    function sphere(g, x, y, z, r, material, segments = 6) { const m = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 0), material); m.position.set(x, y, z); g.add(m); return m; }
+    function localBox(g, x, y, z, sx, sy, sz, material) { const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), material); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; g.add(m); return m; }
+    function cylinder(g, x, y, z, rt, rb, h, material, segments = 6) { const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, segments), material); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; g.add(m); return m; }
+    function sphere(g, x, y, z, r, material, segments = 6) { const m = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 0), material); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; g.add(m); return m; }
     function addCollider(x, z, sx, sz) { colliders.push({ minX: x - sx / 2, maxX: x + sx / 2, minZ: z - sz / 2, maxZ: z + sz / 2 }); }
     function interact(id, name, description, x, z, action, range = 2.1) { interactables.push({ id, name, description, x, z, action, range, used: false }); }
 
@@ -542,8 +604,20 @@
     // the bedroom and bathroom each use a clearly framed 1.0–1.2 m doorway.
     // Apartment envelope. The ceiling is omitted so the compact floor plan stays readable.
     box('Podlaha', 0, -.12, 0, 16, .22, 12, M.floor);
-    // A slightly warmer floor, base boards and large, intentionally low-poly wall planes.
-    for (let i = 0; i < 16; i++) box('Dřevěná spára', -7.5 + i, 0.001, 0, .018, .009, 11.85, M.darkWood);
+    // Broad low-resolution floorboard bands, with staggered joints for an 8-bit / PS1 hybrid look.
+    for (let z = -5.5, row = 0; z <= 5.5; z += .62, row++) {
+      const tone = row % 2 ? M.wood : M.floor;
+      box('Podlahové prkno', 0, .005, z, 15.72, .018, .58, tone);
+      const offset = row % 2 ? -1.15 : 0;
+      for (let x = -6.75 + offset; x <= 6.75; x += 2.5) {
+        box('Spára podlahy', x, .015, z, .018, .004, .55, M.darkWood);
+      }
+    }
+    // Ceiling plane stays non-shadowing so it does not black out point-lit interior rooms.
+    const ceiling = box('Strop', 0, 3.22, 0, 15.9, .1, 11.9, M.white);
+    ceiling.castShadow = false;
+    ceiling.receiveShadow = false;
+    for (const x of [-6.5, 0, 6.5]) box('Stropní stínová lišta', x, 3.16, 0, .055, .055, 11.5, M.wall2);
     const wallH = 3.15, wallT = .24;
     function wall(x, z, sx, sz, material = M.wall) { box('Stěna', x, wallH / 2, z, sx, wallH, sz, material, { collider: true }); }
     wall(-8, 0, wallT, 12); wall(8, 0, wallT, 12); wall(0, -6, 16, wallT);
@@ -571,7 +645,11 @@
     // Keep the entrance clear: the south baseboard follows only the two solid wall sections.
     box('Lišta', -4.5, .10, 5.84, 7.0, .14, .07, M.wood);
     box('Lišta', 4.5, .10, 5.84, 7.0, .14, .07, M.wood);
-    box('Lišta', -7.84, .10, 0, .07, .14, 11.5, M.wood); box('Lišta', 7.84, .10, 0, .07, .14, 11.5, M.wood);
+    box('Lišta', -7.84, .10, 0, .07, .14, 11.5, M.wood);
+    box('Lišta', 7.84, .10, 0, .07, .14, 11.5, M.wood);
+    // Low skirting on both north/south room dividers, split only by the central hall.
+    box('Lišta příčky', -4.5, .10, .15, 7.0, .12, .05, M.wood);
+    box('Lišta příčky', 4.5, .10, .15, 7.0, .12, .05, M.wood);
     // Rugs and a runner that makes the entry-to-center circulation legible.
     box('Chodba / běhoun', 0, .008, 0, 1.35, .02, 9.8, M.cloth);
     box('Obývák / koberec', -4.1, .006, -1.6, 5.1, .025, 3.1, M.rug);
@@ -681,12 +759,43 @@
       else { showToast('Dveře už jsou otevřené. Venku na tebe čeká chodba.'); completeGame(); }
     }, 2.2);
 
-    // Flat light and a low-poly ceiling lamp that gives the room a warm evening tone.
-    scene.add(new THREE.HemisphereLight(0xd4d8dc, 0x574b3b, 1.55));
-    const warm = new THREE.PointLight(0xffd8a0, 38, 22, 2); warm.position.set(-1, 2.85, -.4); scene.add(warm);
-    const kitchenLight = new THREE.PointLight(0xffe5b9, 18, 13, 2); kitchenLight.position.set(4, 2.7, -3.7); scene.add(kitchenLight);
-    const bedLight = new THREE.PointLight(0xffc781, 9, 7, 2); bedLight.position.set(-2.35, 1.55, 2.65); scene.add(bedLight);
-    cylinder(addGroup(-1, 0, -.4), 0, 3.0, 0, .23, .23, .07, M.black, 6);
+    // Reference rendering setup: hemisphere fill, PCF sun shadows on desktop, warm room pools.
+    scene.add(new THREE.HemisphereLight(0xc7d1d8, 0x332b24, 1.05));
+    const sun = new THREE.DirectionalLight(0xbfd7ff, 1.65);
+    sun.position.set(-4, 7, 5);
+    sun.castShadow = !LOW_POWER;
+    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.camera.left = -10;
+    sun.shadow.camera.right = 10;
+    sun.shadow.camera.top = 8;
+    sun.shadow.camera.bottom = -8;
+    sun.shadow.camera.near = .5;
+    sun.shadow.camera.far = 25;
+    sun.shadow.bias = -0.0005;
+    scene.add(sun);
+    const warm = new THREE.PointLight(0xffd29a, 42, 18, 2);
+    warm.position.set(0, 2.82, -.4);
+    scene.add(warm);
+    const livingLight = new THREE.PointLight(0xffd29a, 16, 10, 2);
+    livingLight.position.set(-4.2, 2.55, -2.8);
+    scene.add(livingLight);
+    const kitchenLight = new THREE.PointLight(0xffe8bd, 22, 11, 2);
+    kitchenLight.position.set(4, 2.7, -3.7);
+    scene.add(kitchenLight);
+    const bedLight = new THREE.PointLight(0xffc781, 11, 7, 2);
+    bedLight.position.set(-2.5, 1.55, 2.65);
+    scene.add(bedLight);
+    const bathLight = new THREE.PointLight(0xd6eaff, 8, 7, 2);
+    bathLight.position.set(5, 2.7, 3.8);
+    scene.add(bathLight);
+    const lampShade = mat(0xd7a35f, .85);
+    const lampGlow = mat(0xffdca8, .45);
+    lampGlow.emissive.set(0x5a3518);
+    lampGlow.emissiveIntensity = .7;
+    const ceilingLamp = addGroup(0, 0, -.4);
+    cylinder(ceilingLamp, 0, 2.94, 0, .27, .27, .1, M.black, 6);
+    cylinder(ceilingLamp, 0, 2.84, 0, .42, .3, .25, lampShade, 6);
+    sphere(ceilingLamp, 0, 2.72, 0, .16, lampGlow, 1);
 
     // Player and first-person state.
     const player = { x: 0, z: 4.95, yaw: Math.PI * 0.02, pitch: -.04, speed: 3.45, radius: .29 };
@@ -698,8 +807,10 @@
       const w = Math.max(240, Math.floor(innerWidth / 3.2));
       const h = Math.max(150, Math.floor(innerHeight / 3.2));
       renderer.setSize(w, h, false);
-      renderer.domElement.style.width = '100%'; renderer.domElement.style.height = '100%';
-      camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+      renderer.domElement.style.width = '100%';
+      renderer.domElement.style.height = '100%';
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
     }
     addEventListener('resize', resize); resize();
     function showToast(text) { toastEl.textContent = text; toastEl.classList.add('show'); lastToast = performance.now(); }
@@ -731,6 +842,16 @@
     function resumeGame() { paused = false; pauseScreen.classList.add('hidden'); if (matchMedia('(pointer:fine)').matches) lockPointer(); }
     document.getElementById('startButton').addEventListener('click', startGame);
     document.getElementById('resumeButton').addEventListener('click', resumeGame);
+    document.addEventListener('keydown', e => {
+      if (e.code !== 'Enter') return;
+      if (!startScreen.classList.contains('hidden')) {
+        e.preventDefault();
+        startGame();
+      } else if (paused && !pauseScreen.classList.contains('hidden')) {
+        e.preventDefault();
+        resumeGame();
+      }
+    });
     document.getElementById('touchAction').addEventListener('click', doInteract);
     renderer.domElement.addEventListener('click', () => { if (started && !paused && !document.pointerLockElement && matchMedia('(pointer:fine)').matches) lockPointer(); });
     document.addEventListener('pointerlockchange', () => { if (!document.pointerLockElement && started && !paused && matchMedia('(pointer:fine)').matches) {/* Cursor remains available; Esc opens pause below. */ } });
