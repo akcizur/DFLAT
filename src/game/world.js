@@ -136,10 +136,10 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
       for (const z of [1.8, 3.0]) box('Zárubeň koupelny', 1, 1.08, z, .26, 2.16, .12, M.white);
       box('Nadpraží koupelny', 1, 2.16, 2.4, .26, .12, 1.08, M.white);
       // Main entrance header: one continuous wall piece above the opening, aligned to the wall plane.
-      box('Vstup / nadpraží', 0, 2.72, 5.91, 2.05, .86, .24, M.wall);
+      box('Vstup / nadpraží', 0, (wallH + 2.8) / 2, 5.91, 2.05, wallH - 2.8, .24, M.wall);
       // Solid infill above all interior doorways; the wall continues to the ceiling.
       for (const [x, z] of [[-1, -3.4], [-1, 2.4], [1, -3.4], [1, 2.4]]) {
-        box('Stěna nad dveřmi', x, (2.28 + wallH) / 2, z, .24, wallH - 2.28, 1.2, M.wall);
+        box('Stěna nad dveřmi', x, (2.22 + wallH) / 2, z, .24, wallH - 2.22, 1.2, M.wall);
       }
       // Trim and small visual wall marks.
       // North skirting is segmented with the wall geometry so it does not float across openings.
@@ -326,35 +326,32 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
       }
       scene.add(skyline);
 
-      // Reference rendering setup: hemisphere fill, PCF sun shadows on desktop, warm room pools.
-      scene.add(new THREE.HemisphereLight(0xc7d1d8, 0x332b24, 1.05));
-      const sun = new THREE.DirectionalLight(0xffd7b0, 1.9);
-      sun.position.set(-4, 7, 5);
-      sun.castShadow = !LOW_POWER;
-      sun.shadow.mapSize.set(1024, 1024);
-      sun.shadow.camera.left = -10;
-      sun.shadow.camera.right = 10;
-      sun.shadow.camera.top = 8;
-      sun.shadow.camera.bottom = -8;
-      sun.shadow.camera.near = .5;
-      sun.shadow.camera.far = 25;
-      sun.shadow.bias = -0.0005;
-      scene.add(sun);
-      const warm = new THREE.PointLight(0xffd29a, 34, 18, 2);
-      warm.position.set(0, 2.82, -.4);
-      scene.add(warm);
-      const livingLight = new THREE.PointLight(0xffc58c, 18, 11, 2);
-      livingLight.position.set(-4.2, 2.55, -2.8);
-      scene.add(livingLight);
-      const kitchenLight = new THREE.PointLight(0xffe8bd, 22, 11, 2);
-      kitchenLight.position.set(4, 2.7, -3.7);
-      scene.add(kitchenLight);
-      const bedLight = new THREE.PointLight(0xffc781, 11, 7, 2);
-      bedLight.position.set(-2.5, 1.55, 2.65);
-      scene.add(bedLight);
-      const bathLight = new THREE.PointLight(0xd6eaff, 8, 7, 2);
-      bathLight.position.set(5, 2.7, 3.8);
-      scene.add(bathLight);
+      // SIMPLE ROOM LIGHTING: one modest ceiling point light per room, plus a low ambient fill.
+      // This keeps each room readable without overlapping high-intensity light pools.
+      scene.add(new THREE.HemisphereLight(0xc7d1d8, 0x332b24, 0.72));
+      const roomLights = [
+        { name: 'Světlo / obývák', color: 0xffd2a0, intensity: 8, x: -4.5, z: -3.0 },
+        { name: 'Světlo / kuchyně', color: 0xffe6c0, intensity: 8, x: 4.5, z: -3.0 },
+        { name: 'Světlo / ložnice', color: 0xffd0a0, intensity: 6, x: -4.5, z: 3.0 },
+        { name: 'Světlo / koupelna', color: 0xd9e8ff, intensity: 6, x: 4.5, z: 3.0 },
+        { name: 'Světlo / chodba', color: 0xffd9aa, intensity: 5, x: 0, z: 0 }
+      ];
+      for (const room of roomLights) {
+        const light = new THREE.PointLight(room.color, room.intensity, 7.5, 2);
+        light.name = room.name;
+        light.position.set(room.x, 2.78, room.z);
+        light.castShadow = false;
+        scene.add(light);
+        const fixture = new THREE.Mesh(
+          new THREE.BoxGeometry(0.32, 0.07, 0.32),
+          new THREE.MeshBasicMaterial({ color: room.color })
+        );
+        fixture.name = room.name + ' / svítidlo';
+        fixture.position.set(room.x, 3.06, room.z);
+        fixture.castShadow = false;
+        fixture.receiveShadow = false;
+        scene.add(fixture);
+      }
       const lampShade = mat(0xd7a35f, .85);
       const lampGlow = mat(0xffdca8, .45);
       lampGlow.emissive.set(0x5a3518);

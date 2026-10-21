@@ -34,7 +34,8 @@ new THREE.TextureLoader().load(
   undefined,
   error => console.error("The Flat: assets/bg-scene-hq.png sky background failed to load.", error)
 );
-scene.fog = new THREE.Fog(0x34343b, 12, 30);
+// Soft depth haze becomes visible around 2–3 m; keeps distant room geometry from feeling too sharp.
+scene.fog = new THREE.FogExp2(0x34343b, 0.075);
 
 const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.08, 70);
 camera.rotation.order = "YXZ";
