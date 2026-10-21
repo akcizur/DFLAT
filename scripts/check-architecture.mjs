@@ -8,6 +8,8 @@ const required = [
   "package.json",
   "vite.config.js",
   "index.html",
+  "vendor/three.module.min.js",
+  "vendor/THREE-LICENSE.txt",
   "styles.css",
   "styles-cinematic.css",
   "assets/city-sunset.webp",
@@ -37,6 +39,9 @@ for (const relativePath of required) {
 const html = await readFile(path.join(root, "index.html"), "utf8");
 if (!html.includes('href="./styles.css"')) fail("index.html must load styles.css");
 if (!html.includes('<script type="module" src="./src/main.js"></script>')) fail("index.html must load src/main.js");
+if (!html.includes('type="importmap"') || !html.includes('"three": "./vendor/three.module.min.js"')) {
+  fail("static hosting fallback must map Three.js to the local vendored r169 module");
+}
 if (/<style(?:\s|>)/i.test(html)) fail("inline CSS remains in index.html");
 if (/<script\b(?![^>]*\bsrc=)[^>]*>/i.test(html)) fail("inline JavaScript remains in index.html");
 

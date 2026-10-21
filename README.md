@@ -1,6 +1,6 @@
 # The Flat — DFLAT
 
-A first-person apartment exploration game built with Three.js, Vite and Bun. Three.js is bundled locally; the runtime does not import the 3D engine from a CDN.
+A first-person apartment exploration game built with Three.js, Vite and Bun. Three.js is local, with no CDN dependency. Vite bundles the npm package for the production build; a version-matched vendored module plus an import map also keeps the unbundled source entry compatible with static branch hosting.
 
 ## Run locally
 
@@ -48,6 +48,7 @@ The deployment workflow builds the static site into `dist/` and deploys to [akci
 - `styles.css`, `styles-cinematic.css` — responsive pixel/CRT interface.
 - `assets/bg-scene-hq.png` — high-resolution panoramic exterior environment.
 - `src/main.js` — 60 Hz fixed-step game loop, 15 FPS scene raster and presentation cadence.
+- `vendor/three.module.min.js` — local Three.js r169 fallback for unbundled static branch hosting; its MIT license is included beside it.
 - `src/game/pixel-post.js` — two saved frame buffers and a shader-free progressive Canvas2D scanline compositor.
 - `src/game/materials.js` — pixel-gradient materials and procedural baked-light map.
 - `src/game/world.js` — apartment geometry, lights, collision volumes and interactables.
