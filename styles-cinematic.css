@@ -469,3 +469,12 @@
   #startScreen.tv-bios-mode.transition-out,
   #pauseScreen { transition-duration: .01ms !important; }
 }
+
+
+/* Keep these interfaces genuinely text-only and ensure hidden overlays stay hidden. */
+#bootScreen.boot-screen::before,
+#bootScreen.boot-screen::after,
+#startScreen.tv-bios-mode::before,
+#pauseScreen::before { display: none !important; }
+#startScreen.tv-bios-mode.hidden,
+#pauseScreen.hidden { display: none !important; }
