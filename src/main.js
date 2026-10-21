@@ -33,7 +33,7 @@ new THREE.TextureLoader().load(
   undefined,
   error => console.error("The Flat: assets/bg-scene-hq.png sky background failed to load.", error)
 );
-scene.fog = new THREE.Fog(0x25231f, 12, 29);
+scene.fog = new THREE.Fog(0x25231f, 10, 24);
 
 const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.08, 70);
 camera.rotation.order = "YXZ";
@@ -47,17 +47,17 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setPixelRatio(1);
 renderer.domElement.style.imageRendering = "pixelated";
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMapping = THREE.NoToneMapping;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.BasicShadowMap;
 renderer.shadowMap.autoUpdate = true;
-renderer.toneMappingExposure = 1.05;
+renderer.toneMappingExposure = 1.0;
 renderer.domElement.id = "screenCanvas";
 renderer.domElement.tabIndex = 0;
 mount.appendChild(renderer.domElement);
 
 function resize() {
-  const pixelScale = LOW_POWER ? 2.8 : 2.35;
+  const pixelScale = LOW_POWER ? 3.4 : 3.05;
   const width = Math.max(200, Math.floor(innerWidth / pixelScale));
   const height = Math.max(125, Math.floor(innerHeight / pixelScale));
   renderer.setSize(width, height, false);
