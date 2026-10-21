@@ -54,15 +54,30 @@ const mainSource = await readFile(path.join(root, "src/main.js"), "utf8");
 if (/from\s+["']https?:\/\//i.test(mainSource)) fail("runtime modules must be bundled locally; remove CDN imports");
 if (!mainSource.includes("const SIMULATION_HZ = 60")) fail("game simulation must target 60 Hz");
 if (!mainSource.includes("const SCENE_RENDER_HZ = 60")) fail("scene raster must target 60 FPS");
-if (!mainSource.includes("postFx.renderScene(scene, camera")) fail("scene must use the buffered progressive pixel renderer");
+if (!mainSource.includes("postFx.renderScene(scene, camera")) fail("scene must use the buffered depth-aware pixel renderer");
 if (!mainSource.includes("postFx.present(now / 1000)")) fail("pixel compositor must present independently from scene raster");
 const compositorSource = await readFile(path.join(root, "src/game/pixel-post.js"), "utf8");
 if (!compositorSource.includes('getContext("2d"')) fail("stable Canvas2D pixel compositor is required");
 if (compositorSource.includes("shadowBlur") || compositorSource.includes("shadowColor")) fail("CRT compositor must not use glow or shadows");
-if (compositorSource.includes("new THREE.ShaderMaterial")) fail("presentation must not depend on the custom GLSL shader");
+if (!compositorSource.includes("new THREE.WebGLRenderTarget")) fail("depth-aware blur needs a GPU scene target");
+if (!compositorSource.includes("new THREE.DepthTexture")) fail("depth-aware blur needs a depth texture");
+if (!compositorSource.includes("new THREE.ShaderMaterial")) fail("distance-based Gaussian blur shader is required");
+if (!compositorSource.includes("smoothstep(2.0, 3.2, distanceToCamera)")) fail("Gaussian blur must ramp in over approximately 2–3 metres");
+if (!compositorSource.includes("texture2D(tDiffuse, vUv + vec2(-px.x, -px.y))")) fail("Gaussian blur must use a symmetric sample kernel");
 if (!mainSource.includes("preserveDrawingBuffer: true")) fail("WebGL frame buffer must be preserved for pixel compositing");
 if (!mainSource.includes('object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone())')) fail("mesh UV2 channels are required for baked light maps");
 
+const worldSource = await readFile(path.join(root, "src/game/world.js"), "utf8");
+if (!worldSource.includes("wall(-4.375, 6, 7.25, wallT)")) fail("entrance wall must align to the door-frame opening");
+if (!worldSource.includes("localBox(doorPivot, .69, 1.40, 0, 1.38, 2.80")) fail("front door leaf must fit the clear entrance width");
+if (!worldSource.includes("wallH - 2.22, 1.2, M.wall")) fail("interior door header infill must meet its lintel without a gap");
+if (!worldSource.includes("wallH - 2.92")) fail("entrance wall block must join the entrance lintel to the ceiling");
+if (!worldSource.includes("box('Stěna nad lodžií'")) fail("loggia door header must connect to the ceiling wall");
+if (!worldSource.includes("new THREE.BoxGeometry(0.32, 0.07, 0.32)")) fail("each room needs a simple cube light fixture");
+if (!worldSource.includes("const roomFixtureMaterial")) fail("room light fixtures should share one basic material");
+for (const room of ["obývák", "kuchyně", "ložnice", "koupelna", "chodba"]) {
+  if (!worldSource.includes(`name: 'Světlo / ${room}'`)) fail("missing basic light source for " + room);
+}
 const materialsSource = await readFile(path.join(root, "src/game/materials.js"), "utf8");
 if (!materialsSource.includes("function bakedLightTexture()") || !materialsSource.includes("lightMapIntensity")) {
   fail("procedural baked-light gradients are not configured on the material palette");
