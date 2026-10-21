@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c458cacf1f6410bb7886bb2889724ba, type: 3}
+  m_Name: RetroCRT_PS1
+  m_EditorClassIdentifier: 
+  settings:
+    pixelResolution: {x: 320, y: 240}
+    pixelation: 1
+    colorLevels: 24
+    orderedDither: 0.32
+    curvature: 0.045
+    vignette: 0.14
+    chromaticAberration: 0.003
+    scanlines: 0.12
+    interlace: 0.04
+    phosphorMask: 0.04
+    glow: 0.025
+    analogNoise: 0.01
+    horizontalJitter: 0.0005
+    flicker: 0.006

@@ -1,0 +1,8 @@
+{
+  "name": "com.vics.retro-crt-urp",
+  "version": "1.0.0",
+  "displayName": "Retro CRT / PS1 URP",
+  "description": "CRT post-processing, retro screen artifacts, and a PS1-inspired URP surface shader.",
+  "unity": "2022.3",
+  "keywords": ["urp", "crt", "ps1", "retro", "post-processing", "shader"]
+}
