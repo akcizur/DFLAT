@@ -1,9 +1,11 @@
 // First-person movement, collision handling, proximity and camera synchronization.
 export function createPlayerController({ camera, colliders, interactables, state, ui }) {
-  const player = { x: 0, z: 4.95, yaw: Math.PI * 0.02, pitch: -0.04, speed: 2.15, radius: 0.29 };
+  const player = { x: 0, z: 4.95, yaw: Math.PI * 0.02, pitch: -0.04, speed: 1.85, radius: 0.29 };
   camera.position.set(player.x, 1.68, player.z);
   camera.rotation.order = "YXZ";
   let walkTime = 0;
+  let velocityX = 0, velocityZ = 0;
+  let cameraYaw = player.yaw, cameraPitch = player.pitch;
   let walkBlend = 0;
   let cameraX = player.x, cameraY = 1.68, cameraZ = player.z;
 
@@ -53,7 +55,7 @@ export function createPlayerController({ camera, colliders, interactables, state
     const desiredMoving = state.started && !state.paused &&
       (Math.abs(player.x - cameraX) + Math.abs(player.z - cameraZ) > 0.0005 ||
        Object.values(keysDown).some(Boolean));
-    const blend = 1 - Math.exp(-deltaTime * 4.2);
+    const blend = 1 - Math.exp(-deltaTime * 3.1);
     walkBlend += ((desiredMoving ? 1 : 0) - walkBlend) * (1 - Math.exp(-deltaTime * 3.2));
     if (desiredMoving) walkTime += deltaTime * 7.2;
     const bob = Math.sin(walkTime) * 0.012 * walkBlend;
@@ -66,8 +68,13 @@ export function createPlayerController({ camera, colliders, interactables, state
     cameraZ += (targetZ - cameraZ) * blend;
     camera.position.set(cameraX, cameraY, cameraZ);
     camera.rotation.order = "YXZ";
-    camera.rotation.y = player.yaw;
-    camera.rotation.x = player.pitch;
+    const lookBlend = 1 - Math.exp(-deltaTime * 14);
+    let yawDelta = player.yaw - cameraYaw;
+    yawDelta = Math.atan2(Math.sin(yawDelta), Math.cos(yawDelta));
+    cameraYaw += yawDelta * lookBlend;
+    cameraPitch += (player.pitch - cameraPitch) * lookBlend;
+    camera.rotation.y = cameraYaw;
+    camera.rotation.x = cameraPitch;
     camera.rotation.z = 0;
   }
 
@@ -80,14 +87,14 @@ export function createPlayerController({ camera, colliders, interactables, state
       if (keysDown.KeyD || keysDown.ArrowRight) strafe += 1;
       if (keysDown.KeyA || keysDown.ArrowLeft) strafe -= 1;
 
-      if (forward || strafe) {
-        const length = Math.hypot(forward, strafe);
-        forward /= length;
-        strafe /= length;
-        const dx = (-Math.sin(player.yaw) * forward + Math.cos(player.yaw) * strafe) * player.speed * deltaTime;
-        const dz = (-Math.cos(player.yaw) * forward - Math.sin(player.yaw) * strafe) * player.speed * deltaTime;
-        movePlayer(dx, dz);
-      }
+      const length = Math.hypot(forward, strafe);
+      if (length > 0) { forward /= length; strafe /= length; }
+      const targetVX = (-Math.sin(player.yaw) * forward + Math.cos(player.yaw) * strafe) * player.speed;
+      const targetVZ = (-Math.cos(player.yaw) * forward - Math.sin(player.yaw) * strafe) * player.speed;
+      const inertia = 1 - Math.exp(-deltaTime * 7.0);
+      velocityX += (targetVX - velocityX) * inertia;
+      velocityZ += (targetVZ - velocityZ) * inertia;
+      movePlayer(velocityX * deltaTime, velocityZ * deltaTime);
     }
 
     syncCamera(deltaTime);
