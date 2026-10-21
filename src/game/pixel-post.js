@@ -1,21 +1,26 @@
-// Lightweight pixel/CRT compositor with depth-aware Gaussian blur for Three.js r169.
-// Foreground stays crisp; surfaces beyond roughly 2–3 m receive a restrained blur.
-// Canvas2D preserves nearest-neighbour pixels and adds thin monochrome scanlines.
+// Lightweight pixel/CRT compositor for Three.js r169.
+// Keeps the depth-aware blur and nearest-neighbour raster while adding configurable,
+// GPU-side CRT/VHS effects. Profiles can be selected with ?fx=crt|vhs|psx|clean|off.
 export function createPixelPostProcess(THREE, renderer) {
   const displayCanvas = document.createElement("canvas");
   displayCanvas.id = "pixelDisplayCanvas";
   displayCanvas.setAttribute("aria-hidden", "true");
   const displayContext = displayCanvas.getContext("2d", { alpha: false, desynchronized: true });
 
-  if (!displayContext) {
-    return { setSize() {}, renderScene(scene, camera) { renderer.render(scene, camera); }, present() {}, triggerZoom() {}, dispose() {} };
-  }
+  const fallback = {
+    setSize() {},
+    renderScene(scene, camera) { renderer.render(scene, camera); },
+    present() {},
+    triggerZoom() {},
+    setProfile() {},
+    getProfile() { return "off"; },
+    dispose() {}
+  };
+  if (!displayContext) return fallback;
 
   const frameCanvas = document.createElement("canvas");
   const frameContext = frameCanvas.getContext("2d", { alpha: false });
-  if (!frameContext) {
-    return { setSize() {}, renderScene(scene, camera) { renderer.render(scene, camera); }, present() {}, triggerZoom() {}, dispose() {} };
-  }
+  if (!frameContext) return fallback;
 
   let width = 1;
   let height = 1;
@@ -24,6 +29,16 @@ export function createPixelPostProcess(THREE, renderer) {
   let zoomAmount = 0;
   const size = new THREE.Vector2();
   const reducedMotion = Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches);
+  const lowPower = Boolean(window.matchMedia?.("(pointer: coarse)")?.matches);
+
+  const profiles = {
+    off:   { curvature: 0, chroma: 0, scanline: 0, vignette: 0, noise: 0, jitter: 0, interlace: 0, mask: 0, levels: 0 },
+    clean: { curvature: 0.015, chroma: 0.0002, scanline: 0.025, vignette: 0.12, noise: 0.004, jitter: 0, interlace: 0, mask: 0, levels: 0 },
+    crt:   { curvature: 0.075, chroma: 0.0012, scanline: 0.075, vignette: 0.24, noise: 0.012, jitter: 0.0002, interlace: 0.035, mask: 0.035, levels: 0 },
+    vhs:   { curvature: 0.055, chroma: 0.0026, scanline: 0.055, vignette: 0.18, noise: 0.035, jitter: 0.0018, interlace: 0.075, mask: 0.015, levels: 0 },
+    psx:   { curvature: 0.035, chroma: 0.0008, scanline: 0.04, vignette: 0.16, noise: 0.008, jitter: 0.0001, interlace: 0.02, mask: 0.025, levels: 20 }
+  };
+  let profileName = "crt";
 
   const target = new THREE.WebGLRenderTarget(1, 1, {
     minFilter: THREE.NearestFilter,
@@ -45,7 +60,17 @@ export function createPixelPostProcess(THREE, renderer) {
       tDepth: { value: target.depthTexture },
       resolution: { value: new THREE.Vector2(1, 1) },
       cameraNear: { value: 0.08 },
-      cameraFar: { value: 70 }
+      cameraFar: { value: 70 },
+      time: { value: 0 },
+      curvature: { value: 0.075 },
+      chroma: { value: 0.0012 },
+      scanline: { value: 0.075 },
+      vignette: { value: 0.24 },
+      noise: { value: 0.012 },
+      jitter: { value: 0.0002 },
+      interlace: { value: 0.035 },
+      mask: { value: 0.035 },
+      levels: { value: 0 }
     },
     vertexShader: `
       varying vec2 vUv;
@@ -60,7 +85,21 @@ export function createPixelPostProcess(THREE, renderer) {
       uniform vec2 resolution;
       uniform float cameraNear;
       uniform float cameraFar;
+      uniform float time;
+      uniform float curvature;
+      uniform float chroma;
+      uniform float scanline;
+      uniform float vignette;
+      uniform float noise;
+      uniform float jitter;
+      uniform float interlace;
+      uniform float mask;
+      uniform float levels;
       varying vec2 vUv;
+
+      float hash(vec2 p) {
+        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+      }
 
       float viewDistance(float depth) {
         float z = depth * 2.0 - 1.0;
@@ -68,26 +107,66 @@ export function createPixelPostProcess(THREE, renderer) {
           (cameraFar + cameraNear - z * (cameraFar - cameraNear));
       }
 
-      void main() {
-        float depth = texture2D(tDepth, vUv).x;
+      vec3 sampleScene(vec2 uv) {
+        vec2 texel = 1.0 / resolution;
+        float depth = texture2D(tDepth, uv).x;
         float distanceToCamera = viewDistance(depth);
-        // Gaussian-like 13-tap kernel: crisp in the foreground; blur ramps in from 2.0 to 3.2 m.
+        // 13-tap Gaussian-like blur, ramping in between roughly 2 and 3.2 metres.
+        float blur = smoothstep(2.0, 3.2, distanceToCamera) * 2.2;
+        vec2 px = texel * blur;
+        vec3 color = texture2D(tDiffuse, uv).rgb * 0.20;
+        color += texture2D(tDiffuse, uv + vec2( px.x, 0.0)).rgb * 0.12;
+        color += texture2D(tDiffuse, uv - vec2( px.x, 0.0)).rgb * 0.12;
+        color += texture2D(tDiffuse, uv + vec2(0.0,  px.y)).rgb * 0.12;
+        color += texture2D(tDiffuse, uv - vec2(0.0,  px.y)).rgb * 0.12;
+        color += texture2D(tDiffuse, uv + vec2( px.x,  px.y)).rgb * 0.06;
+        color += texture2D(tDiffuse, uv + vec2(-px.x,  px.y)).rgb * 0.06;
+        color += texture2D(tDiffuse, uv + vec2( px.x, -px.y)).rgb * 0.06;
+        color += texture2D(tDiffuse, uv + vec2(-px.x, -px.y)).rgb * 0.06;
+        color += texture2D(tDiffuse, uv + vec2( px.x * 2.0, 0.0)).rgb * 0.02;
+        color += texture2D(tDiffuse, uv + vec2(-px.x * 2.0, 0.0)).rgb * 0.02;
+        color += texture2D(tDiffuse, uv + vec2(0.0,  px.y * 2.0)).rgb * 0.02;
+        color += texture2D(tDiffuse, uv + vec2(0.0, -px.y * 2.0)).rgb * 0.02;
+        return color;
+      }
+
+      void main() {
+        vec2 centered = vUv * 2.0 - 1.0;
+        float r2 = dot(centered, centered);
+        vec2 uv = centered * (1.0 + curvature * r2) * 0.5 + 0.5;
+
+        // VHS horizontal tracking wobble is intentionally tiny and disabled in reduced-motion mode.
+        float lineId = floor(vUv.y * resolution.y);
+        float wobble = sin(lineId * 0.37 + floor(time * 12.0)) * jitter;
+        uv.x += wobble;
+        float edge = step(0.0, uv.x) * step(uv.x, 1.0) * step(0.0, uv.y) * step(uv.y, 1.0);
+        vec2 rgbShift = vec2(chroma * (0.35 + r2), 0.0);
+        float depth = texture2D(tDepth, clamp(uv, 0.001, 0.999)).x;
+        float distanceToCamera = viewDistance(depth);
         float blur = smoothstep(2.0, 3.2, distanceToCamera) * 2.2;
         vec2 px = (1.0 / resolution) * blur;
-        vec4 color = texture2D(tDiffuse, vUv) * 0.20;
-        color += texture2D(tDiffuse, vUv + vec2( px.x, 0.0)) * 0.12;
-        color += texture2D(tDiffuse, vUv - vec2( px.x, 0.0)) * 0.12;
-        color += texture2D(tDiffuse, vUv + vec2(0.0,  px.y)) * 0.12;
-        color += texture2D(tDiffuse, vUv - vec2(0.0,  px.y)) * 0.12;
-        color += texture2D(tDiffuse, vUv + vec2( px.x,  px.y)) * 0.06;
-        color += texture2D(tDiffuse, vUv + vec2(-px.x,  px.y)) * 0.06;
-        color += texture2D(tDiffuse, vUv + vec2( px.x, -px.y)) * 0.06;
-        color += texture2D(tDiffuse, vUv + vec2(-px.x, -px.y)) * 0.06;
-        color += texture2D(tDiffuse, vUv + vec2( px.x * 2.0, 0.0)) * 0.02;
-        color += texture2D(tDiffuse, vUv + vec2(-px.x * 2.0, 0.0)) * 0.02;
-        color += texture2D(tDiffuse, vUv + vec2(0.0,  px.y * 2.0)) * 0.02;
-        color += texture2D(tDiffuse, vUv + vec2(0.0, -px.y * 2.0)) * 0.02;
-        gl_FragColor = vec4(color.rgb, 1.0);
+        vec3 color = sampleScene(clamp(uv, 0.001, 0.999));
+        if (chroma > 0.0) {
+          color.r = sampleScene(clamp(uv + rgbShift, 0.001, 0.999)).r;
+          color.b = sampleScene(clamp(uv - rgbShift, 0.001, 0.999)).b;
+        }
+
+        float scan = 0.5 + 0.5 * sin(vUv.y * resolution.y * 3.14159265);
+        color *= 1.0 - scanline * scan;
+        float field = mod(floor(vUv.y * resolution.y) + floor(time * 30.0), 2.0);
+        color *= 1.0 - interlace * field;
+        float subpixel = mod(floor(vUv.x * resolution.x), 3.0);
+        vec3 maskTint = subpixel < 1.0 ? vec3(1.0, 0.93, 0.93)
+          : (subpixel < 2.0 ? vec3(0.93, 1.0, 0.93) : vec3(0.93, 0.93, 1.0));
+        color *= mix(vec3(1.0), maskTint, mask);
+
+        float vignetteStrength = smoothstep(0.25, 1.45, r2);
+        color *= 1.0 - vignette * vignetteStrength;
+        float grain = (hash(floor(vUv * resolution) + floor(time * 24.0)) - 0.5) * noise;
+        color += grain;
+        if (levels > 1.0) color = floor(color * levels + 0.5) / levels;
+        color *= edge;
+        gl_FragColor = vec4(clamp(color, 0.0, 1.0), 1.0);
         #include <colorspace_fragment>
       }
     `,
@@ -117,6 +196,30 @@ export function createPixelPostProcess(THREE, renderer) {
   renderer.domElement.style.zIndex = "0";
   renderer.domElement.style.opacity = "0";
 
+  function setProfile(name) {
+    if (!Object.prototype.hasOwnProperty.call(profiles, name)) return false;
+    profileName = name;
+    const profile = { ...profiles[name] };
+    // Mobile devices and reduced-motion users get a less noisy, cheaper-looking signal.
+    if (lowPower) {
+      profile.noise *= 0.65;
+      profile.jitter *= 0.4;
+      profile.mask *= 0.5;
+    }
+    if (reducedMotion) {
+      profile.jitter = 0;
+      profile.interlace = 0;
+      profile.noise *= 0.45;
+    }
+    for (const key of Object.keys(profile)) {
+      const uniformName = key === "levels" ? "levels" : key;
+      postMaterial.uniforms[uniformName].value = profile[key];
+    }
+    return true;
+  }
+
+  function getProfile() { return profileName; }
+
   function setSize(nextWidth, nextHeight) {
     width = Math.max(1, Math.floor(nextWidth));
     height = Math.max(1, Math.floor(nextHeight));
@@ -133,9 +236,10 @@ export function createPixelPostProcess(THREE, renderer) {
     hasFrame = false;
   }
 
-  function renderScene(scene, camera) {
+  function renderScene(scene, camera, timeSeconds = performance.now() / 1000) {
     postMaterial.uniforms.cameraNear.value = camera.near;
     postMaterial.uniforms.cameraFar.value = camera.far;
+    postMaterial.uniforms.time.value = timeSeconds;
     renderer.setRenderTarget(target);
     renderer.clear();
     renderer.render(scene, camera);
@@ -192,7 +296,9 @@ export function createPixelPostProcess(THREE, renderer) {
     renderer.domElement.style.zIndex = "";
   }
 
+  const requestedProfile = new URLSearchParams(window.location.search).get("fx");
+  setProfile(requestedProfile && profiles[requestedProfile] ? requestedProfile : "crt");
   renderer.getSize(size);
   setSize(size.x, size.y);
-  return { setSize, renderScene, present, triggerZoom, dispose };
+  return { setSize, renderScene, present, triggerZoom, setProfile, getProfile, profiles, dispose };
 }
