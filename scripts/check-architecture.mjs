@@ -20,7 +20,8 @@ const required = [
   "src/game/world.js",
   "src/game/player.js",
   "src/game/ui.js",
-  "src/game/input.js"
+  "src/game/input.js",
+  "tools/generate_socialist_block_17.py"
 ];
 
 function fail(message) {
@@ -78,6 +79,14 @@ if (!worldSource.includes("const roomFixtureMaterial")) fail("room light fixture
 for (const room of ["obývák", "kuchyně", "ložnice", "koupelna", "chodba"]) {
   if (!worldSource.includes(`name: 'Světlo / ${room}'`)) fail("missing basic light source for " + room);
 }
+const blenderGenerator = await readFile(path.join(root, "tools/generate_socialist_block_17.py"), "utf8");
+if (!blenderGenerator.includes("wall_faces = []")) fail("Blender generator must initialise wall_faces");
+if (!blenderGenerator.includes("v_slab = [(x, y, 0.0) for x, y in outline]")) fail("Blender generator must define complete v_slab vertices");
+if (!blenderGenerator.includes("FLOOR_COUNT = 17")) fail("Blender generator must build exactly 17 storeys");
+if (!blenderGenerator.includes("FLOOR_TO_FLOOR = 2.8")) fail("Blender generator storey spacing must be 2.8 metres");
+if (!blenderGenerator.includes("WALL_THICKNESS = 0.20")) fail("Blender generator perimeter panel thickness must be 200 mm");
+if (!blenderGenerator.includes("modifier.count = FLOOR_COUNT")) fail("Blender Array modifier must repeat the geometry exactly 17 times");
+if (!blenderGenerator.includes("modifier.constant_offset_displace = (0.0, 0.0, FLOOR_TO_FLOOR)")) fail("Blender Array modifier must use a 2.8 m vertical offset");
 const materialsSource = await readFile(path.join(root, "src/game/materials.js"), "utf8");
 if (!materialsSource.includes("function bakedLightTexture()") || !materialsSource.includes("lightMapIntensity")) {
   fail("procedural baked-light gradients are not configured on the material palette");
