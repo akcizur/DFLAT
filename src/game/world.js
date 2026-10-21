@@ -361,5 +361,39 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
         scene.add(fixture);
       }
 
+
+      // Quiet, translucent apparitions add a sense of presence without combat or gameplay noise.
+      const ghostMaterial = new THREE.MeshBasicMaterial({
+        color: 0xb6d2d4, transparent: true, opacity: LOW_POWER ? 0.10 : 0.14,
+        depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending
+      });
+      const ghostGlowMaterial = new THREE.MeshBasicMaterial({
+        color: 0xa6e5e9, transparent: true, opacity: 0.36, depthWrite: false,
+        blending: THREE.AdditiveBlending, toneMapped: false
+      });
+      function makeGhost(name, x, z, scale, phase) {
+        const apparition = new THREE.Group();
+        apparition.name = name;
+        const body = new THREE.Mesh(new THREE.ConeGeometry(0.32, 1.05, 7, 1), ghostMaterial);
+        body.position.y = 0.63; body.rotation.y = 0.2;
+        const head = new THREE.Mesh(new THREE.IcosahedronGeometry(0.23, 1), ghostMaterial);
+        head.position.y = 1.27;
+        const halo = new THREE.Mesh(new THREE.SphereGeometry(0.38, 8, 6), ghostGlowMaterial);
+        halo.position.y = 1.25; halo.scale.set(1, 1.1, 0.7);
+        apparition.add(body, head, halo);
+        for (const side of [-1, 1]) {
+          const eye = new THREE.Mesh(new THREE.SphereGeometry(0.025, 5, 4), ghostGlowMaterial);
+          eye.position.set(side * 0.075, 1.29, 0.205);
+          apparition.add(eye);
+        }
+        apparition.position.set(x, 0.05, z);
+        apparition.scale.setScalar(scale);
+        apparition.traverse(object => { object.castShadow = false; object.receiveShadow = false; });
+        scene.add(apparition);
+        meshesToAnimate.push({ object: apparition, baseY: 0.05, phase });
+      }
+      makeGhost("Distant apparition / bedroom", -5.7, 0.15, 0.82, 1.4);
+      makeGhost("Distant apparition / living room", -6.0, -3.8, 0.62, 3.8);
+
   return { colliders, interactables, meshesToAnimate, doorAnimations };
 }
