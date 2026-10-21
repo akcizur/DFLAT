@@ -1,7 +1,7 @@
 // Shared low-poly palette with small, tiled pixel textures for tactile surfaces.
 export function createMaterials(THREE) {
   const mat = (color, roughness = 1, map = null, metalness = 0) => new THREE.MeshStandardMaterial({
-    color, roughness: Math.max(roughness, 0.78), metalness: Math.min(metalness, 0.12), flatShading: true, dithering: false, ...(map ? { map } : {})
+    color, roughness: Math.max(roughness, 0.42), metalness: Math.min(metalness, 0.38), flatShading: true, dithering: false, ...(map ? { map } : {})
   });
 
   function pixelTexture(base, accent, seed = 1, repeatX = 3, repeatY = 3) {

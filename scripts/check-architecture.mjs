@@ -7,8 +7,10 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const required = [
   "index.html",
   "styles.css",
+  "styles-cinematic.css",
   "assets/city-sunset.webp",
   "src/main.js",
+  "src/game/pixel-post.js",
   "src/game/materials.js",
   "src/game/world.js",
   "src/game/player.js",
