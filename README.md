@@ -55,9 +55,11 @@ blender --background --python tools/generate_socialist_block_17.py
 
 The script saves the generated project as `DFLAT_socialist_block_17.blend` in the current working directory. Set `DFLAT_BLOCK_OUTPUT` to choose a different output path.
 
-The generated collection contains an uninterrupted eight-node perimeter shell with 200 mm outer walls, repeated interior partitions, a separate 200 mm foundation slab and an Array of 17 floor/roof panels. Wall and panel Arrays use an exact 2.8 m vertical pitch. The top roof surface is approximately 47.8 m above the base, including the 200 mm roof panel.
+The generated collection contains an eight-node perimeter with mitered 200 mm corners, actual window cut-outs with frames and glazing, and a ground-floor-only entrance opening with a door, canopy and approach steps. Upper storeys repeat 16 times above the ground floor at an exact 2.8 m pitch, for 17 storeys total.
 
-`tools/generate_socialist_block_17.py` defines the complete `wall_faces` and `v_slab` arrays and keeps both Array modifiers editable.
+The staircase uses two switch-back flights per storey. Each intermediate floor slab has a matching stairwell opening, and the roof slab has a separate smaller hatch with a fixed ladder extending from the top floor to above the roof. The roof top is approximately 47.8 m above the base. The 17 floor/roof panels are built as 16 repeated floor slabs plus one roof panel, separate from the foundation.
+
+`tools/generate_socialist_block_17.py` keeps wall/floor Arrays editable, applies precise Boolean cut-outs to the slab openings, and defines the complete `wall_faces` and `v_slab` geometry. The Blender file is generated when the script is run in Blender; the website does not load this model automatically.
 
 ## Architecture
 
