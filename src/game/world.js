@@ -93,7 +93,8 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
         { z: -3.15, width: 2.25, sill: 0.85, top: 2.72, label: "kuchyně" },
         { z: 3.1, width: 2.25, sill: 0.85, top: 2.72, label: "koupelna" }
       ]);
-      wall(-4.5, 6, 7, wallT); wall(4.5, 6, 7, wallT); // open entry gap in the middle
+      // 1.50 m entrance opening, centred and aligned to the door slab and frame.
+      wall(-4.375, 6, 7.25, wallT); wall(4.375, 6, 7.25, wallT); // open entry gap in the middle
       // Four separate zones lead off one central hall: living, kitchen, bedroom and bathroom.
       // Cross-walls divide north/south rooms; the side walls of the hall have one doorway per room.
       wall(-4.5, .15, 7.0, .18, M.wall); wall(4.5, .15, 7.0, .18, M.wall);
@@ -105,7 +106,9 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
       wall(1, 1.02, .18, 1.56, M.wall); wall(1, 4.5, .18, 3.0, M.wall);
       // Hallway-end loggia doors, with a walkable exterior platform and guard rail.
       for (const x of [-1.05, 1.05]) box('Zárubeň lodžie', x, 1.45, -6, .12, 2.9, .16, M.white);
-      box('Nadpraží lodžie', 0, 2.9, -6, 2.22, .12, .16, M.white);
+      // The glazing ends at 2.73 m, the lintel starts there, and the wall block starts at 2.85 m.
+      box('Nadpraží lodžie', 0, 2.79, -6, 2.22, .12, .16, M.white);
+      box('Stěna nad lodžií', 0, (2.85 + wallH) / 2, -6, 2.1, wallH - 2.85, wallT, M.wall);
       const loggiaGlass = new THREE.MeshStandardMaterial({ color: 0xa9c2d4, roughness: .24, metalness: .08, transparent: true, opacity: .28, side: THREE.DoubleSide });
       const loggiaDoorPivot = addGroup(-.98, 0, -5.94);
       localBox(loggiaDoorPivot, .98, 1.38, -.04, 1.92, 2.70, .07, loggiaGlass);
@@ -126,26 +129,33 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
         else { ui.showToast('Dveře na lodžii se zavírají.'); }
       }, 2.3);
 
-      // Decorative jambs and lintels. These frame openings without adding collision blockers.
-      for (const z of [-4.0, -2.8]) box('Zárubeň obýváku', -1, 1.08, z, .26, 2.16, .12, M.wood2);
-      box('Nadpraží obýváku', -1, 2.16, -3.4, .26, .12, 1.08, M.wood2);
-      for (const z of [-4.0, -2.8]) box('Zárubeň kuchyně', 1, 1.08, z, .26, 2.16, .12, M.wood2);
-      box('Nadpraží kuchyně', 1, 2.16, -3.4, .26, .12, 1.08, M.wood2);
-      for (const z of [1.8, 3.0]) box('Zárubeň ložnice', -1, 1.08, z, .26, 2.16, .12, M.wood2);
-      box('Nadpraží ložnice', -1, 2.16, 2.4, .26, .12, 1.08, M.wood2);
-      for (const z of [1.8, 3.0]) box('Zárubeň koupelny', 1, 1.08, z, .26, 2.16, .12, M.white);
-      box('Nadpraží koupelny', 1, 2.16, 2.4, .26, .12, 1.08, M.white);
-      // Main entrance header: one continuous wall piece above the opening, aligned to the wall plane.
-      box('Vstup / nadpraží', 0, (wallH + 2.8) / 2, 5.91, 2.05, wallH - 2.8, .24, M.wall);
-      // Solid infill above all interior doorways; the wall continues to the ceiling.
-      for (const [x, z] of [[-1, -3.4], [-1, 2.4], [1, -3.4], [1, 2.4]]) {
-        box('Stěna nad dveřmi', x, (2.22 + wallH) / 2, z, .24, wallH - 2.22, 1.2, M.wall);
+      // All interior doorways share a 1.20 m clear opening and identical timber frames.
+      // The 2.16 m jambs meet the 2.22 m lintel top; wall infill begins exactly at that height.
+      const interiorDoorways = [
+        { room: 'obýváku', x: -1, z: -3.4, jambs: [-4.0, -2.8] },
+        { room: 'kuchyně', x: 1, z: -3.4, jambs: [-4.0, -2.8] },
+        { room: 'ložnice', x: -1, z: 2.4, jambs: [1.8, 3.0] },
+        { room: 'koupelny', x: 1, z: 2.4, jambs: [1.8, 3.0] }
+      ];
+      for (const doorway of interiorDoorways) {
+        for (const z of doorway.jambs) {
+          box(`Zárubeň ${doorway.room}`, doorway.x, 1.08, z, .26, 2.16, .12, M.wood2);
+        }
+        box(`Nadpraží ${doorway.room}`, doorway.x, 2.16, doorway.z, .26, .12, 1.08, M.wood2);
+        box(`Stěna nad dveřmi ${doorway.room}`, doorway.x, (2.22 + wallH) / 2, doorway.z, .18, wallH - 2.22, 1.2, M.wall);
       }
+
+      // Entrance slab and its frame share a 1.50 m structural opening; the leaf fits the 1.38 m clear width.
+      for (const x of [-.75, .75]) {
+        box('Zárubeň vstupu', x, 1.40, 5.91, .12, 2.80, .26, M.wood2);
+      }
+      box('Nadpraží vstupu', 0, 2.86, 5.91, 1.65, .12, .26, M.wood2);
+      box('Vstup / stěna nadpraží', 0, (2.92 + wallH) / 2, 5.91, 1.65, wallH - 2.92, .24, M.wall);
       // Trim and small visual wall marks.
       // North skirting is segmented with the wall geometry so it does not float across openings.
       // Keep the entrance clear: the south baseboard follows only the two solid wall sections.
-      box('Lišta', -4.5, .10, 5.84, 7.0, .14, .07, M.wood);
-      box('Lišta', 4.5, .10, 5.84, 7.0, .14, .07, M.wood);
+      box('Lišta', -4.375, .10, 5.84, 7.25, .14, .07, M.wood);
+      box('Lišta', 4.375, .10, 5.84, 7.25, .14, .07, M.wood);
       box('Lišta', -7.84, .10, 0, .07, .14, 11.5, M.wood);
       box('Lišta', 7.84, .10, 0, .07, .14, 11.5, M.wood);
       // Avoid continuous decorative strips across room openings; wall edges stay clean.
@@ -256,12 +266,12 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
       box('Předsíň / botník', -.83, .28, 5.15, .34, .48, .85, M.wood, { collider: true });
       box('Botník / sedák', -.83, .56, 5.15, .36, .08, .88, M.cloth);
       // Front door with a simple animated hinge.
-      const doorPivot = addGroup(-.82, 0, 5.86);
-      const doorMesh = localBox(doorPivot, .68, 1.40, 0, 1.36, 2.80, .13, M.wood2);
+      const doorPivot = addGroup(-.69, 0, 5.86);
+      const doorMesh = localBox(doorPivot, .69, 1.40, 0, 1.38, 2.80, .13, M.wood2);
       localBox(doorPivot, 1.18, 1.42, -.08, .04, .10, .04, M.yellow);
       localBox(doorPivot, .20, 1.42, -.08, .04, .10, .04, M.darkWood);
-      const doorCollider = { minX: -.9, maxX: .9, minZ: 5.63, maxZ: 6.1, door: true }; colliders.push(doorCollider);
-      const frontDoorAnim = animateDoor(doorPivot, doorCollider, 0, -1.35, { minX: -.9, maxX: .9, minZ: 5.63, maxZ: 6.1 });
+      const doorCollider = { minX: -.75, maxX: .75, minZ: 5.63, maxZ: 6.1, door: true }; colliders.push(doorCollider);
+      const frontDoorAnim = animateDoor(doorPivot, doorCollider, 0, -1.35, { minX: -.75, maxX: .75, minZ: 5.63, maxZ: 6.1 });
       interact('frontdoor', 'Vstupní dveře', 'Dveře jsou zamčené. Potřebuješ klíče.', 0, 5.1, () => {
         if (!state.hasKeys) { ui.showToast('Zamčeno. Klíče budou někde v bytě.'); return; }
         state.doorOpen = !state.doorOpen;
@@ -326,40 +336,30 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
       }
       scene.add(skyline);
 
-      // SIMPLE ROOM LIGHTING: one modest ceiling point light per room, plus a low ambient fill.
-      // This keeps each room readable without overlapping high-intensity light pools.
+      // One simple ceiling cube and one matching point light for every enclosed zone.
       scene.add(new THREE.HemisphereLight(0xc7d1d8, 0x332b24, 0.72));
+      const roomFixtureMaterial = new THREE.MeshBasicMaterial({ color: 0xffdfbd, toneMapped: false });
       const roomLights = [
-        { name: 'Světlo / obývák', color: 0xffd2a0, intensity: 8, x: -4.5, z: -3.0 },
-        { name: 'Světlo / kuchyně', color: 0xffe6c0, intensity: 8, x: 4.5, z: -3.0 },
-        { name: 'Světlo / ložnice', color: 0xffd0a0, intensity: 6, x: -4.5, z: 3.0 },
-        { name: 'Světlo / koupelna', color: 0xd9e8ff, intensity: 6, x: 4.5, z: 3.0 },
-        { name: 'Světlo / chodba', color: 0xffd9aa, intensity: 5, x: 0, z: 0 }
+        { name: 'Světlo / obývák', x: -4.5, z: -3.0 },
+        { name: 'Světlo / kuchyně', x: 4.5, z: -3.0 },
+        { name: 'Světlo / ložnice', x: -4.5, z: 3.0 },
+        { name: 'Světlo / koupelna', x: 4.5, z: 3.0 },
+        { name: 'Světlo / chodba', x: 0, z: 0 }
       ];
       for (const room of roomLights) {
-        const light = new THREE.PointLight(room.color, room.intensity, 7.5, 2);
+        const light = new THREE.PointLight(0xffdfbd, 7, 7.5, 2);
         light.name = room.name;
         light.position.set(room.x, 2.78, room.z);
         light.castShadow = false;
         scene.add(light);
-        const fixture = new THREE.Mesh(
-          new THREE.BoxGeometry(0.32, 0.07, 0.32),
-          new THREE.MeshBasicMaterial({ color: room.color })
-        );
+
+        const fixture = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.07, 0.32), roomFixtureMaterial);
         fixture.name = room.name + ' / svítidlo';
         fixture.position.set(room.x, 3.06, room.z);
         fixture.castShadow = false;
         fixture.receiveShadow = false;
         scene.add(fixture);
       }
-      const lampShade = mat(0xd7a35f, .85);
-      const lampGlow = mat(0xffdca8, .45);
-      lampGlow.emissive.set(0x5a3518);
-      lampGlow.emissiveIntensity = .7;
-      const ceilingLamp = addGroup(0, 0, -.4);
-      cylinder(ceilingLamp, 0, 2.94, 0, .27, .27, .1, M.black, 6);
-      cylinder(ceilingLamp, 0, 2.84, 0, .42, .3, .25, lampShade, 6);
-      sphere(ceilingLamp, 0, 2.72, 0, .16, lampGlow, 1);
 
   return { colliders, interactables, meshesToAnimate, doorAnimations };
 }
