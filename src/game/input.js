@@ -2,6 +2,13 @@
 export function bindInput({ renderer, state, controller, ui, postFx }) {
   const { player, keysDown, doInteract } = controller;
   let touchLook = null;
+  // Conservative defaults: roughly half the original mouse sensitivity.
+  const lookSensitivity = {
+    mouseX: 0.0010,
+    mouseY: 0.0009,
+    touchX: 0.0028,
+    touchY: 0.0018
+  };
 
   function lockPointer() {
     if (renderer.domElement.requestPointerLock) renderer.domElement.requestPointerLock();
@@ -61,8 +68,8 @@ export function bindInput({ renderer, state, controller, ui, postFx }) {
 
   document.addEventListener("mousemove", event => {
     if (document.pointerLockElement === renderer.domElement && state.started && !state.paused) {
-      player.yaw -= event.movementX * 0.0019;
-      player.pitch -= event.movementY * 0.0017;
+      player.yaw -= event.movementX * lookSensitivity.mouseX;
+      player.pitch -= event.movementY * lookSensitivity.mouseY;
       player.pitch = Math.max(-1.35, Math.min(1.35, player.pitch));
     }
   });
@@ -78,8 +85,8 @@ export function bindInput({ renderer, state, controller, ui, postFx }) {
     if (!touchLook || touchLook.id !== event.pointerId) return;
     const dx = event.clientX - touchLook.x;
     const dy = event.clientY - touchLook.y;
-    player.yaw -= dx * 0.0048;
-    player.pitch -= dy * 0.0032;
+    player.yaw -= dx * lookSensitivity.touchX;
+    player.pitch -= dy * lookSensitivity.touchY;
     player.pitch = Math.max(-1.25, Math.min(1.25, player.pitch));
     touchLook.x = event.clientX;
     touchLook.y = event.clientY;

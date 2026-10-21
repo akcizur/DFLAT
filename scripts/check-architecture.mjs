@@ -5,10 +5,13 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const required = [
+  "package.json",
+  "vite.config.js",
   "index.html",
   "styles.css",
   "styles-cinematic.css",
   "assets/city-sunset.webp",
+  "assets/bg-scene-hq.png",
   "src/main.js",
   "src/game/pixel-post.js",
   "src/game/materials.js",
@@ -36,6 +39,14 @@ if (!html.includes('href="./styles.css"')) fail("index.html must load styles.css
 if (!html.includes('<script type="module" src="./src/main.js"></script>')) fail("index.html must load src/main.js");
 if (/<style(?:\s|>)/i.test(html)) fail("inline CSS remains in index.html");
 if (/<script\b(?![^>]*\bsrc=)[^>]*>/i.test(html)) fail("inline JavaScript remains in index.html");
+
+const packageJson = JSON.parse(await readFile(path.join(root, "package.json"), "utf8"));
+if (packageJson.scripts?.build !== "vite build") fail("package.json must provide the Vite production build");
+if (packageJson.dependencies?.three !== "0.169.0") fail("Three.js must be installed locally at the tested game-compatible version");
+if (packageJson.devDependencies?.vite !== "6.4.5") fail("Vite must be installed as a local dev dependency at version 6.4.5");
+
+const mainSource = await readFile(path.join(root, "src/main.js"), "utf8");
+if (/from\s+["']https?:\/\//i.test(mainSource)) fail("runtime modules must be bundled locally; remove CDN imports");
 
 const modules = required.filter(file => file.endsWith(".js"));
 for (const relativePath of modules) {

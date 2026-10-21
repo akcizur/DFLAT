@@ -1,41 +1,67 @@
 # The Flat — DFLAT
 
-A small first-person apartment exploration game built with Three.js and hosted as a static GitHub Pages site.
+A first-person apartment exploration game built with Three.js, Vite and Bun. Three.js is bundled into the site during the build, so the game no longer loads its 3D engine from a CDN.
 
 ## Run locally
 
-Because the game uses JavaScript modules, serve the folder over HTTP rather than opening `index.html` directly:
+Install [Bun](https://bun.sh/) if it is not installed, then run these commands from the project root:
 
 ```sh
-python -m http.server 8000
+bun install
+bun run dev
 ```
 
-Then open [http://localhost:8000](http://localhost:8000). Three.js is loaded from jsDelivr, so an internet connection is required.
+Open the local URL printed by Vite (normally `http://localhost:5173/`). The development server provides hot reload while keeping the complete Three.js engine local in `node_modules`.
+
+To create and test the production build:
+
+```sh
+bun run check:syntax
+bun run check
+bun run build
+bun run preview
+```
+
+The first `bun install` creates `bun.lock`. Commit that file along with future dependency changes so installs can be reproduced with `bun ci`.
+
+## GitHub Pages
+
+The deployment workflow builds the static site into `dist/` and deploys it to:
+
+- `https://akcizur.github.io/DFLAT/`
+
+For the first deployment, open **Repository Settings → Pages → Build and deployment** and set **Source** to **GitHub Actions**. After that, pushes to `main` build and deploy the game automatically. The Vite configuration uses `/DFLAT/` as the base only in GitHub Actions; local development and preview use the root path.
+
+## Controls
+
+- `W A S D` / arrow keys — move
+- Mouse — look around (lower default sensitivity)
+- `E` — interact
+- `Enter` — start or resume
+- `Esc` — pause
+- Touch screens — on-screen movement/action controls and drag-to-look
+
+The renderer is capped at **17 FPS** by design to preserve the intended slow, pixelated presentation. Actual FPS can be lower if the device cannot render a frame within the target interval.
 
 ## Architecture
 
-- `index.html` — semantic page shell and the existing game HUD/menus.
-- `styles.css` — all presentation; no inline style block is required.
-- `assets/city-sunset.webp` — panoramic exterior background projected around the apartment as a 360-degree sky.
-- `src/main.js` — bootstraps Three.js, shared game state, world, controller, input and render loop.
+- `index.html` — semantic page shell, centered BIOS menus and the game HUD.
+- `styles.css`, `styles-cinematic.css` — interface and visual styling.
+- `assets/bg-scene-hq.png` — high-resolution panoramic exterior environment.
+- `src/main.js` — local Three.js bootstrap, render loop, shared state and scene updates.
 - `src/game/materials.js` — reusable material palette.
-- `src/game/world.js` — continuous wall material, solid door headers, four exterior windows, accessible balcony, lighting, collision volumes and interactables.
-- `src/game/player.js` — first-person movement, collision response, nearby interaction detection and camera sync.
-- `src/game/input.js` — keyboard, pointer lock and touch input.
-- `src/game/ui.js` — objectives, inventory display, notifications, menus' visual state and in-game clock.
-- `scripts/check-architecture.mjs` — verifies entry points, local imports and JavaScript syntax.
-
-The supplied city-at-sunset panorama is used as a 360-degree background visible through the exterior windows and bedroom balcony door.
-
-The site intentionally has no bundler or install-time dependency, so GitHub Pages can serve it directly.
+- `src/game/world.js` — apartment geometry, lighting, collisions and interactables.
+- `src/game/player.js` — movement, collision response and camera sync.
+- `src/game/input.js` — keyboard, pointer lock, mouse/touch look and actions.
+- `src/game/ui.js` — objectives, inventory, notifications, menus and in-game clock.
+- `scripts/check-architecture.mjs` — validates required files, local dependencies and JavaScript syntax.
 
 ## Checks
 
-Requires Node.js 20 or newer; no package installation is needed:
-
 ```sh
-npm run check:syntax
-npm run check
+bun run check:syntax
+bun run check
+bun run build
 ```
 
-GitHub Actions runs the same checks for pushes and pull requests to `main`.
+GitHub Actions runs project checks on pushes and pull requests, and deploys successful builds from `main`.

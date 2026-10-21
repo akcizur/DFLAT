@@ -1,4 +1,4 @@
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js";
+import * as THREE from "three";
 import { createMaterials } from "./game/materials.js";
 import { createApartment } from "./game/world.js";
 import { createPlayerController } from "./game/player.js";
@@ -101,12 +101,26 @@ const controller = createPlayerController({
 bindInput({ renderer, state, controller, ui });
 
 const clockStart = performance.now();
-let previous = clockStart;
+
+// Hard cap the simulation/render loop at 17 FPS while retaining elapsed-time movement.
+// The deadline accumulator alternates 3- and 4-refresh waits on 60 Hz displays so the
+// average stays near 17 FPS instead of accidentally dropping to a steady 15 FPS.
+const TARGET_FPS = 17;
+const FRAME_INTERVAL = 1000 / TARGET_FPS;
+let previous = 0;
+let nextFrameAt = 0;
 
 function animate(now) {
   requestAnimationFrame(animate);
-  const deltaTime = Math.min((now - previous) / 1000, 0.04);
+  if (nextFrameAt && now + 0.5 < nextFrameAt) return;
+
+  const elapsed = previous === 0 ? FRAME_INTERVAL : now - previous;
   previous = now;
+  nextFrameAt = nextFrameAt === 0 ? now + FRAME_INTERVAL : nextFrameAt + FRAME_INTERVAL;
+  while (nextFrameAt <= now) nextFrameAt += FRAME_INTERVAL;
+
+  // Cap unusually long stalls to keep a returned-to-tab movement step from jumping.
+  const deltaTime = Math.min(elapsed / 1000, 0.1);
 
   const nearest = controller.update(deltaTime);
   // Cinematic hinge easing with smooth acceleration/deceleration; collision stays disabled while open.

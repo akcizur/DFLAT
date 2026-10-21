@@ -615,3 +615,28 @@
 @media (prefers-reduced-motion: reduce) {
   .hud .interaction.show { animation: none; }
 }
+
+
+/* Center the terminal's text columns, not just the overlay container. */
+#bootScreen .bios,
+#bootScreen .boot-footer,
+#startScreen.tv-bios-mode .term,
+#pauseScreen .term {
+  text-align: center;
+}
+#startScreen.tv-bios-mode .tv-bios-info {
+  text-align: center;
+}
+#startScreen.tv-bios-mode .cmd,
+#pauseScreen .cmd {
+  margin-inline: auto;
+}
+#startScreen.tv-bios-mode .tv-bios-footer {
+  text-align: center;
+}
+@media (max-width: 520px) {
+  #startScreen.tv-bios-mode .term,
+  #pauseScreen .term {
+    margin-inline: auto;
+  }
+}
