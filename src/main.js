@@ -8,18 +8,30 @@ import { bindInput } from "./game/input.js";
 const mount = document.getElementById("game");
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x25231f);
-const panoramaLoader = new THREE.TextureLoader();
-panoramaLoader.load(
+
+// Render the supplied image as real scene geometry, not only as a renderer clear color.
+// This makes the city image visible through window openings and around the apartment.
+const panorama = { mesh: null };
+new THREE.TextureLoader().load(
   new URL("../assets/city-sunset.webp", import.meta.url).href,
   texture => {
     texture.colorSpace = THREE.SRGBColorSpace;
-    texture.mapping = THREE.EquirectangularReflectionMapping;
-    scene.background = texture;
-    scene.backgroundBlurriness = 0;
-    scene.backgroundIntensity = 1.08;
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
+    const skyMaterial = new THREE.MeshBasicMaterial({
+      map: texture,
+      side: THREE.BackSide,
+      fog: false,
+      depthWrite: false,
+      toneMapped: false
+    });
+    panorama.mesh = new THREE.Mesh(new THREE.SphereGeometry(48, 48, 32), skyMaterial);
+    panorama.mesh.name = "Skutečné obrazové pozadí města";
+    panorama.mesh.renderOrder = -1000;
+    scene.add(panorama.mesh);
   },
   undefined,
-  error => console.warn("The Flat: panorama background could not be loaded.", error)
+  error => console.error("The Flat: city image background failed to load.", error)
 );
 scene.fog = new THREE.Fog(0x25231f, 12, 29);
 
