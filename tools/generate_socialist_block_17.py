@@ -541,8 +541,12 @@ def _build_stair_mesh():
     )
 
     rail_face_start = len(stair_faces)
+    rail_vertex_offset = len(stair_vertices)
     stair_vertices.extend(rail_vertices)
-    stair_faces.extend(rail_faces)
+    stair_faces.extend(
+        tuple(index + rail_vertex_offset for index in face)
+        for face in rail_faces
+    )
     return stair_vertices, stair_faces, rail_face_start
 
 
