@@ -37,10 +37,12 @@
   </div>
   <div class="toast" id="toast"></div>
   <div class="touch-controls" id="touchControls" aria-label="Dotykové ovládání">
-    <div class="touch-col"><button data-key="KeyW">▲</button></div>
-    <div class="touch-col"><button data-key="KeyA">◀</button><button data-key="KeyS">▼</button><button data-key="KeyD">▶</button></div>
+    <div class="virtual-stick" id="moveStick" aria-label="Pohybová páčka"><span class="stick-ring"></span><span class="stick-knob" id="moveKnob"></span></div>
   </div>
-  <button class="touch-action" id="touchAction">AKCE<br>E</button>
+  <div id="touchLookZone" aria-label="Tažením otáčej kamerou"></div>
+  <button class="touch-action" id="touchAction" aria-label="Interakce">INTERAKCE</button>
+  <button class="pause-button" id="pauseButton" aria-label="Pauza" title="Pauza">Ⅱ</button>
+  <button class="fullscreen-button" id="fullscreenButton" aria-label="Celá obrazovka" title="Celá obrazovka">⛶</button>
 
   <div class="boot-screen" id="bootScreen" aria-label="BIOS boot intro">
     <div class="bios">
