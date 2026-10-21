@@ -21,7 +21,8 @@ const required = [
   "src/game/player.js",
   "src/game/ui.js",
   "src/game/input.js",
-  "tools/generate_socialist_block_17.py"
+  "tools/generate_socialist_block_17.py",
+  "tools/VP_OS_Building_Architecture_v4.py"
 ];
 
 function fail(message) {
@@ -105,6 +106,14 @@ if (!blenderGenerator.includes('text_curve.body = "VCHOD 01"') || !blenderGenera
 if (!blenderGenerator.includes("def _create_scene_preview(") || !blenderGenerator.includes("camera_data.type = \"ORTHO\"")) fail("Generator must create a useful architectural preview camera");
 if (!blenderGenerator.includes("scene.render.resolution_y = 1600") || !blenderGenerator.includes("camera_data.ortho_scale = 26.0") || !blenderGenerator.includes("Large warm key light")) fail("Generator must frame the 8-storey model in its portrait preview and configure architectural lighting");
 if (!blenderGenerator.includes('principled.inputs["Base Color"].default_value = rgba')) fail("Generated materials must use their configured colors in rendered output");
+const v4Generator = await readFile(path.join(root, "tools/VP_OS_Building_Architecture_v4.py"), "utf8");
+if (!v4Generator.includes("H_CLR, H_STR, SLAB, FAC = 2615, 2800, 150, 300")) fail("VP-OS v4 storey and slab dimensions are missing");
+if (!v4Generator.includes("arr.count = 15")) fail("VP-OS v4 must repeat 15 typical floors");
+if (!v4Generator.includes("def boolean_cut(") || !v4Generator.includes("mod.solver = 'EXACT'")) fail("VP-OS v4 openings must use exact Boolean cuts");
+if (!v4Generator.includes("def build_vertical_core_story()") || !v4Generator.includes("def cut_core_openings_from_slab(")) fail("VP-OS v4 must define stairs, lift and floor-plate openings");
+if (!v4Generator.includes("def lodzie_stitni_east(") || !v4Generator.includes("def build_roof_details()")) fail("VP-OS v4 must include east loggias and detailed roof geometry");
+if (!v4Generator.includes('VP_OS_Building_Architecture_v4.blend')) fail("VP-OS v4 must save a standalone Blender project");
+
 const materialsSource = await readFile(path.join(root, "src/game/materials.js"), "utf8");
 if (!materialsSource.includes("function bakedLightTexture()") || !materialsSource.includes("lightMapIntensity")) {
   fail("procedural baked-light gradients are not configured on the material palette");
