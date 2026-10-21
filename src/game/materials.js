@@ -1,22 +1,22 @@
 // Shared low-poly palette with small, tiled pixel textures for tactile surfaces.
 export function createMaterials(THREE) {
   const mat = (color, roughness = 1, map = null, metalness = 0) => new THREE.MeshStandardMaterial({
-    color, roughness, metalness, flatShading: true, dithering: false, ...(map ? { map } : {})
+    color, roughness: Math.max(roughness, 0.78), metalness: Math.min(metalness, 0.12), flatShading: true, dithering: false, ...(map ? { map } : {})
   });
 
   function pixelTexture(base, accent, seed = 1, repeatX = 3, repeatY = 3) {
     const canvas = document.createElement("canvas");
-    canvas.width = 32; canvas.height = 32;
+    canvas.width = 16; canvas.height = 16;
     const ctx = canvas.getContext("2d");
-    ctx.fillStyle = base; ctx.fillRect(0, 0, 32, 32);
+    ctx.fillStyle = base; ctx.fillRect(0, 0, 16, 16);
     // Deterministic chunky dither marks: deliberately no smooth noise or filtering.
     let n = seed >>> 0;
     const rand = () => { n = (n * 1664525 + 1013904223) >>> 0; return n / 4294967296; };
-    for (let i = 0; i < 70; i++) {
+    for (let i = 0; i < 34; i++) {
       ctx.globalAlpha = 0.12 + rand() * 0.28;
       ctx.fillStyle = accent;
-      const x = Math.floor(rand() * 8) * 4, y = Math.floor(rand() * 8) * 4;
-      ctx.fillRect(x, y, 4 * (rand() > 0.8 ? 2 : 1), 4);
+      const x = Math.floor(rand() * 8) * 2, y = Math.floor(rand() * 8) * 2;
+      ctx.fillRect(x, y, 2 * (rand() > 0.8 ? 2 : 1), 2);
     }
     ctx.globalAlpha = 1;
     const texture = new THREE.CanvasTexture(canvas);
