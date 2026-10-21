@@ -20,6 +20,8 @@ jobs:
         uses: oven-sh/setup-bun@v2
       - name: Install dependencies
         run: bun install
+      - name: Check Blender generator Python syntax
+        run: python -m py_compile tools/generate_socialist_block_17.py
       - name: Check JavaScript syntax
         run: bun run check:syntax
       - name: Check project architecture
