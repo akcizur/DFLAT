@@ -57,3 +57,200 @@
   #startScreen.tv-bios-mode .term { animation: none !important; }
   #startScreen.tv-bios-mode, #startScreen.tv-bios-mode.transition-out { transition: none !important; }
 }
+
+
+/* DFLAT CRT Machine — amber phosphor with restrained red signal faults.
+   UI-only treatment: the Three.js canvas and game post-processing are untouched. */
+:root {
+  --crt-amber: #ffb34a;
+  --crt-hot: #ffd18a;
+  --crt-red: #ff3b2f;
+  --crt-dim: #9c652b;
+  --crt-bg: rgba(10, 5, 2, .88);
+  --crt-edge: rgba(255, 153, 45, .48);
+  --crt-glow: 0 0 5px rgba(255, 151, 42, .48), 0 0 18px rgba(255, 92, 25, .13);
+}
+
+/* Boot sequence: warm phosphor ignition, not the previous green/neutral BIOS. */
+.boot-screen {
+  color: var(--crt-amber);
+  background: #080401;
+  text-shadow: var(--crt-glow);
+}
+.boot-screen:before {
+  opacity: .34;
+  background: repeating-linear-gradient(to bottom,
+    transparent 0 2px, rgba(255, 170, 80, .10) 3px, rgba(0, 0, 0, .62) 4px);
+}
+.boot-screen:after {
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,.9) 100%);
+}
+.boot-noise {
+  opacity: .045;
+  background-image: repeating-radial-gradient(rgba(255,190,110,.7) 0 1px, transparent 1px 3px);
+}
+.bios { text-shadow: 0 0 7px rgba(255, 160, 48, .5); }
+.bios > div:first-child, .boot-logo { color: var(--crt-hot); }
+.bios span, .boot-footer, .boot-logo small { color: var(--crt-dim); }
+.logo-mark span { color: var(--crt-red); }
+.boot-logo { text-shadow: 2px 0 rgba(255,59,47,.42), -1px 0 rgba(255,180,74,.55), var(--crt-glow); }
+.boot-logo div { color: var(--crt-amber); }
+.boot-footer { letter-spacing: .16em; }
+
+/* Start/pause CRT glass. Effects remain confined to menu overlays. */
+#startScreen.tv-bios-mode,
+#pauseScreen {
+  color: var(--crt-amber);
+  background:
+    radial-gradient(ellipse at 50% 45%, rgba(48,22,5,.22), transparent 65%),
+    rgba(0,0,0,.78);
+  text-shadow: 0 0 5px rgba(255,151,42,.38);
+}
+#startScreen.tv-bios-mode .term,
+#pauseScreen .term {
+  isolation: isolate;
+  color: var(--crt-amber);
+  border: 1px solid rgba(255,164,66,.62);
+  border-radius: 9% / 7%;
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 2px, rgba(0,0,0,.34) 3px 4px),
+    radial-gradient(ellipse at 50% 40%, #251307 0%, #100802 64%, #050201 100%);
+  box-shadow:
+    inset 0 0 30px rgba(0,0,0,.96),
+    inset 0 0 58px rgba(255,112,23,.07),
+    0 0 0 6px #15100b,
+    0 0 0 8px #4b3826,
+    0 0 32px rgba(255,93,24,.10);
+  text-shadow: 0 0 5px rgba(255,160,55,.44);
+  animation: amber-crt-idle 6.5s steps(1,end) infinite;
+}
+#startScreen.tv-bios-mode .term:before,
+#pauseScreen .term:before {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: .42;
+  background: repeating-linear-gradient(to bottom,
+    transparent 0 2px, rgba(255,175,83,.09) 3px, rgba(0,0,0,.54) 4px);
+}
+#startScreen.tv-bios-mode .term:after,
+#pauseScreen .term:after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at center, transparent 43%, rgba(0,0,0,.7) 100%);
+}
+#startScreen.tv-bios-mode .dim,
+#pauseScreen .dim { color: #a36b32; }
+#startScreen.tv-bios-mode .tv-bios-title {
+  color: var(--crt-hot);
+  text-shadow: 0 0 8px rgba(255,164,66,.5), 2px 0 rgba(255,59,47,.28);
+  animation: amber-title-signal 8s steps(1,end) infinite;
+}
+#startScreen.tv-bios-mode .tv-bios-title span { color: #a56a34; }
+#startScreen.tv-bios-mode .tv-bios-rule { color: #78471e; }
+#startScreen.tv-bios-mode .tv-bios-info { color: #e8a54e; }
+#startScreen.tv-bios-mode .tv-bios-footer { color: #b77736; }
+#startScreen.tv-bios-mode .cmd,
+#pauseScreen .cmd {
+  color: var(--crt-hot);
+  border: 1px solid rgba(255,164,66,.65);
+  background: rgba(48,22,5,.72);
+  box-shadow: inset 0 0 14px rgba(255,125,26,.08), 0 0 12px rgba(255,102,20,.08);
+  padding: 12px 16px;
+  text-shadow: var(--crt-glow);
+}
+#startScreen.tv-bios-mode .cmd .p,
+#startScreen.tv-bios-mode .cur,
+#pauseScreen .cmd .p,
+#pauseScreen .cur { color: var(--crt-red); }
+#startScreen.tv-bios-mode .cmd:hover,
+#startScreen.tv-bios-mode .cmd:focus-visible,
+#pauseScreen .cmd:hover,
+#pauseScreen .cmd:focus-visible {
+  color: #140700;
+  background: var(--crt-amber);
+  outline: 1px solid var(--crt-hot);
+  box-shadow: 0 0 18px rgba(255,153,45,.3);
+  text-shadow: none;
+}
+#startScreen.tv-bios-mode.transition-out {
+  filter: brightness(1.3) contrast(1.16) sepia(.22);
+}
+
+/* In-game HUD: translucent smoked-glass plates with amber phosphor.
+   No global overlay/filter is applied to #game or its canvas. */
+.hud { color: var(--crt-amber); text-shadow: 0 0 5px rgba(255,143,35,.3); }
+.brand, .status, .objective, .interaction, .hint, .toast,
+.touch-controls button, .touch-action {
+  color: var(--crt-amber);
+  background: linear-gradient(135deg, rgba(18,9,3,.91), rgba(5,3,2,.78));
+  border: 1px solid var(--crt-edge);
+  border-radius: 2px;
+  box-shadow: inset 0 0 16px rgba(255,108,22,.045), 0 0 14px rgba(255,94,20,.06);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+  text-shadow: 0 0 5px rgba(255,153,45,.34);
+}
+.brand { color: var(--crt-hot); letter-spacing: .1em; }
+.brand span { color: #a76b30; }
+.status { color: var(--crt-hot); border-color: rgba(255,173,77,.36); }
+.objective { border-left: 2px solid var(--crt-amber); }
+.objective b { color: var(--crt-hot); letter-spacing: .12em; }
+.objective .done { color: #ffc56e; text-shadow: 0 0 8px rgba(255,161,48,.6); }
+#inventoryText { color: #d78a37; }
+.crosshair:before, .crosshair:after {
+  background: var(--crt-hot);
+  box-shadow: 0 0 5px rgba(255,159,52,.75);
+}
+.interaction { border-color: rgba(255,177,74,.8); color: var(--crt-hot); }
+.interaction b { color: var(--crt-red); text-shadow: 0 0 7px rgba(255,59,47,.65); }
+.hint { color: #b87b3a; }
+.bottomline .right { color: #a36b32; text-shadow: 0 0 4px rgba(255,128,35,.22); }
+.toast {
+  border-color: rgba(255,59,47,.7);
+  color: var(--crt-hot);
+  box-shadow: inset 0 0 16px rgba(255,59,47,.07), 0 0 18px rgba(255,59,47,.12);
+}
+.touch-controls button, .touch-action {
+  color: var(--crt-hot);
+  border-color: rgba(255,170,72,.62);
+}
+.touch-controls button:active, .touch-action:active {
+  color: #160700;
+  background: var(--crt-amber);
+  border-color: var(--crt-hot);
+}
+
+/* A rare, short red channel slip. Never animates the game canvas. */
+@keyframes amber-crt-idle {
+  0%, 96%, 100% { opacity: 1; }
+  97% { opacity: .965; }
+  98% { opacity: 1; }
+}
+@keyframes amber-title-signal {
+  0%, 31%, 32%, 100% { transform: translateX(0); text-shadow: 0 0 8px rgba(255,164,66,.5), 2px 0 rgba(255,59,47,.28); }
+  31.2% { transform: translateX(1px); text-shadow: -2px 0 rgba(255,59,47,.75), 2px 0 rgba(255,179,74,.6); }
+  31.5% { transform: translateX(-1px); }
+  32.2% { transform: translateX(0); }
+}
+@media (max-width: 480px) {
+  #startScreen.tv-bios-mode .term, #pauseScreen .term {
+    width: min(780px, 92vw);
+    min-height: auto;
+    border-radius: 8% / 4%;
+    padding: 24px 20px;
+  }
+  #startScreen.tv-bios-mode .tv-bios-title { margin-top: 16px; }
+  .brand span { display: block; margin: 3px 0 0; font-size: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #startScreen.tv-bios-mode .term, #pauseScreen .term,
+  #startScreen.tv-bios-mode .tv-bios-title { animation: none !important; }
+}
