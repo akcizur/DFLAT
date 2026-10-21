@@ -1,7 +1,7 @@
 // Shared low-poly palette with small, tiled pixel textures for tactile surfaces.
 export function createMaterials(THREE) {
-  const mat = (color, roughness = 1, map = null) => new THREE.MeshStandardMaterial({
-    color, roughness, flatShading: true, ...(map ? { map } : {})
+  const mat = (color, roughness = 1, map = null, metalness = 0) => new THREE.MeshStandardMaterial({
+    color, roughness, metalness, flatShading: true, dithering: false, ...(map ? { map } : {})
   });
 
   function pixelTexture(base, accent, seed = 1, repeatX = 3, repeatY = 3) {
@@ -37,10 +37,10 @@ export function createMaterials(THREE) {
   const M = {
     wall: mat(0xd2c7ac, 1, wallTex), wall2: mat(0xb8ad95), white: mat(0xe6dfcd),
     floor: mat(0x806c55, 1, floorTex), wood: mat(0x77563f, 1, woodTex), wood2: mat(0x9b7455, 1, woodTex),
-    darkWood: mat(0x4e3a2e), black: mat(0x252625), metal: mat(0x85877f), glass: mat(0x6b8990, .65),
+    darkWood: mat(0x4e3a2e), black: mat(0x252625), metal: mat(0x85877f, .32, null, 0.42), glass: mat(0x6b8990, .24, null, 0.12),
     sofa: mat(0x657267, 1, clothTex), sofaDark: mat(0x4e5a50), cloth: mat(0xc4b6a1), rug: mat(0x9b5544),
-    green: mat(0x718365), leaf: mat(0x70815d), yellow: mat(0xd7b85a), ceramic: mat(0xd4d4c8),
-    tile: mat(0xaaa99d), dark: mat(0x3a3833), light: mat(0xf4d8a2), screen: mat(0x37474a),
+    green: mat(0x718365), leaf: mat(0x70815d), yellow: mat(0xd7b85a), ceramic: mat(0xd4d4c8, .28),
+    tile: mat(0xaaa99d), dark: mat(0x3a3833), light: mat(0xf4d8a2), screen: mat(0x37474a, .2, null, 0.08),
     fridge: mat(0xc6c6ba), bedding: mat(0x8b9a9a), blanket: mat(0x994c43), plant: mat(0x47634a)
   };
   return { M, mat };
