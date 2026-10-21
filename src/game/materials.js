@@ -9,6 +9,21 @@ export function createMaterials(THREE) {
     canvas.width = 16; canvas.height = 16;
     const ctx = canvas.getContext("2d");
     ctx.fillStyle = base; ctx.fillRect(0, 0, 16, 16);
+
+    // Pixel-quantized texture gradient: a warm high corner fades into a cool,
+    // darker edge. The source is tiny on purpose and is enlarged with nearest sampling.
+    const ramp = ctx.createLinearGradient(0, 0, 16, 16);
+    ramp.addColorStop(0, "rgba(255, 238, 199, 0.28)");
+    ramp.addColorStop(0.42, "rgba(255, 215, 167, 0.06)");
+    ramp.addColorStop(1, "rgba(14, 22, 29, 0.30)");
+    ctx.fillStyle = ramp;
+    ctx.fillRect(0, 0, 16, 16);
+    const lightPool = ctx.createRadialGradient(4, 3, 0, 7, 7, 14);
+    lightPool.addColorStop(0, "rgba(255, 219, 159, 0.18)");
+    lightPool.addColorStop(1, "rgba(255, 219, 159, 0)");
+    ctx.fillStyle = lightPool;
+    ctx.fillRect(0, 0, 16, 16);
+
     // Deterministic chunky dither marks: deliberately no smooth noise or filtering.
     let n = seed >>> 0;
     const rand = () => { n = (n * 1664525 + 1013904223) >>> 0; return n / 4294967296; };
@@ -30,6 +45,51 @@ export function createMaterials(THREE) {
     return texture;
   }
 
+  function bakedLightTexture() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 32;
+    canvas.height = 32;
+    const ctx = canvas.getContext("2d");
+    const image = ctx.createImageData(32, 32);
+    const bayer4 = [
+      [0, 8, 2, 10],
+      [12, 4, 14, 6],
+      [3, 11, 1, 9],
+      [15, 7, 13, 5]
+    ];
+
+    // A low-energy, low-resolution light map rather than a real-time light source.
+    // It gives every face a subtle warm center, cooler corners and stepped gradients.
+    for (let y = 0; y < 32; y++) {
+      for (let x = 0; x < 32; x++) {
+        const nx = (x - 15.5) / 15.5;
+        const ny = (y - 15.5) / 15.5;
+        const warmPool = Math.max(0, 1 - Math.hypot((nx + 0.12) * 0.95, (ny + 0.24) * 0.9));
+        const coolEdge = Math.max(0, Math.hypot(nx, ny) - 0.25);
+        const raw = 0.035 + warmPool * 0.055 + Math.max(0, 1 - (y / 31)) * 0.012 - coolEdge * 0.008;
+        const dither = (bayer4[y % 4][x % 4] - 7.5) / 16 / 255;
+        const level = Math.max(0.018, Math.min(0.12, Math.round((raw + dither) * 64) / 64));
+        const offset = (y * 32 + x) * 4;
+        image.data[offset] = Math.round(Math.min(0.14, level * 1.13) * 255);
+        image.data[offset + 1] = Math.round(Math.min(0.12, level * 0.96) * 255);
+        image.data[offset + 2] = Math.round(Math.min(0.10, level * 0.78) * 255);
+        image.data[offset + 3] = 255;
+      }
+    }
+
+    ctx.putImageData(image, 0, 0);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.NoColorSpace;
+    texture.wrapS = texture.wrapT = THREE.ClampToEdgeWrapping;
+    texture.magFilter = THREE.NearestFilter;
+    texture.minFilter = THREE.NearestFilter;
+    texture.generateMipmaps = false;
+    texture.needsUpdate = true;
+    return texture;
+  }
+
+  const bakedLightMap = bakedLightTexture();
+
   const wallTex = pixelTexture("#d2c7ac", "#a89b80", 11, 2, 1);
   const floorTex = pixelTexture("#806c55", "#b18a62", 23, 6, 4);
   const woodTex = pixelTexture("#77563f", "#c09162", 37, 3, 2);
@@ -43,5 +103,16 @@ export function createMaterials(THREE) {
     tile: mat(0xaaa99d), dark: mat(0x3a3833), light: mat(0xf4d8a2), screen: mat(0x37474a, .2, null, 0.08),
     fridge: mat(0xc6c6ba), bedding: mat(0x8b9a9a), blanket: mat(0x994c43), plant: mat(0x47634a)
   };
-  return { M, mat };
+
+  // The light map is intentionally subtle; dynamic lamps and window light remain
+  // active for interactive doors/rooms, while this provides a stable baked-style fill.
+  for (const material of new Set(Object.values(M))) {
+    if (material?.isMeshStandardMaterial) {
+      material.lightMap = bakedLightMap;
+      material.lightMapIntensity = 0.42;
+      material.needsUpdate = true;
+    }
+  }
+
+  return { M, mat, bakedLightMap };
 }

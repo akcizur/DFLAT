@@ -47,6 +47,15 @@ if (packageJson.devDependencies?.vite !== "6.4.5") fail("Vite must be installed 
 
 const mainSource = await readFile(path.join(root, "src/main.js"), "utf8");
 if (/from\s+["']https?:\/\//i.test(mainSource)) fail("runtime modules must be bundled locally; remove CDN imports");
+if (!mainSource.includes("const SIMULATION_HZ = 60")) fail("game simulation must target 60 Hz");
+if (!mainSource.includes("const SCENE_RENDER_HZ = 15")) fail("scene raster must target 15 FPS");
+if (!mainSource.includes("postFx.renderScene(scene, camera")) fail("scene must use the buffered progressive pixel renderer");
+if (!mainSource.includes("postFx.present(now / 1000)")) fail("pixel compositor must present independently from scene raster");
+
+const materialsSource = await readFile(path.join(root, "src/game/materials.js"), "utf8");
+if (!materialsSource.includes("function bakedLightTexture()") || !materialsSource.includes("lightMapIntensity")) {
+  fail("procedural baked-light gradients are not configured on the material palette");
+}
 
 const modules = required.filter(file => file.endsWith(".js"));
 for (const relativePath of modules) {

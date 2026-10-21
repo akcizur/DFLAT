@@ -4,6 +4,7 @@ import { createApartment } from "./game/world.js";
 import { createPlayerController } from "./game/player.js";
 import { createUI } from "./game/ui.js";
 import { bindInput } from "./game/input.js";
+import { createPixelPostProcess } from "./game/pixel-post.js";
 
 const mount = document.getElementById("game");
 const scene = new THREE.Scene();
@@ -47,7 +48,9 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setPixelRatio(1);
 renderer.domElement.style.imageRendering = "pixelated";
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
+// Scene color stays linear in the low-resolution buffers; the pixel compositor
+// applies a single ACES-style curve when the final frame is presented.
+renderer.toneMapping = THREE.NoToneMapping;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.BasicShadowMap;
 renderer.shadowMap.autoUpdate = true;
@@ -58,11 +61,16 @@ renderer.domElement.id = "screenCanvas";
 renderer.domElement.tabIndex = 0;
 mount.appendChild(renderer.domElement);
 
+// Render the apartment infrequently, then composite the saved pixel buffer at 60 Hz.
+// This separates the intentionally stepped 15 FPS image from responsive game motion.
+const postFx = createPixelPostProcess(THREE, renderer);
+
 function resize() {
   const pixelScale = LOW_POWER ? 3.4 : 3.05;
   const width = Math.max(200, Math.floor(innerWidth / pixelScale));
   const height = Math.max(125, Math.floor(innerHeight / pixelScale));
   renderer.setSize(width, height, false);
+  postFx.setSize(width, height);
   renderer.domElement.style.width = "100%";
   renderer.domElement.style.height = "100%";
   camera.aspect = innerWidth / innerHeight;
@@ -80,10 +88,15 @@ const state = {
   balconyDoorOpen: false
 };
 const ui = createUI();
-const { M, mat } = createMaterials(THREE);
+const { M, mat, bakedLightMap } = createMaterials(THREE);
 const world = createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui });
-// Low-resolution shadow maps preserve the pixel-art look while adding readable contact shadows.
+
+// Give every mesh a UV2 channel for the shared procedural baked-light gradient.
+// The low-frequency amber/cool light map complements real lights and contact shadows.
 scene.traverse(object => {
+  if (object.isMesh && object.geometry?.attributes?.uv && !object.geometry.attributes.uv2) {
+    object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone());
+  }
   if (object.isLight && object.castShadow) {
     object.shadow.mapSize.set(LOW_POWER ? 192 : 384, LOW_POWER ? 192 : 384);
     object.shadow.bias = -0.00035;
@@ -91,6 +104,7 @@ scene.traverse(object => {
     object.shadow.radius = 0;
   }
 });
+if (bakedLightMap) bakedLightMap.needsUpdate = true;
 const controller = createPlayerController({
   camera,
   colliders: world.colliders,
@@ -98,75 +112,112 @@ const controller = createPlayerController({
   state,
   ui
 });
-bindInput({ renderer, state, controller, ui });
+bindInput({ renderer, state, controller, ui, postFx });
 
 const clockStart = performance.now();
+const SIMULATION_HZ = 60;
+const SIMULATION_STEP_MS = 1000 / SIMULATION_HZ;
+const SCENE_RENDER_HZ = 15;
+const SCENE_RENDER_INTERVAL_MS = 1000 / SCENE_RENDER_HZ;
+const PRESENT_HZ = 60;
+const PRESENT_INTERVAL_MS = 1000 / PRESENT_HZ;
 
-// Hard cap the simulation/render loop at 17 FPS while retaining elapsed-time movement.
-// The deadline accumulator alternates 3- and 4-refresh waits on 60 Hz displays so the
-// average stays near 17 FPS instead of accidentally dropping to a steady 15 FPS.
-const TARGET_FPS = 17;
-const FRAME_INTERVAL = 1000 / TARGET_FPS;
-let previous = 0;
-let nextFrameAt = 0;
+let previousTime = 0;
+let simulationTime = clockStart;
+let simulationAccumulator = 0;
+let nextSceneRenderAt = 0;
+let nextPresentAt = 0;
 
-function animate(now) {
-  requestAnimationFrame(animate);
-  if (nextFrameAt && now + 0.5 < nextFrameAt) return;
+// Prepare the one-time material list outside the fixed-step loop.
+const shimmerMaterials = (() => {
+  const mats = new Set();
+  scene.traverse(object => {
+    if (!object.isMesh || object.name === "HQ sky image background") return;
+    for (const material of (Array.isArray(object.material) ? object.material : [object.material])) {
+      if (material?.color && material.emissive && !mats.has(material)) {
+        mats.add(material);
+        material.userData.baseEmissiveIntensity = material.emissiveIntensity;
+        material.userData.shimmerPhase = (object.id % 17) * 0.37;
+      }
+    }
+  });
+  return [...mats];
+})();
 
-  const elapsed = previous === 0 ? FRAME_INTERVAL : now - previous;
-  previous = now;
-  nextFrameAt = nextFrameAt === 0 ? now + FRAME_INTERVAL : nextFrameAt + FRAME_INTERVAL;
-  while (nextFrameAt <= now) nextFrameAt += FRAME_INTERVAL;
+function updateSimulation(deltaSeconds, nowMs) {
+  // Movement, look synchronization, doors and UI advance at a fixed 60 Hz,
+  // independently from the slower 15 FPS scene raster.
+  const nearest = controller.update(deltaSeconds);
 
-  // Cap unusually long stalls to keep a returned-to-tab movement step from jumping.
-  const deltaTime = Math.min(elapsed / 1000, 0.1);
-
-  const nearest = controller.update(deltaTime);
-  // Cinematic hinge easing with smooth acceleration/deceleration; collision stays disabled while open.
   for (const door of world.doorAnimations) {
     const target = door.targetOpen ? 1 : 0;
-    door.progress += (target - door.progress) * (1 - Math.exp(-deltaTime * 5.5));
+    door.progress += (target - door.progress) * (1 - Math.exp(-deltaSeconds * 5.5));
     if (Math.abs(target - door.progress) < 0.002) door.progress = target;
     const eased = door.progress * door.progress * (3 - 2 * door.progress);
     door.pivot.rotation.y = door.closedRotation + (door.openRotation - door.closedRotation) * eased;
     if (!door.targetOpen && door.progress < 0.9 && door.closedBounds) {
       Object.assign(door.collider, door.closedBounds);
     } else if (door.targetOpen) {
-      door.collider.minX = 30; door.collider.maxX = 31;
+      door.collider.minX = 30;
+      door.collider.maxX = 31;
     }
   }
-  // Subtle per-object luminance shimmer: tiny, slow, phase-shifted so the room feels
-  // like a worn PS1/CRT capture rather than a visibly vibrating scene.
-  const shimmer = 0.012 + Math.sin(now * 0.0017) * 0.004;
-  if (!scene.userData.shimmerMaterials) {
-    const mats = new Set();
-    scene.traverse(object => {
-      if (!object.isMesh || object.name === "HQ sky image background") return;
-      for (const material of (Array.isArray(object.material) ? object.material : [object.material])) {
-        if (material && material.color && !mats.has(material)) {
-          mats.add(material);
-          if (material.emissive) {
-            material.userData.baseEmissiveIntensity = material.emissiveIntensity;
-            material.userData.shimmerPhase = (object.id % 17) * 0.37;
-          }
-        }
-      }
-    });
-    scene.userData.shimmerMaterials = [...mats].filter(material => material.emissive);
-  }
-  for (const material of scene.userData.shimmerMaterials) {
+
+  // Very restrained 60 Hz material shimmer; the actual raster remains at 15 FPS.
+  const shimmer = 0.012 + Math.sin(nowMs * 0.0017) * 0.004;
+  for (const material of shimmerMaterials) {
     const phase = material.userData.shimmerPhase || 0;
-    material.emissiveIntensity = (material.userData.baseEmissiveIntensity || 0) + shimmer * (0.5 + 0.5 * Math.sin(now * 0.0022 + phase));
+    material.emissiveIntensity =
+      (material.userData.baseEmissiveIntensity || 0) +
+      shimmer * (0.5 + 0.5 * Math.sin(nowMs * 0.0022 + phase));
   }
+
   for (const item of world.meshesToAnimate) {
-    item.object.position.y = item.baseY + Math.sin(now * 0.002 + item.phase) * 0.045;
-    item.object.rotation.y = 0.45 + Math.sin(now * 0.001) * 0.18;
+    item.object.position.y = item.baseY + Math.sin(nowMs * 0.002 + item.phase) * 0.045;
+    item.object.rotation.y = 0.45 + Math.sin(nowMs * 0.001) * 0.18;
   }
 
   ui.setInteraction(nearest, state);
-  ui.tick(now, clockStart);
-  renderer.render(scene, camera);
+  ui.tick(nowMs, clockStart);
+}
+
+function animate(now) {
+  requestAnimationFrame(animate);
+
+  if (previousTime === 0) {
+    previousTime = now;
+    simulationTime = now;
+    nextSceneRenderAt = now;
+    nextPresentAt = now;
+  }
+
+  // Fixed-step game simulation with a bounded catch-up window when a tab resumes.
+  const elapsed = Math.min(now - previousTime, 100);
+  previousTime = now;
+  simulationAccumulator += elapsed;
+
+  let steps = 0;
+  while (simulationAccumulator >= SIMULATION_STEP_MS && steps < 5) {
+    simulationTime += SIMULATION_STEP_MS;
+    updateSimulation(SIMULATION_STEP_MS / 1000, simulationTime);
+    simulationAccumulator -= SIMULATION_STEP_MS;
+    steps += 1;
+  }
+  if (steps === 5 && simulationAccumulator >= SIMULATION_STEP_MS) {
+    simulationAccumulator %= SIMULATION_STEP_MS;
+  }
+
+  // Render a new 3D frame at 15 FPS. The pixel compositor then reveals that frame
+  // line-by-line over the last buffer while being presented at 60 FPS.
+  if (now >= nextSceneRenderAt) {
+    postFx.renderScene(scene, camera, now / 1000);
+    nextSceneRenderAt = now + SCENE_RENDER_INTERVAL_MS;
+  }
+
+  if (now >= nextPresentAt) {
+    postFx.present(now / 1000);
+    nextPresentAt = now + PRESENT_INTERVAL_MS;
+  }
 }
 
 ui.updateObjective(state);
