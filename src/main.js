@@ -92,10 +92,12 @@ const ui = createUI();
 const { M, mat } = createMaterials(THREE);
 const world = createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui });
 
-// Keep the world geometry and real point/directional lights unchanged. The baked-look
-// palette lives in the pixel texture gradients; this avoids adding a required UV2
-// attribute to geometry that was originally built for the stable renderer.
+// Three.js light maps are sampled from the geometry's secondary UV channel.
+// Add that channel to all meshes which already provide regular material UVs.
 scene.traverse(object => {
+  if (object.isMesh && object.geometry?.attributes?.uv && !object.geometry.attributes.uv2) {
+    object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone());
+  }
   if (object.isLight && object.castShadow) {
     object.shadow.mapSize.set(LOW_POWER ? 192 : 384, LOW_POWER ? 192 : 384);
     object.shadow.bias = -0.00035;

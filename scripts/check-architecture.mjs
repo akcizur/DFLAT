@@ -55,6 +55,7 @@ const compositorSource = await readFile(path.join(root, "src/game/pixel-post.js"
 if (!compositorSource.includes('getContext("2d"')) fail("stable Canvas2D pixel compositor is required");
 if (compositorSource.includes("new THREE.ShaderMaterial")) fail("presentation must not depend on the custom GLSL shader");
 if (!mainSource.includes("preserveDrawingBuffer: true")) fail("WebGL frame buffer must be preserved for pixel compositing");
+if (!mainSource.includes('object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone())')) fail("mesh UV2 channels are required for baked light maps");
 
 const materialsSource = await readFile(path.join(root, "src/game/materials.js"), "utf8");
 if (!materialsSource.includes("function bakedLightTexture()") || !materialsSource.includes("lightMapIntensity")) {
