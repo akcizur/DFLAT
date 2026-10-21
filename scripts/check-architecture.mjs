@@ -82,11 +82,11 @@ for (const room of ["obývák", "kuchyně", "ložnice", "koupelna", "chodba"]) {
 const blenderGenerator = await readFile(path.join(root, "tools/generate_socialist_block_17.py"), "utf8");
 if (!blenderGenerator.includes("wall_faces = []")) fail("Blender generator must initialise wall_faces");
 if (!blenderGenerator.includes("v_slab = [(x, y, 0.0) for x, y in outline]")) fail("Blender generator must define complete v_slab vertices");
-if (!blenderGenerator.includes("FLOOR_COUNT = 17")) fail("Blender generator must build exactly 17 storeys");
+if (!blenderGenerator.includes("FLOOR_COUNT = 8")) fail("Blender generator must build exactly 8 storeys");
 if (!blenderGenerator.includes("FLOOR_TO_FLOOR = 2.8")) fail("Blender generator storey spacing must be 2.8 metres");
 if (!blenderGenerator.includes("WALL_THICKNESS = 0.20")) fail("Blender generator perimeter panel thickness must be 200 mm");
 if (!blenderGenerator.includes("modifier.count = count")) fail("Blender Array helper must accept explicit repeat counts");
-if (!blenderGenerator.includes('_add_array(upper_walls, "Upper storeys | 2.8 m pitch", FLOOR_COUNT - 1)')) fail("Ground floor and 16 upper floors must total 17 storeys without duplicating the entrance");
+if (!blenderGenerator.includes('_add_array(upper_walls, "Upper storeys | 2.8 m pitch", FLOOR_COUNT - 1)')) fail("Ground floor and 7 upper floors must total 8 storeys without duplicating the entrance");
 if (!blenderGenerator.includes("modifier.constant_offset_displace = (0.0, 0.0, FLOOR_TO_FLOOR)")) fail("Blender Array modifier must use a 2.8 m vertical offset");
 if (!blenderGenerator.includes("WINDOW_WIDTH = 1.30") || !blenderGenerator.includes("def _build_facade_segment(")) fail("Blender generator must make real window openings in facade geometry");
 if (!blenderGenerator.includes("include_entry=True") || !blenderGenerator.includes("DOOR_WIDTH = 1.80")) fail("Ground-floor facade must have a separate actual entrance opening");
@@ -103,7 +103,7 @@ if (!blenderGenerator.includes("Eight full-height rainwater downpipes")) fail("E
 if (!blenderGenerator.includes("Rooftop ventilation housings") || !blenderGenerator.includes("Raised roof exhausts")) fail("Rooftop ventilation equipment is required");
 if (!blenderGenerator.includes('text_curve.body = "VCHOD 01"') || !blenderGenerator.includes("21 | Entrance plaque")) fail("Ground entrance needs visible lettering and a plaque");
 if (!blenderGenerator.includes("def _create_scene_preview(") || !blenderGenerator.includes("camera_data.type = \"ORTHO\"")) fail("Generator must create a useful architectural preview camera");
-if (!blenderGenerator.includes("scene.render.resolution_y = 1600") || !blenderGenerator.includes("Large warm key light")) fail("Generator must configure portrait rendering and architectural lighting");
+if (!blenderGenerator.includes("scene.render.resolution_y = 1600") || !blenderGenerator.includes("camera_data.ortho_scale = 26.0") || !blenderGenerator.includes("Large warm key light")) fail("Generator must frame the 8-storey model in its portrait preview and configure architectural lighting");
 if (!blenderGenerator.includes('principled.inputs["Base Color"].default_value = rgba')) fail("Generated materials must use their configured colors in rendered output");
 const materialsSource = await readFile(path.join(root, "src/game/materials.js"), "utf8");
 if (!materialsSource.includes("function bakedLightTexture()") || !materialsSource.includes("lightMapIntensity")) {
