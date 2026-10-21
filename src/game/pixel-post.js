@@ -187,6 +187,7 @@ export function createPixelPostProcess(THREE, renderer) {
   displayCanvas.style.zIndex = "1";
   displayCanvas.style.pointerEvents = "none";
   displayCanvas.style.imageRendering = "pixelated";
+  displayCanvas.style.filter = "contrast(1.015) saturate(1.01)";
   displayCanvas.style.display = "block";
 
   const mount = renderer.domElement.parentElement;
