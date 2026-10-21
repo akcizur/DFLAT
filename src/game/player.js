@@ -3,6 +3,8 @@ export function createPlayerController({ camera, colliders, interactables, state
   const player = { x: 0, z: 4.95, yaw: Math.PI * 0.02, pitch: -0.04, speed: 3.45, radius: 0.29 };
   camera.position.set(player.x, 1.68, player.z);
   camera.rotation.order = "YXZ";
+  let walkTime = 0;
+  let walkBlend = 0;
 
   const keysDown = Object.create(null);
 
@@ -46,7 +48,13 @@ export function createPlayerController({ camera, colliders, interactables, state
   }
 
   function syncCamera() {
-    camera.position.set(player.x, 1.68, player.z);
+    // Gentle player-like head sway: fades smoothly when movement starts/stops.
+    const moving = Object.values(keysDown).some(Boolean) && state.started && !state.paused;
+    walkBlend += ((moving ? 1 : 0) - walkBlend) * 0.12;
+    if (moving) walkTime += 0.12;
+    const bob = Math.sin(walkTime) * 0.035 * walkBlend;
+    const sway = Math.sin(walkTime * 0.5) * 0.012 * walkBlend;
+    camera.position.set(player.x + Math.cos(player.yaw) * sway, 1.68 + bob, player.z - Math.sin(player.yaw) * sway);
     camera.rotation.order = "YXZ";
     camera.rotation.y = player.yaw;
     camera.rotation.x = player.pitch;
