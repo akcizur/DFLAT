@@ -1,4 +1,50 @@
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js";
+// Load Three.js dynamically so a failed CDN request can fall back instead of
+// aborting the entire game module before the BIOS screen can report the problem.
+function showRuntimeError(title, message) {
+  let panel = document.getElementById("runtimeError");
+  if (!panel) {
+    panel = document.createElement("section");
+    panel.id = "runtimeError";
+    panel.className = "runtime-error";
+    panel.setAttribute("role", "alert");
+    document.body.appendChild(panel);
+  }
+  panel.replaceChildren();
+  const heading = document.createElement("h1");
+  heading.textContent = title;
+  const detail = document.createElement("p");
+  detail.textContent = message;
+  const help = document.createElement("p");
+  help.textContent = "Zkontroluj připojení a obnov stránku.";
+  const reload = document.createElement("a");
+  reload.href = "./";
+  reload.textContent = "[ RELOAD ]";
+  panel.append(heading, detail, help, reload);
+  panel.hidden = false;
+}
+
+async function loadThree() {
+  const urls = [
+    "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+    "https://unpkg.com/three@0.169.0/build/three.module.js"
+  ];
+  let lastError;
+  for (const url of urls) {
+    try {
+      return await import(url);
+    } catch (error) {
+      lastError = error;
+      console.warn("DFLAT: Three.js CDN failed; trying fallback.", url, error);
+    }
+  }
+  showRuntimeError(
+    "DFLAT // ENGINE LOAD FAILED",
+    "Three.js se nepodařilo načíst z dostupných CDN. Hra potřebuje připojení k internetu pro načtení enginu."
+  );
+  throw lastError ?? new Error("Three.js could not be loaded.");
+}
+
+const THREE = await loadThree();
 import { createMaterials } from "./game/materials.js";
 import { createApartment } from "./game/world.js";
 import { createPlayerController } from "./game/player.js";
@@ -46,11 +92,21 @@ const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.08, 7
 camera.rotation.order = "YXZ";
 
 const LOW_POWER = matchMedia("(pointer:coarse)").matches;
-const renderer = new THREE.WebGLRenderer({
-  antialias: false,
-  alpha: false,
-  powerPreference: "high-performance"
-});
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({
+    antialias: false,
+    alpha: false,
+    powerPreference: "high-performance"
+  });
+} catch (error) {
+  console.error("DFLAT: WebGL renderer initialization failed.", error);
+  showRuntimeError(
+    "DFLAT // WEBGL UNAVAILABLE",
+    "Prohlížeč nedokázal vytvořit WebGL renderer. Povol hardwarovou akceleraci nebo zkus jiný aktuální prohlížeč."
+  );
+  throw error;
+}
 renderer.setPixelRatio(1);
 renderer.domElement.style.imageRendering = "pixelated";
 // Tone mapping and display conversion run once in the final pixel shader.
@@ -64,14 +120,20 @@ renderer.domElement.style.filter = "none";
 renderer.domElement.id = "screenCanvas";
 renderer.domElement.tabIndex = 0;
 mount.appendChild(renderer.domElement);
-const pixelPost = createPixelPostProcess(THREE, renderer);
+let pixelPost = null;
+try {
+  pixelPost = createPixelPostProcess(THREE, renderer);
+} catch (error) {
+  // Keep the game playable if the cinematic post-process cannot initialize.
+  console.error("DFLAT: cinematic post-processing disabled; using direct renderer.", error);
+}
 
 function resize() {
   const pixelScale = LOW_POWER ? 3.4 : 3.05;
   const width = Math.max(200, Math.floor(innerWidth / pixelScale));
   const height = Math.max(125, Math.floor(innerHeight / pixelScale));
   renderer.setSize(width, height, false);
-  pixelPost.setSize(width, height);
+  pixelPost?.setSize(width, height);
   renderer.domElement.style.width = "100%";
   renderer.domElement.style.height = "100%";
   camera.aspect = innerWidth / innerHeight;
@@ -107,7 +169,13 @@ const controller = createPlayerController({
   state,
   ui
 });
-bindInput({ renderer, state, controller, ui, postFx: pixelPost });
+bindInput({
+  renderer,
+  state,
+  controller,
+  ui,
+  postFx: { triggerZoom: amount => pixelPost?.triggerZoom(amount) }
+});
 
 const clockStart = performance.now();
 let previous = clockStart;
@@ -161,7 +229,32 @@ function animate(now) {
 
   ui.setInteraction(nearest, state);
   ui.tick(now, clockStart);
-  pixelPost.render(scene, camera, now / 1000);
+
+  if (pixelPost) {
+    try {
+      pixelPost.render(scene, camera, now / 1000);
+      return;
+    } catch (error) {
+      console.error("DFLAT: post-process render failed; switching to direct WebGL rendering.", error);
+      try { pixelPost.dispose?.(); } catch (disposeError) {
+        console.warn("DFLAT: post-process cleanup failed.", disposeError);
+      }
+      pixelPost = null;
+    }
+  }
+
+  // Final fallback: render the actual 3D scene directly, without the shader pass.
+  try {
+    renderer.setRenderTarget(null);
+    renderer.clear();
+    renderer.render(scene, camera);
+  } catch (error) {
+    console.error("DFLAT: direct scene render failed.", error);
+    showRuntimeError(
+      "DFLAT // RENDER FAILED",
+      "3D scénu se nepodařilo vykreslit. Zkontroluj podporu WebGL a obnov stránku."
+    );
+  }
 }
 
 ui.updateObjective(state);
