@@ -53,19 +53,49 @@
     <div class="boot-footer">SYSTEM READY // HANDING OFF TO REALITY</div>
   </div>
 
-  <div class="screen tv-bios-mode" id="startScreen">
-    <div class="term">
-      <div class="dim">DFLAT SYSTEM BIOS / ROM 0.9.0</div>
-      <div class="tv-bios-title">THE FLAT</div>
-      <div class="tv-bios-subtitle">EPISODE 01 / BYT 3B</div>
-      <div class="tv-bios-rule">------------------------------</div>
-      <div class="tv-bios-info">MEMORY CHECK .... OK<br>DISPLAY ......... 320x200<br>REALITY ......... STANDBY</div>
-      <div class="gap"></div>
-      <button class="cmd" id="startButton"><span class="p">&gt;</span> START GAME<span class="cur">_</span></button>
-      <div class="gap"></div>
-      <div class="dim">WASD MOVE&nbsp;&nbsp; E INTERACT&nbsp;&nbsp; ESC PAUSE</div>
-      <div class="tv-bios-footer">PRESS ENTER TO BEGIN_</div>
-    </div>
+  <div class="screen tv-bios-mode nexus-menu" id="startScreen" aria-label="Hlavní menu DFLAT">
+    <main class="nexus-monitor">
+      <div class="nexus-bezel">
+        <section class="nexus-glass">
+          <header class="nexus-topbar">
+            <span class="nexus-brand"><i aria-hidden="true"></i> DFLAT / TERMINAL 04</span>
+            <span class="nexus-status"><span><i class="nexus-led"></i>ONLINE</span><span>EP. 01 / BYT 3B</span></span>
+          </header>
+          <div class="nexus-content">
+            <div class="nexus-art" aria-hidden="true">
+              <svg viewBox="0 0 440 280" fill="none" role="presentation">
+                <g stroke="currentColor" stroke-width="2">
+                  <path d="M220 34 362 112 220 190 78 112 220 34Z" fill="currentColor" fill-opacity=".07"/>
+                  <path d="m78 112 142 80 142-80M220 34v156"/>
+                  <path d="m112 112 108 61 108-61M146 93l74 42 74-42M181 74l39 22 39-22"/>
+                  <path d="M102 217h236M129 231h182M160 245h120"/>
+                  <path d="M220 15v15m-8-8h16M62 112h12m292 0h12"/>
+                  <circle cx="220" cy="112" r="48" stroke-dasharray="3 6"/>
+                  <circle cx="220" cy="112" r="27"/>
+                  <path d="m212 112 6 6 12-15"/>
+                </g>
+                <g fill="#fff13b"><circle cx="220" cy="34" r="3"/><circle cx="78" cy="112" r="3"/><circle cx="362" cy="112" r="3"/><circle cx="220" cy="190" r="3"/></g>
+                <g fill="currentColor" opacity=".7"><circle cx="88" cy="75" r="1.5"/><circle cx="350" cy="66" r="1.5"/><circle cx="368" cy="170" r="1.5"/><circle cx="66" cy="176" r="1.5"/><circle cx="145" cy="56" r="1.5"/><circle cx="300" cy="207" r="1.5"/></g>
+              </svg>
+              <div class="nexus-art-caption">GEOMETRIC SCAN // STABLE</div>
+            </div>
+            <nav class="nexus-menu" aria-label="Hlavní menu">
+              <div class="nexus-eyebrow">SYSTEM MENU / 01</div>
+              <h1>THE<br>FLAT<span>_</span></h1>
+              <p class="nexus-subtitle">MALÝ BYT. DLOUHÝ VEČER.</p>
+              <button type="button" class="cmd nexus-command" id="startButton"><span class="nexus-chevron">&gt;</span><span>START GAME</span><span class="nexus-enter">ENTER ↵</span></button>
+              <div class="nexus-menu-note">EPISODE 01 / BYT 3B</div>
+              <div class="nexus-controls"><span>WASD <b>MOVE</b></span><span>MOUSE <b>LOOK</b></span><span>E <b>INTERACT</b></span><span>ESC <b>PAUSE</b></span></div>
+            </nav>
+          </div>
+          <footer class="nexus-footer">
+            <span>LINK ESTABLISHED // SECURE CHANNEL</span>
+            <span class="nexus-meter" aria-label="Signal strength"><i style="--h:6px"></i><i style="--h:10px"></i><i style="--h:14px"></i><i style="--h:8px"></i><i style="--h:17px"></i><i style="--h:12px"></i><i style="--h:15px"></i><i style="--h:7px"></i></span>
+            <span>DFLAT / 0.9.0</span>
+          </footer>
+        </section>
+      </div>
+    </main>
   </div>
 
   <div class="screen hidden" id="pauseScreen">
