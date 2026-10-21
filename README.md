@@ -45,7 +45,7 @@ The deployment workflow builds the static site into `dist/` and deploys to [akci
 
 ## Optional Blender building generator
 
-The Blender generator creates a separate, editable 17-storey building massing model; it is a modelling tool and is not imported into the browser game at runtime.
+The Blender generator creates a separate, editable 8-storey building massing model; it is a modelling tool and is not imported into the browser game at runtime.
 
 Run it with Blender installed:
 
@@ -53,11 +53,11 @@ Run it with Blender installed:
 blender --background --python tools/generate_socialist_block_17.py
 ```
 
-The script saves the generated project as `DFLAT_socialist_block_17.blend` in the current working directory. Set `DFLAT_BLOCK_OUTPUT` to choose a different output path.
+The script saves the generated project as `DFLAT_socialist_block_8.blend` in the current working directory. Set `DFLAT_BLOCK_OUTPUT` to choose a different output path.
 
-The generated collection contains an eight-node perimeter with mitered 200 mm corners, actual window cut-outs with frames and glazing, and a ground-floor-only entrance opening with a door, canopy and approach steps. Upper storeys repeat 16 times above the ground floor at an exact 2.8 m pitch, for 17 storeys total.
+The generated collection contains an eight-node perimeter with mitered 200 mm corners, actual window cut-outs with frames and glazing, and a ground-floor-only entrance opening with a door, canopy and approach steps. Upper storeys repeat 7 times above the ground floor at an exact 2.8 m pitch, for 8 storeys total.
 
-The staircase uses two switch-back flights per storey. Each intermediate floor slab has a matching stairwell opening, and the roof slab has a separate smaller hatch with a fixed ladder extending from the top floor to above the roof. The roof top is approximately 47.8 m above the base. The 17 floor/roof panels are built as 16 repeated floor slabs plus one roof panel, separate from the foundation.
+The staircase uses two switch-back flights per storey. Each intermediate floor slab has a matching stairwell opening, and the roof slab has a separate smaller hatch with a fixed ladder extending from the top floor to above the roof. The roof top is approximately 22.6 m above the base. The 8 floor/roof panels are built as 7 repeated intermediate floor slabs plus one roof panel, separate from the foundation.
 
 The facade has repeated horizontal belt courses, narrow vertical panel joints, and downpipes at the outer chamfers. A parapet with overhanging coping, three ventilation housings and raised exhausts finish the roof. The street front gets a concrete arrival apron and approach path; the entrance is labelled `VCHOD 01` and includes a simple intercom. Materials now have Principled shaders, and the scene opens with an orthographic portrait camera, architectural area lighting and a ground/street context for a first render.
 
