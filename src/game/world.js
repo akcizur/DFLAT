@@ -329,11 +329,87 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
       }
       for (let i = 0; i < 15; i++) {
         const x = -23 + i * 3.25;
+        if (x > -8.5 && x < 8.5) continue; // reserve the central sightline for the detailed panelák
         const width = 2.0 + skylineSeed(i + 111) * 3.4;
         const depth = 2.2 + skylineSeed(i + 222) * 2.6;
         const height = 5 + skylineSeed(i + 333) * 15;
         skylineBlock(x, -17 - skylineSeed(i + 444) * 5, width, depth, height, skylineMats[(i + 2) % skylineMats.length], skylineIndex++);
       }
+
+      // Main nearby landmark: a recognizable Czech panel apartment block.
+      // Four upper storeys plus ground floor; the south facade faces the apartment loggia.
+      const panelak = new THREE.Group();
+      panelak.name = "Panelák / 4 patra";
+      const panel = new THREE.MeshStandardMaterial({ color: 0xb9b6ad, roughness: 0.96 });
+      const panelShade = new THREE.MeshStandardMaterial({ color: 0x999b98, roughness: 1 });
+      const concrete = new THREE.MeshStandardMaterial({ color: 0x777b7b, roughness: 1 });
+      const balconyConcrete = new THREE.MeshStandardMaterial({ color: 0xa5a49d, roughness: 1 });
+      const windowGlass = new THREE.MeshStandardMaterial({ color: 0x34434a, roughness: 0.28, metalness: 0.08 });
+      const windowLit = new THREE.MeshStandardMaterial({ color: 0xb7a58a, emissive: 0x65513a, emissiveIntensity: 0.22, roughness: 0.65 });
+      const rail = new THREE.MeshStandardMaterial({ color: 0x555d60, metalness: 0.35, roughness: 0.7 });
+      const panelPart = (name, x, y, z, w, h, d, material) => {
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+        mesh.name = name;
+        mesh.position.set(x, y, z);
+        mesh.castShadow = false;
+        mesh.receiveShadow = false;
+        panelak.add(mesh);
+        return mesh;
+      };
+      const buildingWidth = 15.5;
+      const buildingDepth = 4.6;
+      const floorHeight = 2.72;
+      const storeys = 5; // ground floor + four upper floors
+      const buildingHeight = floorHeight * storeys;
+      panelPart("Panelák / hlavní železobetonový blok", 0, buildingHeight / 2, -15.9, buildingWidth, buildingHeight, buildingDepth, panel);
+      panelPart("Panelák / sokl", 0, 0.42, -15.9, buildingWidth + 0.35, 0.84, buildingDepth + 0.3, concrete);
+      panelPart("Panelák / plochá střecha", 0, buildingHeight + 0.12, -15.9, buildingWidth + 0.5, 0.24, buildingDepth + 0.5, concrete);
+      panelPart("Panelák / atika", 0, buildingHeight + 0.32, -15.9, buildingWidth + 0.5, 0.18, buildingDepth + 0.5, panelShade);
+      // Repeated vertical panel joints and horizontal slab bands make the facade read as prefabricated concrete.
+      for (let floor = 1; floor < storeys; floor++) {
+        const y = floor * floorHeight;
+        panelPart("Panelák / spára panelu", 0, y, -13.56, buildingWidth, 0.075, 0.035, panelShade);
+      }
+      for (let bay = -3; bay <= 3; bay++) {
+        const x = bay * 2.05;
+        panelPart("Panelák / svislá spára", x, buildingHeight / 2, -13.56, 0.055, buildingHeight - 0.18, 0.035, panelShade);
+        for (let floor = 0; floor < storeys; floor++) {
+          const y = floor * floorHeight + 1.38;
+          const isGround = floor === 0;
+          const ww = isGround ? 1.12 : 1.02;
+          const wh = isGround ? 1.35 : 1.48;
+          const lit = ((bay + floor * 3 + 20) % 7 === 0);
+          panelPart("Panelák / okenní otvor", x, y, -13.535, ww + 0.18, wh + 0.16, 0.08, panelShade);
+          panelPart("Panelák / okno", x, y, -13.475, ww, wh, 0.055, lit ? windowLit : windowGlass);
+          panelPart("Panelák / okenní příčka", x, y, -13.435, 0.045, wh, 0.025, rail);
+          panelPart("Panelák / parapet", x, y - wh / 2 - 0.045, -13.42, ww + 0.12, 0.075, 0.10, balconyConcrete);
+          if (floor > 0 && bay % 2 === 0) {
+            // Shallow, repetitive loggias with slab and understated metal railings.
+            panelPart("Panelák / balkonová deska", x, y - 0.28, -13.03, 1.42, 0.13, 0.88, balconyConcrete);
+            panelPart("Panelák / balkonové zábradlí", x, y + 0.18, -12.62, 1.38, 0.72, 0.055, rail);
+            for (const dx of [-0.60, -0.20, 0.20, 0.60]) {
+              panelPart("Panelák / svislá tyč zábradlí", x + dx, y + 0.18, -12.62, 0.035, 0.68, 0.06, rail);
+            }
+          }
+        }
+      }
+      // Entrance canopy, glazed entrance and a few low ground-floor windows.
+      panelPart("Panelák / vstupní portál", 0, 1.24, -13.40, 1.9, 2.35, 0.16, concrete);
+      panelPart("Panelák / vstupní dveře", 0, 1.08, -13.28, 1.08, 2.05, 0.07, windowGlass);
+      panelPart("Panelák / stříška", 0, 2.38, -13.05, 2.35, 0.16, 0.82, balconyConcrete);
+      panelPart("Panelák / chodník", 0, 0.055, -12.05, 5.0, 0.11, 2.0, concrete);
+      // Small transformer / utility cabinet and simple grass verge at the building foot.
+      panelPart("Panelák / technická skříň", -5.9, 0.72, -12.95, 0.85, 1.35, 0.62, panelShade);
+      const verge = new THREE.Mesh(new THREE.BoxGeometry(18, 0.08, 7), new THREE.MeshStandardMaterial({ color: 0x555e51, roughness: 1 }));
+      verge.name = "Panelák / travnatý pás";
+      verge.position.set(0, -0.02, -11.4);
+      verge.receiveShadow = false;
+      panelak.add(verge);
+      panelak.traverse(object => {
+        if (object.isMesh) { object.castShadow = false; object.receiveShadow = false; }
+      });
+      scene.add(panelak);
+
       scene.add(skyline);
 
       // One simple ceiling cube and one matching point light for every enclosed zone.
