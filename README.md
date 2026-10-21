@@ -53,6 +53,8 @@ Run it with Blender installed:
 blender --background --python tools/generate_socialist_block_17.py
 ```
 
+The script saves the generated project as `DFLAT_socialist_block_17.blend` in the current working directory. Set `DFLAT_BLOCK_OUTPUT` to choose a different output path.
+
 The generated collection contains an uninterrupted eight-node perimeter shell with 200 mm outer walls, repeated interior partitions, a separate 200 mm foundation slab and an Array of 17 floor/roof panels. Wall and panel Arrays use an exact 2.8 m vertical pitch. The top roof surface is approximately 47.8 m above the base, including the 200 mm roof panel.
 
 `tools/generate_socialist_block_17.py` defines the complete `wall_faces` and `v_slab` arrays and keeps both Array modifiers editable.
