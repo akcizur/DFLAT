@@ -105,7 +105,7 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
       wall(1, -5.0, .18, 2.0, M.wall); wall(1, -1.325, .18, 2.95, M.wall);
       wall(1, 1.02, .18, 1.56, M.wall); wall(1, 4.5, .18, 3.0, M.wall);
       // Hallway-end loggia doors, with a walkable exterior platform and guard rail.
-      for (const x of [-1.05, 1.05]) box('Zárubeň lodžie', x, 1.45, -6, .12, 2.9, .16, M.white);
+      for (const x of [-1.05, 1.05]) box('Zárubeň lodžie', x, 1.425, -6, .12, 2.85, .16, M.white);
       // The glazing ends at 2.73 m, the lintel starts there, and the wall block starts at 2.85 m.
       box('Nadpraží lodžie', 0, 2.79, -6, 2.22, .12, .16, M.white);
       box('Stěna nad lodžií', 0, (2.85 + wallH) / 2, -6, 2.1, wallH - 2.85, wallT, M.wall);
