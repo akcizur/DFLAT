@@ -59,15 +59,23 @@ export function bindInput({ renderer, state, controller, ui, postFx }) {
   async function toggleFullscreen() {
     try {
       if (document.fullscreenElement) await document.exitFullscreen();
-      else await (document.documentElement.requestFullscreen?.() || renderer.domElement.requestFullscreen?.());
+      else {
+        const host = document.documentElement;
+        if (host.requestFullscreen) await host.requestFullscreen();
+        else if (renderer.domElement.requestFullscreen) await renderer.domElement.requestFullscreen();
+        else document.body.classList.toggle("fullscreen-fallback");
+      }
     } catch (error) {
-      ui.showToast("Celá obrazovka není v tomto prohlížeči dostupná.");
+      // iOS Safari and some embedded browsers do not expose the Fullscreen API.
+      document.body.classList.toggle("fullscreen-fallback");
+      ui.showToast("Režim celé obrazovky");
     }
   }
   fullscreenButton.addEventListener("click", toggleFullscreen);
   document.addEventListener("fullscreenchange", () => {
-    fullscreenButton.setAttribute("aria-label", document.fullscreenElement ? "Ukončit celou obrazovku" : "Celá obrazovka");
-    fullscreenButton.textContent = document.fullscreenElement ? "↙" : "⛶";
+    const active = Boolean(document.fullscreenElement || document.body.classList.contains("fullscreen-fallback"));
+    fullscreenButton.setAttribute("aria-label", active ? "Ukončit celou obrazovku" : "Celá obrazovka");
+    fullscreenButton.textContent = active ? "↙" : "⛶";
     window.dispatchEvent(new Event("resize"));
   });
 
