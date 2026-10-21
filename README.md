@@ -63,6 +63,20 @@ The facade has repeated horizontal belt courses, narrow vertical panel joints, a
 
 `tools/generate_socialist_block_17.py` keeps wall/floor Arrays editable, applies precise Boolean cut-outs to the slab openings, and defines the complete `wall_faces` and `v_slab` geometry. The Blender file is generated when the script is run in Blender; the website does not load this model automatically. Blender itself must be installed to render or visually inspect the generated scene.
 
+## VP-OS Building Architecture v4 (separate Blender model)
+
+The repository now includes a second, independent generator for the supplied VP-OS high-rise concept. It does not replace the compact 8-storey sample generator above and it is not loaded by the browser game automatically.
+
+Run it from the repository root with Blender installed:
+
+```sh
+blender --background --python tools/VP_OS_Building_Architecture_v4.py
+```
+
+The generator writes `tools/VP_OS_Building_Architecture_v4.blend` and a render to `tools/renders/VP_OS_Building_Architecture_v4.png`. The model uses millimetre-based dimensions converted to Blender metres, 15 repeated typical floors, two upper access levels, rooftop plant details, Boolean-cut façade openings, U-shaped stairs, an open lift shaft/cabin, loggias and selected interior lights. The windows and doorways are intentionally empty openings without frames, glazing or door leaves.
+
+The supplied `SCENE.BUILDING.glb` remains a separate interchange asset. To serve it from the live game, the binary must also be placed in the repository's `assets/` directory and connected to the game's Three.js loader; the Blender generator alone does not make it appear in the browser.
+
 ## Architecture
 
 - `index.html` — game shell, centered BIOS menus and HUD.
