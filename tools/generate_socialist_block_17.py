@@ -938,20 +938,23 @@ def _create_scene_preview(scene, collection, ground_material, paving_material, a
     camera_obj.rotation_euler = (Vector(target) - camera_obj.location).to_track_quat("-Z", "Y").to_euler()
     scene.camera = camera_obj
 
+    building_height = FLOOR_COUNT * FLOOR_TO_FLOOR + SLAB_THICKNESS
+    building_mid_z = building_height * 0.5
     _add_area_light(
         collection, "29 | Large warm key light",
-        (-28.0, -38.0, 68.0), (0.0, 0.0, FLOOR_COUNT * FLOOR_TO_FLOOR * 0.5),
-        18000.0, 34.0, (1.0, 0.88, 0.72),
+        (-28.0, -38.0, building_height + 10.0), (0.0, 0.0, building_mid_z),
+        14500.0, 26.0, (1.0, 0.88, 0.72),
     )
     _add_area_light(
         collection, "30 | Cool front fill",
-        (32.0, -16.0, 42.0), (0.0, 0.0, FLOOR_COUNT * FLOOR_TO_FLOOR * 0.5),
-        10500.0, 28.0, (0.68, 0.80, 1.0),
+        (32.0, -16.0, building_height + 2.0), (0.0, 0.0, building_mid_z),
+        8500.0, 22.0, (0.68, 0.80, 1.0),
     )
     _add_area_light(
         collection, "31 | Roof rim light",
-        (-12.0, 24.0, 58.0), (0.0, 0.0, FLOOR_COUNT * FLOOR_TO_FLOOR * 0.5),
-        15000.0, 24.0, (1.0, 0.95, 0.84),
+        (-12.0, building_height + 2.0, building_height + 5.0),
+        (0.0, 0.0, building_mid_z),
+        11000.0, 20.0, (1.0, 0.95, 0.84),
     )
 
     if scene.world is None:
