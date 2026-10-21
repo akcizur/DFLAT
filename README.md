@@ -77,7 +77,7 @@ The facade has repeated horizontal belt courses, narrow vertical panel joints, a
 - `src/game/input.js` — keyboard, pointer lock, mouse/touch look and interaction.
 - `src/game/ui.js` — objective, inventory, notifications, menus and in-game clock.
 - `scripts/check-architecture.mjs` — validates entry points, local dependencies, rendering targets and the Blender generator settings.
-- `tools/generate_socialist_block_17.py` — standalone Blender script for the complete 17-storey concrete apartment-block massing.
+- `tools/generate_socialist_block_17.py` — standalone Blender script for the 8-storey concrete apartment-block model.
 
 ## Checks
 
