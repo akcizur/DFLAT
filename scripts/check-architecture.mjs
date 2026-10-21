@@ -43,7 +43,7 @@ if (!html.includes('type="importmap"') || !html.includes('"three": "./vendor/thr
   fail("static hosting fallback must map Three.js to the local vendored r169 module");
 }
 if (/<style(?:\s|>)/i.test(html)) fail("inline CSS remains in index.html");
-if (/<script\b(?![^>]*\bsrc=)[^>]*>/i.test(html)) fail("inline JavaScript remains in index.html");
+if (/<script\b(?![^>]*\bsrc=)(?![^>]*\btype=["']importmap["'])[^>]*>/i.test(html)) fail("inline JavaScript remains in index.html");
 
 const packageJson = JSON.parse(await readFile(path.join(root, "package.json"), "utf8"));
 if (packageJson.scripts?.build !== "vite build") fail("package.json must provide the Vite production build");
