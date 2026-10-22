@@ -69,7 +69,7 @@ resize();
 
 const state = {
   hasKeys: false, doorOpen: false, finished: false, started: false,
-  paused: false, balconyDoorOpen: false
+  paused: false, balconyDoorOpen: false, emptyMap: true
 };
 const ui = createUI();
 const { M, mat } = createMaterials(THREE);
