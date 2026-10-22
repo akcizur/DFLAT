@@ -36,9 +36,11 @@ export function createPixelPostProcess(THREE, renderer) {
     clean: { curvature: 0.015, chroma: 0.0002, scanline: 0.025, vignette: 0.12, noise: 0.004, jitter: 0, interlace: 0, mask: 0, levels: 0 },
     crt:   { curvature: 0.035, chroma: 0.00035, scanline: 0.035, vignette: 0.15, noise: 0.004, jitter: 0.00005, interlace: 0.012, mask: 0.012, levels: 0 },
     vhs:   { curvature: 0.055, chroma: 0.0026, scanline: 0.055, vignette: 0.18, noise: 0.035, jitter: 0.0018, interlace: 0.075, mask: 0.015, levels: 0 },
-    psx:   { curvature: 0.035, chroma: 0.0008, scanline: 0.04, vignette: 0.16, noise: 0.008, jitter: 0.0001, interlace: 0.02, mask: 0.025, levels: 20 }
+    psx:     { curvature: 0.018, chroma: 0.0002, scanline: 0, vignette: 0.09, noise: 0.002, jitter: 0, interlace: 0, mask: 0, levels: 20, retro: 0 },
+    vintage: { curvature: 0.006, chroma: 0, scanline: 0, vignette: 0.13, noise: 0.006, jitter: 0, interlace: 0, mask: 0, levels: 0, retro: 1 },
+    dos:     { curvature: 0, chroma: 0, scanline: 0, vignette: 0.04, noise: 0, jitter: 0, interlace: 0, mask: 0, levels: 0, retro: 2 }
   };
-  let profileName = "crt";
+  let profileName = "vintage";
 
   const target = new THREE.WebGLRenderTarget(1, 1, {
     minFilter: THREE.NearestFilter,
@@ -70,7 +72,8 @@ export function createPixelPostProcess(THREE, renderer) {
       jitter: { value: 0.0002 },
       interlace: { value: 0.035 },
       mask: { value: 0.035 },
-      levels: { value: 0 }
+      levels: { value: 0 },
+      retro: { value: 1 }
     },
     vertexShader: `
       varying vec2 vUv;
@@ -95,6 +98,7 @@ export function createPixelPostProcess(THREE, renderer) {
       uniform float interlace;
       uniform float mask;
       uniform float levels;
+      uniform float retro;
       varying vec2 vUv;
 
       float hash(vec2 p) {
@@ -164,7 +168,29 @@ export function createPixelPostProcess(THREE, renderer) {
         color *= 1.0 - vignette * vignetteStrength;
         float grain = (hash(floor(vUv * resolution) + floor(time * 24.0)) - 0.5) * noise;
         color += grain;
-        if (levels > 1.0) color = floor(color * levels + 0.5) / levels;
+
+        // Warm, slightly faded archival grade. No analog scanline or RGB-split effect.
+        if (retro > 0.5) {
+          vec3 faded = mix(color, vec3(0.91, 0.84, 0.68), 0.10);
+          faded = (faded - vec3(0.025)) * 0.96 + vec3(0.035, 0.027, 0.012);
+          color = mix(color, faded, min(retro, 1.0));
+        }
+
+        // Optional Windows/DOS 256-colour look: RGB 3:3:2 quantisation with restrained
+        // ordered dithering, using the source pixel grid rather than screen-line overlays.
+        if (retro > 1.5) {
+          vec2 cell = mod(floor(vUv * resolution), 4.0);
+          float bayer = (cell.x == 0.0 ? (cell.y == 0.0 ? 0.0 : cell.y == 1.0 ? 8.0 : cell.y == 2.0 ? 2.0 : 10.0)
+                                      : cell.x == 1.0 ? (cell.y == 0.0 ? 12.0 : cell.y == 1.0 ? 4.0 : cell.y == 2.0 ? 14.0 : 6.0)
+                                      : cell.x == 2.0 ? (cell.y == 0.0 ? 3.0 : cell.y == 1.0 ? 11.0 : cell.y == 2.0 ? 1.0 : 9.0)
+                                                      : (cell.y == 0.0 ? 15.0 : cell.y == 1.0 ? 7.0 : cell.y == 2.0 ? 13.0 : 5.0);
+          float dither = (bayer / 16.0 - 0.5) / 7.0;
+          color.r = floor(clamp(color.r + dither, 0.0, 1.0) * 7.0 + 0.5) / 7.0;
+          color.g = floor(clamp(color.g + dither, 0.0, 1.0) * 7.0 + 0.5) / 7.0;
+          color.b = floor(clamp(color.b + dither * 0.5, 0.0, 1.0) * 3.0 + 0.5) / 3.0;
+        } else if (levels > 1.0) {
+          color = floor(color * levels + 0.5) / levels;
+        }
         color *= edge;
         gl_FragColor = vec4(clamp(color, 0.0, 1.0), 1.0);
         #include <colorspace_fragment>
@@ -187,7 +213,7 @@ export function createPixelPostProcess(THREE, renderer) {
   displayCanvas.style.zIndex = "1";
   displayCanvas.style.pointerEvents = "none";
   displayCanvas.style.imageRendering = "pixelated";
-  displayCanvas.style.filter = "contrast(1.015) saturate(1.01)";
+  displayCanvas.style.filter = "contrast(1.035) saturate(.84) sepia(.10)";
   displayCanvas.style.display = "block";
 
   const mount = renderer.domElement.parentElement;
@@ -268,16 +294,8 @@ export function createPixelPostProcess(THREE, renderer) {
     }
     displayContext.drawImage(frameCanvas, 0, 0, width, height);
     displayContext.restore();
-    displayContext.save();
-    displayContext.globalAlpha = 0.035;
-    displayContext.fillStyle = "#000000";
-    for (let y = 1; y < height; y += 4) displayContext.fillRect(0, y, width, 1);
-    if (!reducedMotion) {
-      displayContext.globalAlpha = 0.003 + Math.sin(timeSeconds * 4.5) * 0.0015;
-      displayContext.fillStyle = "#ffffff";
-      displayContext.fillRect(0, 0, width, height);
-    }
-    displayContext.restore();
+    // Keep the presentation clean: no fixed scanline overlay, flicker, or fake TV noise.
+    // The vintage grade and optional DOS palette are applied in the scene shader instead.
   }
 
   function triggerZoom(amount = 0.025) {
@@ -298,7 +316,7 @@ export function createPixelPostProcess(THREE, renderer) {
   }
 
   const requestedProfile = new URLSearchParams(window.location.search).get("fx");
-  setProfile(requestedProfile && profiles[requestedProfile] ? requestedProfile : "clean");
+  setProfile(requestedProfile && profiles[requestedProfile] ? requestedProfile : "vintage");
   renderer.getSize(size);
   setSize(size.x, size.y);
   return { setSize, renderScene, present, triggerZoom, setProfile, getProfile, profiles, dispose };
