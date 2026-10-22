@@ -97,7 +97,10 @@ export function createPanelak({ THREE, scene }) {
   part("Panelák / dveře technického výstupu", 0, totalH + 0.58, back + 2.12, 0.8, 0.6, 0.05, doorMat);
 
   // Entrance portico at ground level, on the front facade.
-  part("Panelák / vstupní portál", 0, 1.12, front + 0.06, 1.85, 2.24, 0.14, concreteDark);
+  // Entrance portal is built as two jambs and a lintel, never as a solid block across the doorway.
+  part("Panelák / vstupní portál levý", -0.84, 1.12, front + 0.06, 0.16, 2.24, 0.14, concreteDark);
+  part("Panelák / vstupní portál pravý", 0.84, 1.12, front + 0.06, 0.16, 2.24, 0.14, concreteDark);
+  part("Panelák / vstupní portál nadpraží", 0, 2.16, front + 0.06, 1.84, 0.16, 0.14, concreteDark);
   part("Panelák / vstupní dveře", 0, 1.05, front + 0.16, 1.05, 2.0, 0.06, glass);
   part("Panelák / vstupní stříška", 0, 2.32, front + 0.48, 2.5, 0.16, 0.95, slabMat);
   part("Panelák / chodník", 0, 0.055, front + 2.1, 5.2, 0.11, 2.7, concreteDark);
