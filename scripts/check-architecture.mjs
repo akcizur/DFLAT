@@ -64,7 +64,10 @@ if (compositorSource.includes("shadowBlur") || compositorSource.includes("shadow
 if (!compositorSource.includes("new THREE.WebGLRenderTarget")) fail("depth-aware blur needs a GPU scene target");
 if (!compositorSource.includes("new THREE.DepthTexture")) fail("depth-aware blur needs a depth texture");
 if (!compositorSource.includes("new THREE.ShaderMaterial")) fail("distance-based Gaussian blur shader is required");
-if (!compositorSource.includes("smoothstep(2.0, 3.2, distanceToCamera)")) fail("Gaussian blur must ramp in over approximately 2–3 metres");
+if (!compositorSource.includes("smoothstep(blurStart, blurEnd, distanceToCamera)")) fail("depth blur must use configurable near/far ramp distances");
+if (!compositorSource.includes("uniform float blurX;") || !compositorSource.includes("uniform float blurY;")) fail("blur must expose independent X and Y controls");
+if (!compositorSource.includes("#include <common>") || !compositorSource.includes("#include <colorspace_fragment>")) fail("shader must use Three.js shader include chunks");
+if (!compositorSource.includes("function setBlur(options = {})")) fail("runtime blur settings system is required");
 if (!compositorSource.includes("texture2D(tDiffuse, uv + vec2(-px.x, -px.y))")) fail("Gaussian blur must use a symmetric sample kernel in distorted UV space");
 if (!mainSource.includes("preserveDrawingBuffer: true")) fail("WebGL frame buffer must be preserved for pixel compositing");
 if (!mainSource.includes('object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone())')) fail("mesh UV2 channels are required for baked light maps");
