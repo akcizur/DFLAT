@@ -97,7 +97,8 @@ export function createPixelPostProcess(THREE, renderer) {
         if(retro>.5){vec3 faded=mix(color,vec3(.91,.84,.68),.10);faded=(faded-vec3(.025))*.96+vec3(.035,.027,.012);color=mix(color,faded,min(retro,1.0));}
         if(retro>1.5){vec2 cell=mod(floor(vUv*resolution),4.0);float b=mod(cell.x+cell.y*4.0,16.0)/16.0-.5;color.r=floor(clamp(color.r+b/7.0,0.0,1.0)*7.0+.5)/7.0;color.g=floor(clamp(color.g+b/7.0,0.0,1.0)*7.0+.5)/7.0;color.b=floor(clamp(color.b+b/14.0,0.0,1.0)*3.0+.5)/3.0;}
         else if(levels>1.0)color=floor(color*levels+.5)/levels;
-        gl_FragColor=vec4(clamp(color,0.0,1.0)*edge,1.0); #include <colorspace_fragment>
+        gl_FragColor=vec4(clamp(color,0.0,1.0)*edge,1.0);
+        #include <colorspace_fragment>
       }
     `,
     depthTest: false, depthWrite: false, toneMapped: false
