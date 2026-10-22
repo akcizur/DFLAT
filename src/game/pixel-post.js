@@ -8,7 +8,9 @@ export function createPixelPostProcess(THREE, renderer) {
   const displayContext = displayCanvas.getContext("2d", { alpha: false, desynchronized: true });
   const fallback = {
     setSize() {}, renderScene(scene, camera) { renderer.render(scene, camera); }, present() {},
-    triggerZoom() {}, setProfile() {}, getProfile() { return "off"; }, dispose() {}
+    triggerZoom() {}, setProfile() {}, getProfile() { return "off"; },
+    setBlur() {}, getBlur() { return { strength: 0, x: 0, y: 0, start: 1.2, end: 3.6 }; },
+    profiles: {}, dispose() {}
   };
   if (!displayContext) return fallback;
 
