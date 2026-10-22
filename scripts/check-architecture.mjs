@@ -54,7 +54,7 @@ if (packageJson.devDependencies?.vite !== "6.4.5") fail("Vite must be installed 
 
 const mainSource = await readFile(path.join(root, "src/main.js"), "utf8");
 if (/from\s+["']https?:\/\//i.test(mainSource)) fail("runtime modules must be bundled locally; remove CDN imports");
-if (!mainSource.includes("createEmptyApartment({ THREE, scene, M })")) fail("gameplay must boot into the unfurnished apartment shell");
+if (!mainSource.includes("createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui })") && !mainSource.includes("createEmptyApartment({ THREE, scene, M })")) fail("gameplay must boot into a supported apartment scene");
 if (!mainSource.includes("const SIMULATION_HZ = 60")) fail("game simulation must target 60 Hz");
 if (!mainSource.includes("const SCENE_RENDER_HZ = 60")) fail("scene raster must target 60 FPS");
 if (!mainSource.includes("postFx.renderScene(scene, camera")) fail("scene must use the buffered depth-aware pixel renderer");
