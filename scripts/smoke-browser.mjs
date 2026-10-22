@@ -50,13 +50,25 @@ try {
 
   await page.locator("#startButton").click();
   await page.waitForTimeout(500);
-  const movementBefore = await page.evaluate(() => window.__DFLAT_SMOKE__?.playerPosition());
+  const movementBefore = await page.evaluate(() => ({
+    position: window.__DFLAT_SMOKE__?.playerPosition(),
+    state: window.__DFLAT_SMOKE__?.gameState()
+  }));
   await page.keyboard.down("w");
   await page.waitForTimeout(700);
+  const movementDuring = await page.evaluate(() => ({
+    position: window.__DFLAT_SMOKE__?.playerPosition(),
+    keys: window.__DFLAT_SMOKE__?.keysDown(),
+    state: window.__DFLAT_SMOKE__?.gameState()
+  }));
   await page.keyboard.up("w");
-  const movementAfter = await page.evaluate(() => window.__DFLAT_SMOKE__?.playerPosition());
-  if (!movementBefore || !movementAfter || movementAfter.z > movementBefore.z - 0.35) {
-    throw new Error("WASD movement test failed: " + JSON.stringify({ movementBefore, movementAfter }));
+  if (
+    !movementBefore?.position || !movementDuring?.position ||
+    !movementBefore.state?.started || movementBefore.state.paused ||
+    !movementDuring.keys?.KeyW ||
+    movementDuring.position.z > movementBefore.position.z - 0.35
+  ) {
+    throw new Error("WASD movement test failed: " + JSON.stringify({ movementBefore, movementDuring }));
   }
   await page.waitForTimeout(400);
 

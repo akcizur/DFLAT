@@ -109,6 +109,7 @@ if (new URLSearchParams(location.search).get("smoke") === "1") {
     configurable: true,
     value: {
       playerPosition: () => ({ x: controller.player.x, z: controller.player.z }),
+      keysDown: () => ({ ...controller.keysDown }),
       gameState: () => ({ started: state.started, paused: state.paused })
     }
   });

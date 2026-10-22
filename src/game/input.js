@@ -38,12 +38,8 @@ export function bindInput({ renderer, state, controller, ui }) {
     state.paused = false;
     ui.hidePause();
     renderer.domElement.focus();
-    // Pointer lock is optional and must never block the transition into gameplay.
-    try {
-      if (matchMedia("(pointer:fine)").matches) lockPointer();
-    } catch (error) {
-      console.warn("The Flat: pointer lock unavailable; mouse-look can be re-enabled by clicking the scene.", error);
-    }
+    // Keep keyboard focus after starting. Pointer lock is acquired only after a click
+    // in the actual game canvas, so menu activation never steals the first movement input.
     window.setTimeout(() => {
       ui.hideStart();
       startScreen.classList.remove("transition-out");
@@ -60,7 +56,7 @@ export function bindInput({ renderer, state, controller, ui }) {
     if (!state.started || state.finished) return;
     state.paused = false;
     ui.hidePause();
-    if (matchMedia("(pointer:fine)").matches) lockPointer();
+    // Click the game canvas to reacquire mouse-look; keyboard movement remains active.
   }
   function togglePause() { state.paused ? resumeGame() : pauseGame(); }
   document.getElementById("startButton").addEventListener("click", startGame);
