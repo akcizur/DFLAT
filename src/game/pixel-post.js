@@ -32,9 +32,9 @@ export function createPixelPostProcess(THREE, renderer) {
   const lowPower = Boolean(window.matchMedia?.("(pointer: coarse)")?.matches);
 
   const profiles = {
-    off:   { curvature: 0, chroma: 0, scanline: 0, vignette: 0, noise: 0, jitter: 0, interlace: 0, mask: 0, levels: 0 },
-    clean: { curvature: 0.015, chroma: 0.0002, scanline: 0.025, vignette: 0.12, noise: 0.004, jitter: 0, interlace: 0, mask: 0, levels: 0 },
-    crt:   { curvature: 0.035, chroma: 0.00035, scanline: 0.035, vignette: 0.15, noise: 0.004, jitter: 0.00005, interlace: 0.012, mask: 0.012, levels: 0 },
+    off:   { curvature: 0, chroma: 0, scanline: 0, vignette: 0, noise: 0, jitter: 0, interlace: 0, mask: 0, levels: 0, retro: 0 },
+    clean: { curvature: 0.008, chroma: 0, scanline: 0, vignette: 0.08, noise: 0.002, jitter: 0, interlace: 0, mask: 0, levels: 0, retro: 0 },
+    crt:   { curvature: 0.035, chroma: 0.00035, scanline: 0.035, vignette: 0.15, noise: 0.004, jitter: 0.00005, interlace: 0.012, mask: 0.012, levels: 0, retro: 0 },
     vhs:   { curvature: 0.055, chroma: 0.0026, scanline: 0.055, vignette: 0.18, noise: 0.035, jitter: 0.0018, interlace: 0.075, mask: 0.015, levels: 0 },
     psx:     { curvature: 0.018, chroma: 0.0002, scanline: 0, vignette: 0.09, noise: 0.002, jitter: 0, interlace: 0, mask: 0, levels: 20, retro: 0 },
     vintage: { curvature: 0.006, chroma: 0, scanline: 0, vignette: 0.13, noise: 0.006, jitter: 0, interlace: 0, mask: 0, levels: 0, retro: 1 },
