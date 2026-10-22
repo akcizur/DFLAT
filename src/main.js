@@ -28,7 +28,7 @@ new THREE.TextureLoader().load(
   undefined,
   error => console.error("The Flat: assets/bg-scene-hq.png sky background failed to load.", error)
 );
-scene.fog = new THREE.FogExp2(0x34343b, 0.052);
+scene.fog = new THREE.FogExp2(0x34343b, 0.038);
 
 // Global fill lights keep the scene readable even if local room lighting is unavailable.
 const globalHemisphere = new THREE.HemisphereLight(0xdce8ff, 0x625648, 1.15);
@@ -143,6 +143,7 @@ const shimmerMaterials = (() => {
 
 function updateSimulation(deltaSeconds, nowMs) {
   const nearest = controller.update(deltaSeconds);
+  world.ghosts?.update(nowMs * 0.001);
   for (const door of world.doorAnimations) {
     const target = door.targetOpen ? 1 : 0;
     door.progress += (target - door.progress) * (1 - Math.exp(-deltaSeconds * 5.5));

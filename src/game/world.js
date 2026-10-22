@@ -1,5 +1,6 @@
 // Builds the complete apartment environment and its interactable objects.
 import { createPanelak } from "./panelak.js";
+import { createGhosts } from "./ghosts.js";
 export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) {
   // V2 is the default: a standalone exterior scene focused only on the panelák.
   // Add ?scene=v1 to return to the legacy apartment prototype.
@@ -478,6 +479,7 @@ function createPanelakWorld({ THREE, scene, state, ui }) {
   const meshesToAnimate = [];
   const doorAnimations = [];
   const panelak = createPanelak({ THREE, scene });
+  const ghosts = createGhosts({ THREE, scene });
 
   const groundMat = new THREE.MeshStandardMaterial({ color: 0x656760, roughness: 1 });
   const grassMat = new THREE.MeshStandardMaterial({ color: 0x73786d, roughness: 1 });
@@ -521,6 +523,47 @@ function createPanelakWorld({ THREE, scene, state, ui }) {
   for (const x of [-4.72, -3.48]) {
     groundBox("V2 / lavička noha", x, 0.20, -5.1, 0.10, 0.42, 0.34, metalMat);
   }
+
+  // Low-poly trees and warm street lamps give the entrance a more legible scale.
+  const barkMat = new THREE.MeshStandardMaterial({ color: 0x51483c, roughness: 1 });
+  const foliageMat = new THREE.MeshStandardMaterial({ color: 0x53634f, roughness: 1, flatShading: true });
+  const lampMetalMat = new THREE.MeshStandardMaterial({ color: 0x454b4d, roughness: 0.8 });
+  const lampGlowMat = new THREE.MeshStandardMaterial({
+    color: 0xe7cda1, emissive: 0xffbd68, emissiveIntensity: 0.55, roughness: 0.6
+  });
+
+  function addTree(x, z, scale = 1) {
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.11 * scale, 0.16 * scale, 1.5 * scale, 5), barkMat);
+    trunk.name = "V2 / nízkopolygonový strom / kmen";
+    trunk.position.set(x, 0.75 * scale - 0.16, z);
+    scene.add(trunk);
+    for (const [height, radius] of [[1.55, 0.82], [2.12, 0.68], [2.58, 0.47]]) {
+      const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(radius * scale, 0), foliageMat);
+      crown.name = "V2 / koruna stromu";
+      crown.position.set(x, height * scale - 0.16, z);
+      crown.castShadow = false;
+      crown.receiveShadow = true;
+      scene.add(crown);
+    }
+  }
+
+  function addStreetLamp(x, z, inward) {
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.075, 3.9, 6), lampMetalMat);
+    pole.name = "V2 / pouliční lampa";
+    pole.position.set(x, 1.79, z);
+    scene.add(pole);
+    groundBox("V2 / rameno lampy", x + inward * 0.24, 3.66, z, 0.48, 0.065, 0.08, lampMetalMat);
+    groundBox("V2 / svítidlo lampy", x + inward * 0.43, 3.52, z, 0.30, 0.18, 0.24, lampGlowMat);
+    const light = new THREE.PointLight(0xffd39b, 1.8, 8.5, 2);
+    light.name = "V2 / teplé světlo pouliční lampy";
+    light.position.set(x + inward * 0.43, 3.48, z);
+    scene.add(light);
+  }
+
+  addTree(-5.65, -8.0, 1.0);
+  addTree(5.7, -8.55, 1.08);
+  addStreetLamp(-3.28, -8.15, 1);
+  addStreetLamp(3.28, -8.15, -1);
 
   // Facade, side and rear collision boundaries. The central entry remains usable.
   const frontZ = -15.9 + 8.2 / 2;
@@ -585,5 +628,5 @@ function createPanelakWorld({ THREE, scene, state, ui }) {
   scene.add(entryLight);
   groundBox("V2 / svítidlo vchodu", 0, 2.72, frontZ + 0.72, 0.42, 0.10, 0.16, concreteMat);
 
-  return { colliders, interactables, meshesToAnimate, doorAnimations, meshes: [], panelak };
+  return { colliders, interactables, meshesToAnimate, doorAnimations, meshes: [], panelak, ghosts };
 }
