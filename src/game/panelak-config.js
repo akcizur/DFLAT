@@ -1,5 +1,5 @@
 export const PANELAK_LAYOUT = {
-  totalFloors: 4,
+  totalFloors: 3,
   apartmentsPerFloor: 4,
   roof: true,
 };
