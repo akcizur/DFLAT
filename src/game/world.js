@@ -477,6 +477,17 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
 
 // Minimal playable map shell: deliberately unfurnished apartments while the block map is developed.
 export function createEmptyApartment({ THREE, scene, M }) {
+  // The old furnished world supplied its own lamps. Keep the empty shell readable
+  // with simple low-cost ambient and directional lighting.
+  const ambient = new THREE.HemisphereLight(0xd8d4c7, 0x51483c, 1.65);
+  ambient.name = "Holobyt / ambientní světlo";
+  scene.add(ambient);
+  const keyLight = new THREE.DirectionalLight(0xffe7c0, 1.35);
+  keyLight.name = "Holobyt / hlavní světlo";
+  keyLight.position.set(-4, 8, 5);
+  keyLight.castShadow = false;
+  scene.add(keyLight);
+
   const colliders = [];
   const interactables = [];
   const meshesToAnimate = [];
