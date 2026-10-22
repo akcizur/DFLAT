@@ -326,14 +326,15 @@ export function createPixelPostProcess(THREE, renderer) {
   }
 
   function renderScene(scene, camera, timeSeconds = performance.now() / 1000) {
+    // Render the 3D world directly first. This avoids a blank output if a GPU/driver
+    // cannot compile the optional post-process shader. Pixel scaling and presentation
+    // still run through the Canvas2D display buffer below.
     postMaterial.uniforms.cameraNear.value = camera.near;
     postMaterial.uniforms.cameraFar.value = camera.far;
     postMaterial.uniforms.time.value = timeSeconds;
-    renderer.setRenderTarget(target);
+    renderer.setRenderTarget(null);
     renderer.clear();
     renderer.render(scene, camera);
-    renderer.setRenderTarget(null);
-    renderer.render(postScene, postCamera);
     frameContext.clearRect(0, 0, width, height);
     frameContext.drawImage(renderer.domElement, 0, 0, width, height);
     hasFrame = true;
