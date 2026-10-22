@@ -194,7 +194,7 @@ export function bindInput({ renderer, state, controller, ui }) {
   window.addEventListener("gamepaddisconnected", () => {
     gamepadLabel = ""; previousGamepadButtons = [];
     ui.showToast("Ovladač odpojen.");
-    clearMovement();
+    clearSource("gamepad");
   });
 
   // Poll at display rate; edge-triggered buttons avoid repeated actions while held.
@@ -209,7 +209,7 @@ export function bindInput({ renderer, state, controller, ui }) {
       const rx = dead(pad.axes[2]), ry = dead(pad.axes[3]);
       player.yaw -= rx * sensitivity.padLook / 60;
       player.pitch = Math.max(-1.25, Math.min(1.25, player.pitch + ry * sensitivity.padLook / 60));
-    } else if (!stickPointer) clearMovement();
+    } else clearSource("gamepad");
 
     if (pad) {
       const pressed = index => Boolean(pad.buttons[index]?.pressed);

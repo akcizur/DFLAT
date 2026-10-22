@@ -72,6 +72,8 @@ if (!/canvas\s*\{[^}]*image-rendering:\s*pixelated/s.test(baseStylesSource)) fai
 if (baseStylesSource.includes("#pixelDisplayCanvas") || cinematicStylesSource.includes("#pixelDisplayCanvas")) fail("obsolete effect presentation canvas styles remain");
 const inputSource = await readFile(path.join(root, "src/game/input.js"), "utf8");
 if (!inputSource.includes('window.addEventListener("keydown", onKeyDown, { capture: true })')) fail("keyboard input must be handled during the capture phase");
+if (!inputSource.includes('} else clearSource("gamepad");')) fail("gamepad polling must not clear keyboard/touch movement input when no gamepad is connected");
+if (!inputSource.includes('ui.showToast("Ovladač odpojen.");\n    clearSource("gamepad");')) fail("disconnecting a gamepad must only clear gamepad movement");
 if (!inputSource.includes("clearMovement();\n    state.started = true;")) fail("movement input must be reset when a new game starts");
 const playerSource = await readFile(path.join(root, "src/game/player.js"), "utf8");
 if (!playerSource.includes("z: 1.5, yaw: 0")) fail("V2 player spawn must face the panelak from the exterior");
