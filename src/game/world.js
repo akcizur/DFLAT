@@ -509,11 +509,11 @@ function createPanelakWorld({ THREE, scene, state, ui }) {
   scene.add(ground);
 
   // Approach path and a single quiet road establish scale without competing with the building.
-  groundBox("V2 / chodník před vchodem", 0, -0.015, -6.85, 5.2, 0.12, 9.9, concreteMat);
-  groundBox("V2 / obrubník vlevo", -2.72, 0.025, -6.85, 0.12, 0.16, 10.0, curbMat);
-  groundBox("V2 / obrubník vpravo", 2.72, 0.025, -6.85, 0.12, 0.16, 10.0, curbMat);
-  groundBox("V2 / vozovka", 0, -0.045, 3.2, 180, 0.08, 7.0, asphaltMat);
-  groundBox("V2 / chodník za vozovkou", 0, -0.012, 8.2, 180, 0.12, 2.8, concreteMat);
+  groundBox("V2 / chodník před vchodem", 0, -0.015, -5.0, 5.2, 0.12, 13.5, concreteMat);
+  groundBox("V2 / obrubník vlevo", -2.72, 0.025, -5.0, 0.12, 0.16, 13.6, curbMat);
+  groundBox("V2 / obrubník vpravo", 2.72, 0.025, -5.0, 0.12, 0.16, 13.6, curbMat);
+  groundBox("V2 / vozovka", 0, -0.045, 6.2, 180, 0.08, 7.0, asphaltMat);
+  groundBox("V2 / chodník za vozovkou", 0, -0.012, 11.2, 180, 0.12, 2.8, concreteMat);
 
   // Minimal street furniture frames the entry but keeps the panelák as the only building.
   groundBox("V2 / lavička sedák", -4.1, 0.42, -5.1, 1.7, 0.12, 0.42, metalMat, true);
