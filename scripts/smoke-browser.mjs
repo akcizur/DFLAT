@@ -33,7 +33,7 @@ try {
     if (message.type() === "error") consoleErrors.push(message.text());
   });
 
-  await page.goto("http://127.0.0.1:4173/", { waitUntil: "networkidle", timeout: 30000 });
+  await page.goto("http://127.0.0.1:4173/?smoke=1", { waitUntil: "networkidle", timeout: 30000 });
   await page.waitForSelector("#screenCanvas", { timeout: 10000 });
   await page.waitForTimeout(1200);
 
@@ -49,7 +49,16 @@ try {
   if (beforeStart.debugText.trim()) throw new Error("Boot diagnostics reported an error: " + beforeStart.debugText);
 
   await page.locator("#startButton").click();
-  await page.waitForTimeout(900);
+  await page.waitForTimeout(500);
+  const movementBefore = await page.evaluate(() => window.__DFLAT_SMOKE__?.playerPosition());
+  await page.keyboard.down("w");
+  await page.waitForTimeout(700);
+  await page.keyboard.up("w");
+  const movementAfter = await page.evaluate(() => window.__DFLAT_SMOKE__?.playerPosition());
+  if (!movementBefore || !movementAfter || movementAfter.z > movementBefore.z - 0.35) {
+    throw new Error("WASD movement test failed: " + JSON.stringify({ movementBefore, movementAfter }));
+  }
+  await page.waitForTimeout(400);
 
   const visual = await page.evaluate(() => {
     const canvas = document.querySelector("#screenCanvas");
@@ -83,7 +92,7 @@ try {
   const shaderErrors = consoleErrors.filter(message => /shader error|program linking failed|webgl.*context|failed to compile/i.test(message));
   if (shaderErrors.length) throw new Error("WebGL/shader errors: " + shaderErrors.join(" | "));
 
-  console.log("Browser smoke test passed:", JSON.stringify({ beforeStart, visual, pageErrors, consoleErrors }));
+  console.log("Browser smoke test passed:", JSON.stringify({ beforeStart, movementBefore, movementAfter, visual, pageErrors, consoleErrors }));
 } finally {
   if (browser) await browser.close();
   server.kill("SIGTERM");

@@ -31,6 +31,7 @@ export function bindInput({ renderer, state, controller, ui }) {
   function clearMovement() { clearSource("keyboard"); clearSource("touch"); clearSource("gamepad"); }
   function startGame() {
     if (state.started) return;
+    clearMovement();
     state.started = true;
     const startScreen = document.getElementById("startScreen");
     startScreen.classList.add("transition-out");
@@ -90,8 +91,16 @@ export function bindInput({ renderer, state, controller, ui }) {
     window.dispatchEvent(new Event("resize"));
   });
 
-  document.addEventListener("keydown", event => {
-    if (["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(event.code)) event.preventDefault();
+  function onKeyDown(event) {
+    const isMovementKey = movementCodes.includes(event.code);
+    if (isMovementKey) {
+      event.preventDefault();
+      // Ignore movement input until gameplay is active, then use the same shared key map
+      // as touch and gamepad so inputs cannot overwrite one another.
+      setKey(event.code, state.started && !state.paused);
+      return;
+    }
+    if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.code)) event.preventDefault();
     if (event.code === "Escape" && state.started && !state.finished) {
       if (document.fullscreenElement) { document.exitFullscreen(); return; }
       togglePause(); return;
@@ -100,8 +109,13 @@ export function bindInput({ renderer, state, controller, ui }) {
     if (event.code === "Enter" && state.paused) { event.preventDefault(); resumeGame(); return; }
     setKey(event.code, true);
     if (event.code === "KeyE" && !event.repeat && state.started && !state.paused) doInteract();
-  });
-  document.addEventListener("keyup", event => setKey(event.code, false));
+  }
+  function onKeyUp(event) {
+    if (movementCodes.includes(event.code)) event.preventDefault();
+    setKey(event.code, false);
+  }
+  window.addEventListener("keydown", onKeyDown, { capture: true });
+  window.addEventListener("keyup", onKeyUp, { capture: true });
 
   renderer.domElement.addEventListener("click", () => {
     if (state.started && !state.paused && !document.pointerLockElement && matchMedia("(pointer:fine)").matches) lockPointer();

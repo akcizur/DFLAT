@@ -22,12 +22,12 @@ bun run preview
 
 ## Rendering
 
-- **Direct full-resolution WebGL:** the scene is rendered straight to the screen at the canvas's actual display resolution.
+- **Pixel-grid WebGL:** the scene renders into a compact canvas and scales with nearest-neighbour sampling for a stronger, crisp pixel look.
 - **No screen-wide post-processing:** DOS palette quantization, CRT/PS1/VHS profiles, color tinting, chromatic aberration, scanlines, noise, curvature and depth blur are removed.
 - **Stable simulation:** gameplay updates target 60 Hz and scene rendering is capped at 60 FPS.
 - **World materials remain intact:** authored textures, material colors, lighting, fog and shadows still come from the game scene itself.
 
-This removes the effect filter from the game image without changing the level geometry, movement, interactions or UI behavior.
+The look is produced by native low-resolution rasterization, not a screen-wide effect filter. Level geometry, movement, interactions and the UI remain unchanged.
 
 ## GitHub Pages
 
@@ -81,7 +81,7 @@ The supplied `SCENE.BUILDING.glb` remains a separate interchange asset. To serve
 - `index.html` — game shell, centered BIOS menus and HUD.
 - `styles.css`, `styles-cinematic.css` — responsive HUD and menu styling, separate from scene rendering.
 - `assets/bg-scene-hq.png` — high-resolution panoramic exterior environment.
-- `src/main.js` — 60 Hz fixed-step simulation and direct full-resolution WebGL rendering.
+- `src/main.js` — fixed-step movement simulation and direct low-resolution WebGL raster.
 - `vendor/three.module.min.js` — local Three.js r169 fallback for unbundled static branch hosting; its MIT license is included beside it.
 - `src/game/materials.js` — pixel-gradient materials and procedural baked-light map.
 - `src/game/world.js` — apartment geometry, lights, collision volumes and interactables.

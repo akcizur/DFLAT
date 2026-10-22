@@ -44,7 +44,7 @@ const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.08, 7
 camera.rotation.order = "YXZ";
 const LOW_POWER = matchMedia("(pointer:coarse)").matches;
 const renderer = new THREE.WebGLRenderer({
-  antialias: !LOW_POWER, alpha: false, preserveDrawingBuffer: true,
+  antialias: false, alpha: false, preserveDrawingBuffer: true,
   powerPreference: "high-performance"
 });
 renderer.setPixelRatio(1);
@@ -58,8 +58,11 @@ renderer.domElement.tabIndex = 0;
 mount.appendChild(renderer.domElement);
 
 function resize() {
-  const width = Math.max(1, innerWidth);
-  const height = Math.max(1, innerHeight);
+  const displayWidth = Math.max(1, innerWidth);
+  const displayHeight = Math.max(1, innerHeight);
+  const PIXEL_SCALE = LOW_POWER ? 3.6 : 3.2;
+  const width = Math.max(240, Math.floor(displayWidth / PIXEL_SCALE));
+  const height = Math.max(135, Math.floor(displayHeight / PIXEL_SCALE));
   renderer.setSize(width, height, false);
   Object.assign(renderer.domElement.style, {
     position: "absolute",
@@ -67,9 +70,10 @@ function resize() {
     display: "block",
     width: "100%",
     height: "100%",
-    zIndex: "1"
+    zIndex: "1",
+    imageRendering: "pixelated"
   });
-  camera.aspect = width / height;
+  camera.aspect = displayWidth / displayHeight;
   camera.updateProjectionMatrix();
 }
 addEventListener("resize", resize);
@@ -100,6 +104,15 @@ scene.traverse(object => {
 const controller = createPlayerController({
   camera, colliders: world.colliders, interactables: world.interactables, state, ui
 });
+if (new URLSearchParams(location.search).get("smoke") === "1") {
+  Object.defineProperty(window, "__DFLAT_SMOKE__", {
+    configurable: true,
+    value: {
+      playerPosition: () => ({ x: controller.player.x, z: controller.player.z }),
+      gameState: () => ({ started: state.started, paused: state.paused })
+    }
+  });
+}
 bindInput({ renderer, state, controller, ui });
 
 const clockStart = performance.now();
