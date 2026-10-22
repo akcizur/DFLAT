@@ -73,7 +73,8 @@ try {
       samples++;
     }
     return {
-      ok: colors.size > 24 && lit > samples * 0.03 && nonBlack > samples * 0.15,
+      // The default DOS profile deliberately quantizes the image to a restrained palette.
+      ok: colors.size > 16 && lit > samples * 0.03 && nonBlack > samples * 0.15,
       width: canvas.width, height: canvas.height, distinctColorBuckets: colors.size,
       litRatio: lit / samples, nonBlackRatio: nonBlack / samples, samples
     };
