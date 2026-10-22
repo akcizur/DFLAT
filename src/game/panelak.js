@@ -32,8 +32,8 @@ export function createPanelak({ THREE, scene }) {
   part("Panelák / sokl levý", -(W / 2 + 0.175), 0.28, 0, 0.35, 0.56, D + 0.35, concreteDark);
   part("Panelák / sokl pravý", W / 2 + 0.175, 0.28, 0, 0.35, 0.56, D + 0.35, concreteDark);
   part("Panelák / sokl zadní", 0, 0.28, back - 0.175, W + 0.35, 0.56, 0.35, concreteDark);
-  part("Panelák / sokl přední levý", -(W / 2 + 0.925) / 2, 0.28, front + 0.175, W / 2 + 0.925, 0.56, 0.35, concreteDark);
-  part("Panelák / sokl přední pravý", (W / 2 + 0.925) / 2, 0.28, front + 0.175, W / 2 + 0.925, 0.56, 0.35, concreteDark);
+  part("Panelák / sokl přední levý", -(W / 4 + 0.4625), 0.28, front + 0.175, W / 2 - 0.925, 0.56, 0.35, concreteDark);
+  part("Panelák / sokl přední pravý", W / 4 + 0.4625, 0.28, front + 0.175, W / 2 - 0.925, 0.56, 0.35, concreteDark);
   for (let floor = 0; floor < floors; floor++) {
     const y0 = floor * H;
     part(`Panelák / podlahová deska P${floor}`, 0, y0 + 0.12, 0, W, 0.24, D, slabMat);
