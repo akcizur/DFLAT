@@ -73,7 +73,7 @@ if (!compositorSource.includes("function setBlur(options={})")) fail("runtime bl
 if (!compositorSource.includes("texture2D(tDiffuse,uv+vec2(-px.x,-px.y))")) fail("Gaussian blur must use a symmetric sample kernel in distorted UV space");
 if (!mainSource.includes("preserveDrawingBuffer: true")) fail("WebGL frame buffer must be preserved for pixel compositing");
 const playerSource = await readFile(path.join(root, "src/game/player.js"), "utf8");
-if (!playerSource.includes("z: 2.8, yaw: 0")) fail("V2 player spawn must face the panelak from the exterior");
+if (!playerSource.includes("z: 1.5, yaw: 0")) fail("V2 player spawn must face the panelak from the exterior");
 const uiSource = await readFile(path.join(root, "src/game/ui.js"), "utf8");
 if (!uiSource.includes('objectiveText.textContent = "Panelák: prozkoumej okolí a vstup."')) fail("panelak V2 needs its own objective text");
 if (!mainSource.includes('object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone())')) fail("mesh UV2 channels are required for baked light maps");
