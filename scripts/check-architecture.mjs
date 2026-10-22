@@ -40,7 +40,7 @@ for (const relativePath of required) {
 
 const html = await readFile(path.join(root, "index.html"), "utf8");
 if (!html.includes('href="./styles.css"')) fail("index.html must load styles.css");
-if (!html.includes('<script type="module" src="./src/main.js?v=8"></script>')) fail("index.html must load src/main.js");
+if (!html.includes('<script type="module" src="./src/main.js?v=9"></script>')) fail("index.html must load src/main.js");
 if (!html.includes('type="importmap"') || !html.includes('"three": "./vendor/three.module.min.js"')) {
   fail("static hosting fallback must map Three.js to the local vendored r169 module");
 }
@@ -54,6 +54,7 @@ if (packageJson.devDependencies?.vite !== "6.4.5") fail("Vite must be installed 
 
 const mainSource = await readFile(path.join(root, "src/main.js"), "utf8");
 if (/from\s+["']https?:\/\//i.test(mainSource)) fail("runtime modules must be bundled locally; remove CDN imports");
+if (!mainSource.includes("createEmptyApartment({ THREE, scene, M })")) fail("gameplay must boot into the unfurnished apartment shell");
 if (!mainSource.includes("const SIMULATION_HZ = 60")) fail("game simulation must target 60 Hz");
 if (!mainSource.includes("const SCENE_RENDER_HZ = 60")) fail("scene raster must target 60 FPS");
 if (!mainSource.includes("postFx.renderScene(scene, camera")) fail("scene must use the buffered depth-aware pixel renderer");
@@ -73,6 +74,7 @@ if (!mainSource.includes("preserveDrawingBuffer: true")) fail("WebGL frame buffe
 if (!mainSource.includes('object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone())')) fail("mesh UV2 channels are required for baked light maps");
 
 const worldSource = await readFile(path.join(root, "src/game/world.js"), "utf8");
+if (!worldSource.includes("export function createEmptyApartment")) fail("playable empty-apartment map shell is required");
 if (!worldSource.includes("wall(-4.375, 6, 7.25, wallT)")) fail("entrance wall must align to the door-frame opening");
 if (!worldSource.includes("localBox(doorPivot, .69, 1.40, 0, 1.38, 2.80")) fail("front door leaf must fit the clear entrance width");
 if (!worldSource.includes("wallH - 2.22, 1.2, M.wall")) fail("interior door header infill must meet its lintel without a gap");
