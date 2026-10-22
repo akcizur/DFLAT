@@ -115,22 +115,31 @@ export function createPixelPostProcess(THREE, renderer) {
         vec2 texel = 1.0 / resolution;
         float depth = texture2D(tDepth, uv).x;
         float distanceToCamera = viewDistance(depth);
-        // 13-tap Gaussian-like blur, ramping in between roughly 2 and 3.2 metres.
-        float blur = smoothstep(2.0, 3.2, distanceToCamera) * 2.2;
+        // Depth-aware, two-axis Gaussian-like blur. X and Y radii are calculated
+        // independently from the framebuffer dimensions to avoid stretching on mobile.
+        // It starts softly at 1.2 m and reaches full strength beyond 3.6 m.
+        float blur = smoothstep(1.2, 3.6, distanceToCamera) * 3.2;
         vec2 px = texel * blur;
-        vec3 color = texture2D(tDiffuse, uv).rgb * 0.20;
-        color += texture2D(tDiffuse, uv + vec2( px.x, 0.0)).rgb * 0.12;
-        color += texture2D(tDiffuse, uv - vec2( px.x, 0.0)).rgb * 0.12;
-        color += texture2D(tDiffuse, uv + vec2(0.0,  px.y)).rgb * 0.12;
-        color += texture2D(tDiffuse, uv - vec2(0.0,  px.y)).rgb * 0.12;
-        color += texture2D(tDiffuse, uv + vec2( px.x,  px.y)).rgb * 0.06;
-        color += texture2D(tDiffuse, uv + vec2(-px.x,  px.y)).rgb * 0.06;
-        color += texture2D(tDiffuse, uv + vec2( px.x, -px.y)).rgb * 0.06;
-        color += texture2D(tDiffuse, uv + vec2(-px.x, -px.y)).rgb * 0.06;
-        color += texture2D(tDiffuse, uv + vec2( px.x * 2.0, 0.0)).rgb * 0.02;
-        color += texture2D(tDiffuse, uv + vec2(-px.x * 2.0, 0.0)).rgb * 0.02;
-        color += texture2D(tDiffuse, uv + vec2(0.0,  px.y * 2.0)).rgb * 0.02;
-        color += texture2D(tDiffuse, uv + vec2(0.0, -px.y * 2.0)).rgb * 0.02;
+        vec3 color = texture2D(tDiffuse, uv).rgb * 0.16;
+        // Horizontal axis (X).
+        color += texture2D(tDiffuse, uv + vec2(px.x, 0.0)).rgb * 0.12;
+        color += texture2D(tDiffuse, uv - vec2(px.x, 0.0)).rgb * 0.12;
+        color += texture2D(tDiffuse, uv + vec2(px.x * 2.0, 0.0)).rgb * 0.06;
+        color += texture2D(tDiffuse, uv - vec2(px.x * 2.0, 0.0)).rgb * 0.06;
+        // Vertical axis (Y).
+        color += texture2D(tDiffuse, uv + vec2(0.0, px.y)).rgb * 0.12;
+        color += texture2D(tDiffuse, uv - vec2(0.0, px.y)).rgb * 0.12;
+        color += texture2D(tDiffuse, uv + vec2(0.0, px.y * 2.0)).rgb * 0.06;
+        color += texture2D(tDiffuse, uv - vec2(0.0, px.y * 2.0)).rgb * 0.06;
+        // Diagonals soften corners without introducing a directional smear.
+        color += texture2D(tDiffuse, uv + vec2(px.x, px.y)).rgb * 0.025;
+        color += texture2D(tDiffuse, uv + vec2(-px.x, px.y)).rgb * 0.025;
+        color += texture2D(tDiffuse, uv + vec2(px.x, -px.y)).rgb * 0.025;
+        color += texture2D(tDiffuse, uv + vec2(-px.x, -px.y)).rgb * 0.025;
+        color += texture2D(tDiffuse, uv + vec2(px.x * 2.0, px.y * 2.0)).rgb * 0.01;
+        color += texture2D(tDiffuse, uv + vec2(-px.x * 2.0, px.y * 2.0)).rgb * 0.01;
+        color += texture2D(tDiffuse, uv + vec2(px.x * 2.0, -px.y * 2.0)).rgb * 0.01;
+        color += texture2D(tDiffuse, uv + vec2(-px.x * 2.0, -px.y * 2.0)).rgb * 0.01;
         return color;
       }
 
