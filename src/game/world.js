@@ -473,3 +473,48 @@ export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) 
 
   return { colliders, interactables, meshesToAnimate, doorAnimations };
 }
+
+
+// Minimal playable map shell: deliberately unfurnished apartments while the block map is developed.
+export function createEmptyApartment({ THREE, scene, M }) {
+  const colliders = [];
+  const interactables = [];
+  const meshesToAnimate = [];
+  const doorAnimations = [];
+  const wallHeight = 3.15;
+  const wallThickness = 0.24;
+  const roomWidth = 16;
+  const roomDepth = 12;
+
+  function shellPart(name, x, y, z, sx, sy, sz, material, collision = false) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), material);
+    mesh.name = name;
+    mesh.position.set(x, y, z);
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    scene.add(mesh);
+    if (collision) {
+      colliders.push({
+        minX: x - sx / 2, maxX: x + sx / 2,
+        minZ: z - sz / 2, maxZ: z + sz / 2
+      });
+    }
+    return mesh;
+  }
+
+  // One clean, empty apartment shell. The south entrance is intentionally open.
+  shellPart("Holobyt / podlaha", 0, -0.12, 0, roomWidth, 0.24, roomDepth, M.floor);
+  shellPart("Holobyt / severní stěna", 0, wallHeight / 2, -6, roomWidth, wallHeight, wallThickness, M.wall, true);
+  shellPart("Holobyt / západní stěna", -8, wallHeight / 2, 0, wallThickness, wallHeight, roomDepth, M.wall, true);
+  shellPart("Holobyt / východní stěna", 8, wallHeight / 2, 0, wallThickness, wallHeight, roomDepth, M.wall, true);
+  shellPart("Holobyt / jižní stěna vlevo", -4.375, wallHeight / 2, 6, 7.25, wallHeight, wallThickness, M.wall, true);
+  shellPart("Holobyt / jižní stěna vpravo", 4.375, wallHeight / 2, 6, 7.25, wallHeight, wallThickness, M.wall, true);
+  shellPart("Holobyt / strop", 0, wallHeight + 0.08, 0, roomWidth, 0.16, roomDepth, M.white);
+
+  // Bare entrance frame only, no door leaf, furniture, props, or scripted objectives.
+  for (const x of [-0.75, 0.75]) {
+    shellPart("Holobyt / zárubeň", x, 1.4, 5.9, 0.12, 2.8, 0.24, M.wood2);
+  }
+  shellPart("Holobyt / nadpraží", 0, 2.86, 5.9, 1.62, 0.12, 0.24, M.wood2);
+  return { colliders, interactables, meshesToAnimate, doorAnimations, meshes: [] };
+}
