@@ -80,7 +80,12 @@ scene.traverse(object => {
   if (object.name === "Panelák / 4 patra" ||
       object.name.startsWith("Distant apparition")) object.visible = false;
 });
-createPanelak({ THREE, scene });
+try {
+  createPanelak({ THREE, scene });
+} catch (error) {
+  // A decorative exterior must never prevent the playable apartment from booting.
+  console.error("The Flat: panelák model failed; continuing without the exterior.", error);
+}
 
 scene.traverse(object => {
   if (object.isMesh && object.geometry?.attributes?.uv && !object.geometry.attributes.uv2) {
