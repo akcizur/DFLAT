@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { createMaterials } from "./game/materials.js";
-import { createEmptyApartment } from "./game/world.js";
+import { createApartment } from "./game/world.js";
 import { createPlayerController } from "./game/player.js";
 import { createUI } from "./game/ui.js";
 import { bindInput } from "./game/input.js";
@@ -30,6 +30,16 @@ new THREE.TextureLoader().load(
   error => console.error("The Flat: assets/bg-scene-hq.png sky background failed to load.", error)
 );
 scene.fog = new THREE.FogExp2(0x34343b, 0.052);
+
+// Global fill lights keep the scene readable even if local room lighting is unavailable.
+const globalHemisphere = new THREE.HemisphereLight(0xdce8ff, 0x625648, 1.15);
+globalHemisphere.name = "Global fill / hemisphere";
+scene.add(globalHemisphere);
+const globalSun = new THREE.DirectionalLight(0xffe6c2, 1.6);
+globalSun.name = "Global fill / key light";
+globalSun.position.set(-7, 12, 6);
+globalSun.castShadow = false;
+scene.add(globalSun);
 
 const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.08, 70);
 camera.rotation.order = "YXZ";
@@ -68,13 +78,13 @@ resize();
 
 const state = {
   hasKeys: false, doorOpen: false, finished: false, started: false,
-  paused: false, balconyDoorOpen: false, emptyMap: true
+  paused: false, balconyDoorOpen: false, emptyMap: false
 };
 const ui = createUI();
 const { M, mat } = createMaterials(THREE);
-const world = createEmptyApartment({ THREE, scene, M });
+const world = createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui });
 
-// Empty-apartment prototype: intentionally do not create the panelák, NPCs, props or objectives.
+// Restore the full playable apartment and all original interactions.
 
 scene.traverse(object => {
   if (object.isMesh && object.geometry?.attributes?.uv && !object.geometry.attributes.uv2) {
