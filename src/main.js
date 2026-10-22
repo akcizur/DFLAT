@@ -57,7 +57,7 @@ renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.BasicShadowMap;
 renderer.shadowMap.autoUpdate = true;
 // Very subtle analog-like frame persistence for motion, kept deliberately restrained.
-renderer.domElement.style.filter = 'contrast(1.025) saturate(1.02)';
+renderer.domElement.style.filter = 'contrast(1.025) saturate(.9) sepia(.06)';
 renderer.toneMappingExposure = 1.04;
 renderer.domElement.id = "screenCanvas";
 renderer.domElement.tabIndex = 0;
