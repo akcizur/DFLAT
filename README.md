@@ -24,8 +24,8 @@ bun run preview
 
 - **60 Hz simulation and render target:** keyboard/mouse movement, camera synchronization, door easing, object animation, UI and the world render loop target 60 FPS.
 - **Low-resolution pixel raster:** the apartment renders into a compact WebGL canvas with antialiasing disabled and nearest-neighbour scaling for sharp PS1-style pixels.
-- **Depth-aware Gaussian blur:** the GPU depth buffer drives a symmetric Gaussian-like 13-tap filter. Nearby geometry stays sharp; blur fades in at 2.0 m and reaches full strength by about 3.2 m. Nearest sampling preserves the blocky pixel raster.
-- **60 Hz Canvas2D CRT presentation:** the processed WebGL frame is copied to a presentation canvas with nearest-neighbour sampling and thin scanlines. Low-amplitude flicker is disabled for reduced-motion users; no bloom or compositor shadows are used.
+- **Depth-aware two-axis blur:** the GPU depth buffer drives a symmetric multi-tap blur across horizontal X, vertical Y and diagonal directions. X/Y strength and near/far focus distances can be tuned independently through URL parameters. Nearest sampling preserves the blocky pixel raster.
+- **Pixel presentation:** the processed WebGL frame is copied to a Canvas2D presentation canvas with nearest-neighbour sampling. Fixed scanlines, flicker and compositor shadows are intentionally absent.
 - **Pixel textures and baked-light gradients:** compact nearest-filtered textures blend quantized warm/cool gradients and deterministic dither. A shared low-energy procedural light map adds stable, baked-style light pools; real lamps, sun lighting and shadowing still contribute depth.
 
 The 60 FPS setting is a target, not a guarantee; actual performance depends on GPU, browser, display refresh rate and scene complexity.
@@ -84,7 +84,7 @@ The supplied `SCENE.BUILDING.glb` remains a separate interchange asset. To serve
 - `assets/bg-scene-hq.png` — high-resolution panoramic exterior environment.
 - `src/main.js` — 60 Hz fixed-step simulation, low-resolution scene raster and presentation cadence.
 - `vendor/three.module.min.js` — local Three.js r169 fallback for unbundled static branch hosting; its MIT license is included beside it.
-- `src/game/pixel-post.js` — depth-texture Gaussian blur pass plus Canvas2D CRT scanline presentation.
+- `src/game/pixel-post.js` — modular Three.js shader chunks, configurable depth-aware X/Y blur and Canvas2D pixel presentation.
 - `src/game/materials.js` — pixel-gradient materials and procedural baked-light map.
 - `src/game/world.js` — apartment geometry, lights, collision volumes and interactables.
 - `src/game/player.js` — movement, collision response and camera synchronization.
@@ -102,3 +102,15 @@ bun run build
 ```
 
 GitHub Actions runs syntax and architecture checks plus a production build on pushes and pull requests, and deploys successful builds from `main`.
+
+
+### Post-processing controls
+
+The default look is DOS palette mode with a balanced X/Y depth blur. Tune it without editing source:
+
+- `?fx=dos`, `?fx=vintage`, `?fx=psx`, `?fx=clean`, `?fx=off` — visual profile.
+- `?blur=3.2` — overall blur strength (0 disables blur; default 3.2).
+- `?blurX=1.0&blurY=1.0` — independent horizontal and vertical scaling.
+- `?blurStart=1.2&blurEnd=3.6` — distance range in metres for the depth transition.
+
+Example: `?fx=dos&blur=3.2&blurX=1&blurY=1`. The shader uses Three.js include chunks so shared shader functionality remains compatible with the bundled Three.js pipeline.
