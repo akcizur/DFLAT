@@ -28,3 +28,9 @@ jobs:
         run: bun run check
       - name: Build production site
         run: bun run build
+      - name: Install Playwright browser test runner
+        run: |
+          npm install --no-save --package-lock=false playwright
+          npx playwright install --with-deps chromium
+      - name: Verify rendered 3D scene in Chromium
+        run: node scripts/smoke-browser.mjs
