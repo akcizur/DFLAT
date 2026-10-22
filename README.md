@@ -22,7 +22,9 @@ bun run preview
 
 ## Rendering
 
-- **Pixel-grid WebGL:** the scene renders into a compact canvas and scales with nearest-neighbour sampling for a stronger, crisp pixel look.
+- **Pixel-grid WebGL:** the scene renders into a compact canvas and scales with nearest-neighbour sampling for a strong, crisp pixel look.
+- **Imported high-rise:** the exterior loads the supplied `panekas.blend` export with 17 residential levels, roof geometry, lift parts, and the original material colours. The previous procedural low-rise remains as a loading fallback.
+- **Raking sunlight:** angled sunlight and a bounded shadow map bring out concrete edges and balcony recesses while reduced fog keeps the upper floors visible.
 - **No screen-wide post-processing:** DOS palette quantization, CRT/PS1/VHS profiles, color tinting, chromatic aberration, scanlines, noise, curvature and depth blur are removed.
 - **Stable simulation:** gameplay updates target 60 Hz and scene rendering is capped at 60 FPS.
 - **World materials remain intact:** authored textures, material colors, lighting, fog and shadows still come from the game scene itself.
@@ -84,7 +86,9 @@ The supplied `SCENE.BUILDING.glb` remains a separate interchange asset. To serve
 - `src/main.js` — fixed-step movement simulation and direct low-resolution WebGL raster.
 - `vendor/three.module.min.js` — local Three.js r169 fallback for unbundled static branch hosting; its MIT license is included beside it.
 - `src/game/materials.js` — pixel-gradient materials and procedural baked-light map.
-- `src/game/world.js` — apartment geometry, lights, collision volumes and interactables.
+- `src/game/world.js` — exterior setup, collision volumes, entrance interaction and lighting.
+- `src/game/panekas-loader.js` — compact GLB 2.0 loader for the Blender export.
+- `scripts/materialize-panekas-asset.mjs` — validates the compressed model payload and places it in `public/` before build.
 - `src/game/player.js` — movement, collision response and camera synchronization.
 - `src/game/input.js` — keyboard, pointer lock, mouse/touch look and interaction.
 - `src/game/ui.js` — objective, inventory, notifications, menus and in-game clock.

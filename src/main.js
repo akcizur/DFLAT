@@ -28,7 +28,7 @@ new THREE.TextureLoader().load(
   undefined,
   error => console.error("The Flat: assets/bg-scene-hq.png sky background failed to load.", error)
 );
-scene.fog = new THREE.FogExp2(0x34343b, 0.052);
+scene.fog = new THREE.FogExp2(0x34343b, 0.012);
 
 // Global fill lights keep the scene readable even if local room lighting is unavailable.
 const globalHemisphere = new THREE.HemisphereLight(0xdce8ff, 0x625648, 1.15);
@@ -36,8 +36,18 @@ globalHemisphere.name = "Global fill / hemisphere";
 scene.add(globalHemisphere);
 const globalSun = new THREE.DirectionalLight(0xffe6c2, 1.6);
 globalSun.name = "Global fill / key light";
-globalSun.position.set(-7, 12, 6);
-globalSun.castShadow = false;
+globalSun.position.set(-22, 33, 18);
+globalSun.castShadow = true;
+globalSun.shadow.mapSize.set(1024, 1024);
+globalSun.shadow.camera.left = -28;
+globalSun.shadow.camera.right = 28;
+globalSun.shadow.camera.top = 58;
+globalSun.shadow.camera.bottom = -12;
+globalSun.shadow.camera.near = 0.5;
+globalSun.shadow.camera.far = 100;
+globalSun.shadow.bias = -0.0002;
+globalSun.shadow.normalBias = 0.025;
+globalSun.shadow.camera.updateProjectionMatrix();
 scene.add(globalSun);
 
 const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.08, 70);
@@ -94,7 +104,8 @@ scene.traverse(object => {
     object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone());
   }
   if (object.isLight && object.castShadow) {
-    object.shadow.mapSize.set(LOW_POWER ? 192 : 384, LOW_POWER ? 192 : 384);
+    const shadowResolution = object === globalSun ? (LOW_POWER ? 512 : 1024) : (LOW_POWER ? 192 : 384);
+    object.shadow.mapSize.set(shadowResolution, shadowResolution);
     object.shadow.bias = -0.00035;
     object.shadow.normalBias = 0.025;
     object.shadow.radius = 0;
