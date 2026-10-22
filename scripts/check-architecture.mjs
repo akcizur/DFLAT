@@ -21,6 +21,8 @@ const required = [
   "src/game/player.js",
   "src/game/ui.js",
   "src/game/input.js",
+  "src/game/panekas-loader.js",
+  "scripts/materialize-panekas-asset.mjs",
   "tools/generate_socialist_block_17.py",
   "tools/VP_OS_Building_Architecture_v4.py"
 ];
@@ -87,9 +89,9 @@ if (!worldSource.includes("function createPanelakWorld({ THREE, scene, state, ui
 if (!worldSource.includes('get("scene") !== "v1"')) fail("panelak V2 must be the default while the legacy apartment stays opt-in");
 if (!worldSource.includes('groundBox("V2 / chodník před vchodem"')) fail("panelak scene must include a connected entrance approach");
 if (!worldSource.includes('id: "panelakEntrance"')) fail("panelak entry interaction is missing");
-if (!worldSource.includes("const frontZ = -15.9 + 8.2 / 2")) fail("panelak exterior collision geometry must align with the building facade");
+if (!worldSource.includes("const frontZ = buildingRoot.z + 7.69")) fail("imported tower collision plane must align with the Blender entrance facade");
 if (!worldSource.includes("wall(-4.375, 6, 7.25, wallT)")) fail("entrance wall must align to the door-frame opening");
-if (!worldSource.includes("localBox(doorPivot, .69, 1.40, 0, 1.38, 2.80")) fail("front door leaf must fit the clear entrance width");
+if (!worldSource.includes("new THREE.BoxGeometry(1.8, 2.4, 0.07)")) fail("front door leaf must match the imported building entrance scale");
 if (!worldSource.includes("wallH - 2.22, 1.2, M.wall")) fail("interior door header infill must meet its lintel without a gap");
 if (!worldSource.includes("wallH - 2.92")) fail("entrance wall block must join the entrance lintel to the ceiling");
 if (!worldSource.includes("box('Stěna nad lodžií'")) fail("loggia door header must connect to the ceiling wall");
@@ -132,6 +134,11 @@ if (!v4Generator.includes("def build_vertical_core_story()") || !v4Generator.inc
 if (!v4Generator.includes("def lodzie_stitni_east(") || !v4Generator.includes("def build_roof_details()")) fail("VP-OS v4 must include east loggias and detailed roof geometry");
 if (!v4Generator.includes('VP_OS_Building_Architecture_v4.blend')) fail("VP-OS v4 must save a standalone Blender project");
 
+const modelLoaderSource = await readFile(path.join(root, "src/game/panekas-loader.js"), "utf8");
+if (!modelLoaderSource.includes('new DecompressionStream("gzip")') || !modelLoaderSource.includes("0x46546c67")) fail("compressed GLB loader must decompress and validate the imported building model");
+const assetMaterializerSource = await readFile(path.join(root, "scripts/materialize-panekas-asset.mjs"), "utf8");
+if (!assetMaterializerSource.includes("panekas.data") || !assetMaterializerSource.includes("gunzipSync")) fail("compressed Blender model payload must be validated before build");
+if (!worldSource.includes("loadPanekasModel") || !worldSource.includes("gameBuilding.rotation.y = Math.PI")) fail("the supplied Blender model must replace the default exterior with its entrance facing the player");
 const materialsSource = await readFile(path.join(root, "src/game/materials.js"), "utf8");
 if (!materialsSource.includes("function bakedLightTexture()") || !materialsSource.includes("lightMapIntensity")) {
   fail("procedural baked-light gradients are not configured on the material palette");

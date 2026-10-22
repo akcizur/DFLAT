@@ -1,5 +1,6 @@
 // Builds the complete apartment environment and its interactable objects.
 import { createPanelak } from "./panelak.js";
+import { loadPanekasModel } from "./panekas-loader.js";
 export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) {
   // V2 is the default: a standalone exterior scene focused only on the panelák.
   // Add ?scene=v1 to return to the legacy apartment prototype.
@@ -478,6 +479,47 @@ function createPanelakWorld({ THREE, scene, state, ui }) {
   const meshesToAnimate = [];
   const doorAnimations = [];
   const panelak = createPanelak({ THREE, scene });
+  const buildingRoot = { x: 5.2, z: -24.3 };
+  const fallbackFrontZ = -15.9 + 8.2 / 2;
+  const modelUrl = new URL("panekas.data", document.baseURI).href;
+  loadPanekasModel({ THREE, url: modelUrl }).then(gameBuilding => {
+    gameBuilding.name = "PANEKAS / import z Blenderu";
+    gameBuilding.position.set(buildingRoot.x, 0, buildingRoot.z);
+    gameBuilding.rotation.y = Math.PI;
+    gameBuilding.traverse(object => {
+      if (!object.isMesh) return;
+      object.castShadow = true;
+      object.receiveShadow = true;
+    });
+    scene.add(gameBuilding);
+    panelak.traverse(object => {
+      if (object.isMesh && object.name === "Panelák / vstupní dveře") object.visible = false;
+    });
+    panelak.visible = false;
+  }).catch(error => {
+    console.error("The Flat: panekas.data failed to load; keeping the fallback building.", error);
+    ui.showToast("3D model se nenačetl, používám náhradní budovu.");
+    for (const collider of modelShellColliders) {
+      const index = colliders.indexOf(collider);
+      if (index >= 0) colliders.splice(index, 1);
+    }
+    colliders.push(
+      { minX: -7.95, maxX: -0.78, minZ: fallbackFrontZ - 0.22, maxZ: fallbackFrontZ + 0.22 },
+      { minX: 0.78, maxX: 7.95, minZ: fallbackFrontZ - 0.22, maxZ: fallbackFrontZ + 0.22 },
+      { minX: -7.98, maxX: -7.62, minZ: -20.15, maxZ: -11.55 },
+      { minX: 7.62, maxX: 7.98, minZ: -20.15, maxZ: -11.55 },
+      { minX: -7.95, maxX: 7.95, minZ: -20.25, maxZ: -19.85 }
+    );
+    doorPivot.position.set(-0.525, 0, fallbackFrontZ + 0.16);
+    doorLeaf.position.set(0.525, 1.05, 0);
+    doorLeaf.scale.set(1.05 / 1.8, 2.0 / 2.4, 1);
+    doorCollider.minX = -0.55; doorCollider.maxX = 0.55;
+    doorCollider.minZ = fallbackFrontZ - 0.20; doorCollider.maxZ = fallbackFrontZ + 0.20;
+    doorAnimations[0].closedBounds = { ...doorCollider };
+    entranceInteraction.z = fallbackFrontZ + 1.45;
+    entryLight.position.set(0, 2.55, fallbackFrontZ + 0.72);
+    entryFixture.position.z = fallbackFrontZ + 0.72;
+  });
 
   const groundMat = new THREE.MeshStandardMaterial({ color: 0x656760, roughness: 1 });
   const grassMat = new THREE.MeshStandardMaterial({ color: 0x73786d, roughness: 1 });
@@ -509,9 +551,9 @@ function createPanelakWorld({ THREE, scene, state, ui }) {
   scene.add(ground);
 
   // Approach path and a single quiet road establish scale without competing with the building.
-  groundBox("V2 / chodník před vchodem", 0, -0.015, -5.0, 5.2, 0.12, 13.5, concreteMat);
-  groundBox("V2 / obrubník vlevo", -2.72, 0.025, -5.0, 0.12, 0.16, 13.6, curbMat);
-  groundBox("V2 / obrubník vpravo", 2.72, 0.025, -5.0, 0.12, 0.16, 13.6, curbMat);
+  groundBox("V2 / chodník před vchodem", 0, -0.015, -7.5, 5.2, 0.12, 18.5, concreteMat);
+  groundBox("V2 / obrubník vlevo", -2.72, 0.025, -7.5, 0.12, 0.16, 18.6, curbMat);
+  groundBox("V2 / obrubník vpravo", 2.72, 0.025, -7.5, 0.12, 0.16, 18.6, curbMat);
   groundBox("V2 / vozovka", 0, -0.045, 6.2, 180, 0.08, 7.0, asphaltMat);
   groundBox("V2 / chodník za vozovkou", 0, -0.012, 11.2, 180, 0.12, 2.8, concreteMat);
 
@@ -522,34 +564,32 @@ function createPanelakWorld({ THREE, scene, state, ui }) {
     groundBox("V2 / lavička noha", x, 0.20, -5.1, 0.10, 0.42, 0.34, metalMat);
   }
 
-  // Facade, side and rear collision boundaries. The central entry remains usable.
-  const frontZ = -15.9 + 8.2 / 2;
-  colliders.push(
-    { minX: -7.95, maxX: -0.78, minZ: frontZ - 0.22, maxZ: frontZ + 0.22 },
-    { minX: 0.78, maxX: 7.95, minZ: frontZ - 0.22, maxZ: frontZ + 0.22 },
-    { minX: -7.98, maxX: -7.62, minZ: -20.15, maxZ: -11.55 },
-    { minX: 7.62, maxX: 7.98, minZ: -20.15, maxZ: -11.55 },
-    { minX: -7.95, maxX: 7.95, minZ: -20.25, maxZ: -19.85 }
-  );
+  // The imported tower is rotated so its recessed entrance faces the player.
+  // Keep the 7.2 m passage open and block the rest of the exterior perimeter.
+  const frontZ = buildingRoot.z + 7.69;
+  const modelShellColliders = [
+    { minX: -8.7, maxX: -3.65, minZ: frontZ - 0.22, maxZ: frontZ + 0.22 },
+    { minX: 3.65, maxX: 18.2, minZ: frontZ - 0.22, maxZ: frontZ + 0.22 },
+    { minX: -8.85, maxX: -8.45, minZ: -31.95, maxZ: -11.55 },
+    { minX: 17.95, maxX: 18.35, minZ: -31.95, maxZ: -11.55 },
+    { minX: -8.7, maxX: 18.2, minZ: -32.15, maxZ: -31.75 }
+  ];
+  colliders.push(...modelShellColliders);
 
-  // Replace the static door leaf with a hinged leaf so the existing E interaction and
-  // fixed-step door animation work without changing the input or simulation systems.
-  panelak.traverse(object => {
-    if (object.isMesh && object.name === "Panelák / vstupní dveře") object.visible = false;
-  });
+  // Keep the old door visible until the GLB finishes loading. On success, its mesh is hidden.
   const doorPivot = new THREE.Group();
   doorPivot.name = "V2 / pant vstupních dveří";
-  doorPivot.position.set(-0.525, 0, frontZ + 0.16);
-  const doorLeaf = new THREE.Mesh(new THREE.BoxGeometry(1.05, 2.0, 0.065), glassMat);
+  doorPivot.position.set(-0.9, 0, frontZ + 0.12);
+  const doorLeaf = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.4, 0.07), glassMat);
   doorLeaf.name = "V2 / otevírací vstupní dveře";
-  doorLeaf.position.set(0.525, 1.05, 0);
+  doorLeaf.position.set(0.9, 1.2, 0);
   doorLeaf.castShadow = true;
   doorLeaf.receiveShadow = true;
   doorPivot.add(doorLeaf);
   scene.add(doorPivot);
 
   const doorCollider = {
-    minX: -0.55, maxX: 0.55,
+    minX: -0.95, maxX: 0.95,
     minZ: frontZ - 0.20, maxZ: frontZ + 0.20
   };
   colliders.push(doorCollider);
@@ -560,7 +600,7 @@ function createPanelakWorld({ THREE, scene, state, ui }) {
     targetOpen: false, angle: 0, progress: 0, closedBounds
   });
 
-  interactables.push({
+  const entranceInteraction = {
     id: "panelakEntrance",
     name: "Vstup do paneláku",
     description: "Otevři vstupní dveře paneláku.",
@@ -576,14 +616,15 @@ function createPanelakWorld({ THREE, scene, state, ui }) {
         ui.showToast("Vchod se zavírá.");
       }
     }
-  });
+  };
+  interactables.push(entranceInteraction);
 
   // A small light near the entrance provides a readable focal point at dusk.
   const entryLight = new THREE.PointLight(0xffd7a0, 4.0, 7.0, 2);
   entryLight.name = "V2 / světlo nad vchodem";
   entryLight.position.set(0, 2.55, frontZ + 0.72);
   scene.add(entryLight);
-  groundBox("V2 / svítidlo vchodu", 0, 2.72, frontZ + 0.72, 0.42, 0.10, 0.16, concreteMat);
+  const entryFixture = groundBox("V2 / svítidlo vchodu", 0, 2.72, frontZ + 0.72, 0.42, 0.10, 0.16, concreteMat);
 
   return { colliders, interactables, meshesToAnimate, doorAnimations, meshes: [], panelak };
 }
