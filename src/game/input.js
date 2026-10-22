@@ -32,8 +32,16 @@ export function bindInput({ renderer, state, controller, ui, postFx }) {
     state.paused = false;
     ui.hidePause();
     renderer.domElement.focus();
-    if (matchMedia("(pointer:fine)").matches) lockPointer();
-    window.setTimeout(() => { ui.hideStart(); startScreen.classList.remove("transition-out"); }, 260);
+    // Pointer lock is optional and must never block the transition into gameplay.
+    try {
+      if (matchMedia("(pointer:fine)").matches) lockPointer();
+    } catch (error) {
+      console.warn("The Flat: pointer lock unavailable; mouse-look can be re-enabled by clicking the scene.", error);
+    }
+    window.setTimeout(() => {
+      ui.hideStart();
+      startScreen.classList.remove("transition-out");
+    }, 260);
   }
   function pauseGame() {
     if (!state.started || state.finished) return;
