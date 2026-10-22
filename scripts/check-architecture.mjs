@@ -72,10 +72,19 @@ if (!compositorSource.includes("#include <common>") || !compositorSource.include
 if (!compositorSource.includes("function setBlur(options = {})")) fail("runtime blur settings system is required");
 if (!compositorSource.includes("texture2D(tDiffuse, uv + vec2(-px.x, -px.y))")) fail("Gaussian blur must use a symmetric sample kernel in distorted UV space");
 if (!mainSource.includes("preserveDrawingBuffer: true")) fail("WebGL frame buffer must be preserved for pixel compositing");
+const playerSource = await readFile(path.join(root, "src/game/player.js"), "utf8");
+if (!playerSource.includes("z: 2.8, yaw: 0")) fail("V2 player spawn must face the panelak from the exterior");
+const uiSource = await readFile(path.join(root, "src/game/ui.js"), "utf8");
+if (!uiSource.includes('objectiveText.textContent = "Panelák: prozkoumej okolí a vstup."')) fail("panelak V2 needs its own objective text");
 if (!mainSource.includes('object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone())')) fail("mesh UV2 channels are required for baked light maps");
 
 const worldSource = await readFile(path.join(root, "src/game/world.js"), "utf8");
 if (!worldSource.includes("export function createEmptyApartment")) fail("playable empty-apartment map shell is required");
+if (!worldSource.includes("function createPanelakWorld({ THREE, scene, state, ui })")) fail("default DFLAT V2 panelak-only scene is missing");
+if (!worldSource.includes('get("scene") !== "v1"')) fail("panelak V2 must be the default while the legacy apartment stays opt-in");
+if (!worldSource.includes('name: "V2 / chodník před vchodem"')) fail("panelak scene must include a connected entrance approach");
+if (!worldSource.includes('id: "panelakEntrance"')) fail("panelak entry interaction is missing");
+if (!worldSource.includes("const frontZ = -15.9 + 8.2 / 2")) fail("panelak exterior collision geometry must align with the building facade");
 if (!worldSource.includes("wall(-4.375, 6, 7.25, wallT)")) fail("entrance wall must align to the door-frame opening");
 if (!worldSource.includes("localBox(doorPivot, .69, 1.40, 0, 1.38, 2.80")) fail("front door leaf must fit the clear entrance width");
 if (!worldSource.includes("wallH - 2.22, 1.2, M.wall")) fail("interior door header infill must meet its lintel without a gap");
