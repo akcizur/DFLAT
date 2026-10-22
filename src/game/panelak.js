@@ -236,7 +236,7 @@ export function createPanelak({ THREE, scene }) {
   box("Panelák / vstupní portál levý", -0.79, 1.12, front + 0.075, 0.16, 2.24, 0.17, concreteShade);
   box("Panelák / vstupní portál pravý", 0.79, 1.12, front + 0.075, 0.16, 2.24, 0.17, concreteShade);
   box("Panelák / vstupní nadpraží", 0, 2.18, front + 0.075, 1.74, 0.16, 0.17, concreteShade);
-  box("Panelák / hlavní vstupní dveře", 0, 1.10, front + 0.12, 1.30, 2.04, 0.055, doorMaterial);
+  box("Panelák / vstupní dveře", 0, 1.10, front + 0.12, 1.05, 2.04, 0.055, doorMaterial);
   box("Panelák / sklo vstupu", 0, 1.12, front + 0.16, 0.72, 1.84, 0.025, darkGlass);
   box("Panelák / vstupní stříška", 0, 2.34, front + 0.55, 2.75, 0.16, 1.02, roofMaterial);
   box("Panelák / schod 1", 0, 0.09, front + 1.47, 2.65, 0.18, 0.42, foundationMat);
