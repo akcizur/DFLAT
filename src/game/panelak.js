@@ -1,263 +1,249 @@
-// Low-poly Czech panel apartment block: four storeys (P + 3), empty shells and a flat roof.
+// Soviet-era prefabricated panel apartment block: four storeys (P + 3), P1–P4.
 export function createPanelak({ THREE, scene }) {
   const root = new THREE.Group();
-  root.name = "Panelák / P + 3 / čtyři podlaží";
+  root.name = "Sovětský panelový dům / P + 3";
   root.position.set(0, 0, -15.9);
 
-  const mat = (color, roughness = 0.96) =>
-    new THREE.MeshStandardMaterial({ color, roughness });
-  const concrete = mat(0xb9b7af);
-  const concreteDark = mat(0x858984);
-  const slabMat = mat(0x9c9d98);
-  const inside = mat(0xd5d2c9);
-  const frame = mat(0xe3e0d7);
-  const metal = mat(0x525b5e, 0.72);
-  const doorMat = mat(0x777a76);
-  const glass = new THREE.MeshStandardMaterial({
-    color: 0x718a92,
-    roughness: 0.28,
-    metalness: 0.08,
-    transparent: true,
-    opacity: 0.31,
-    depthWrite: false,
+  const material = (color, roughness = 0.94, extra = {}) =>
+    new THREE.MeshStandardMaterial({ color, roughness, ...extra });
+
+  const concrete = material(0xb8b5aa);
+  const concreteLight = material(0xc9c5b8);
+  const concreteShade = material(0x85877f);
+  const concreteSeam = material(0x777a73);
+  const innerConcrete = material(0xd1cec3);
+  const foundationMat = material(0x777a76);
+  const metal = material(0x4e5656, 0.68, { metalness: 0.25 });
+  const frame = material(0xd7d5ca, 0.72);
+  const darkGlass = material(0x33434a, 0.29, {
+    metalness: 0.12, transparent: true, opacity: 0.66,
     side: THREE.DoubleSide
   });
+  const shadowGlass = material(0x202a2e, 0.88);
+  const doorMaterial = material(0x4d5a5b, 0.6, { metalness: 0.16 });
+  const roofMaterial = material(0x8a8b83);
 
-  const W = 15.5, D = 8.2, H = 2.72, floors = 4, wall = 0.16;
-  const bayW = W / 4;
-  const front = D / 2;
-  const back = -D / 2;
-  const windowW = 1.55;
-  const windowH = 1.28;
-  const windowY = 1.58;
-  const entryW = 1.05;
-  const entryH = 2.0;
+  const width = 16.4, depth = 8.8, floorHeight = 2.72, floorCount = 4;
+  const wallThickness = 0.18, bayWidth = width / 4, front = depth / 2, back = -depth / 2;
+  const floorSlab = 0.22, windowWidth = 1.48, windowHeight = 1.30, windowCenterY = 1.58;
 
-  function part(name, x, y, z, sx, sy, sz, material, { shadow = false } = {}) {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), material);
+  function box(name, x, y, z, sx, sy, sz, mat, { shadow = false } = {}) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat);
     mesh.name = name;
     mesh.position.set(x, y, z);
     mesh.castShadow = shadow;
-    mesh.receiveShadow = shadow;
+    mesh.receiveShadow = true;
     root.add(mesh);
     return mesh;
   }
 
-  function addWindow(bay, floor, y0) {
-    const x = -W / 2 + bayW * (bay + 0.5);
-    const wy = y0 + windowY;
+  function addWindowParts(label, x, y, w, h, z = front) {
+    // Dark recess behind the pane gives every window a visible depth.
+    box(`Okno ${label} / hluboké ostění`, x, y, z - 0.105,
+      w - 0.08, h - 0.08, 0.025, shadowGlass);
+    box(`Okno ${label} / sklo`, x, y, z + 0.028,
+      w - 0.11, h - 0.11, 0.035, darkGlass);
 
-    // The aperture is cut out of the concrete facade. Only a real pane and narrow
-    // reveal/frame pieces occupy the opening, so the window does not read as a slab.
-    part(`Okno P${floor} / sklo B${bay + 1}`,
-      x, wy, front - 0.018, windowW, windowH, 0.028, glass);
+    const trimZ = z + 0.075, jamb = 0.075;
+    box(`Okno ${label} / levé ostění`, x - w / 2 - jamb / 2, y, z + 0.025,
+      jamb, h + 0.12, 0.12, concreteShade);
+    box(`Okno ${label} / pravé ostění`, x + w / 2 + jamb / 2, y, z + 0.025,
+      jamb, h + 0.12, 0.12, concreteShade);
+    box(`Okno ${label} / horní překlad`, x, y + h / 2 + 0.035, trimZ,
+      w + 0.13, 0.07, 0.12, concreteLight);
+    box(`Okno ${label} / parapet`, x, y - h / 2 - 0.035, trimZ,
+      w + 0.15, 0.10, 0.18, concreteLight);
 
-    const revealZ = front + 0.012;
-    const revealDepth = 0.09;
-    const sideX = windowW / 2 + 0.035;
-    const sideY = windowH / 2 + 0.035;
-    part(`Okno P${floor} / špaleta levá`, x - sideX, wy, revealZ,
-      0.07, windowH + 0.14, revealDepth, concreteDark);
-    part(`Okno P${floor} / špaleta pravá`, x + sideX, wy, revealZ,
-      0.07, windowH + 0.14, revealDepth, concreteDark);
-    part(`Okno P${floor} / špaleta horní`, x, wy + sideY, revealZ,
-      windowW + 0.14, 0.07, revealDepth, concreteDark);
-    part(`Okno P${floor} / rám spodní`, x, wy - sideY, front + 0.035,
-      windowW + 0.14, 0.075, 0.12, frame);
-    part(`Okno P${floor} / rám horní`, x, wy + windowH / 2, front + 0.035,
-      windowW + 0.07, 0.055, 0.045, frame);
-    part(`Okno P${floor} / rám levý`, x - windowW / 2, wy, front + 0.035,
-      0.055, windowH, 0.045, frame);
-    part(`Okno P${floor} / rám pravý`, x + windowW / 2, wy, front + 0.035,
-      0.055, windowH, 0.045, frame);
-    part(`Okno P${floor} / středová příčka`, x, wy, front + 0.037,
-      0.045, windowH, 0.045, frame);
+    box(`Okno ${label} / rám levý`, x - w / 2 + 0.035, y, z + 0.09,
+      0.045, h - 0.02, 0.035, frame);
+    box(`Okno ${label} / rám pravý`, x + w / 2 - 0.035, y, z + 0.09,
+      0.045, h - 0.02, 0.035, frame);
+    box(`Okno ${label} / příčka`, x, y, z + 0.092, 0.05, h - 0.015, 0.035, frame);
+    box(`Okno ${label} / horní rám`, x, y + h / 2 - 0.025, z + 0.09,
+      w - 0.03, 0.045, 0.035, frame);
+    box(`Okno ${label} / spodní rám`, x, y - h / 2 + 0.025, z + 0.09,
+      w - 0.03, 0.045, 0.035, frame);
   }
 
-  function buildFacade(floor, y0) {
-    const wallBottom = y0 + 0.24;
-    const wallTop = y0 + H;
-    const apertures = Array.from({ length: 4 }, (_, bay) => {
-      const center = -W / 2 + bayW * (bay + 0.5);
-      return {
-        left: center - windowW / 2,
-        right: center + windowW / 2,
-        bottom: y0 + windowY - windowH / 2,
-        top: y0 + windowY + windowH / 2,
-        type: "window"
-      };
-    });
-    if (floor === 0) {
-      apertures.push({
-        left: -entryW / 2,
-        right: entryW / 2,
-        bottom: wallBottom,
-        top: y0 + entryH,
-        type: "entry"
+  function buildFrontFacade(floor, y0) {
+    const wallBottom = y0 + floorSlab, wallTop = y0 + floorHeight;
+    const openings = [];
+    for (let bay = 0; bay < 4; bay++) {
+      const x = -width / 2 + bayWidth * (bay + 0.5);
+      openings.push({
+        left: x - windowWidth / 2, right: x + windowWidth / 2,
+        bottom: y0 + windowCenterY - windowHeight / 2,
+        top: y0 + windowCenterY + windowHeight / 2,
+        kind: "flat", x
       });
     }
+    // Open ground-floor entrance; narrow, repeated stairwell windows above it.
+    if (floor === 0) {
+      openings.push({ left: -0.67, right: 0.67, bottom: wallBottom, top: y0 + 2.15, kind: "entry", x: 0 });
+    } else {
+      openings.push({ left: -0.39, right: 0.39, bottom: y0 + 0.92, top: y0 + 2.34, kind: "stairs", x: 0 });
+    }
 
-    const cuts = [-W / 2, W / 2, ...apertures.flatMap(a => [a.left, a.right])]
-      .map(value => Number(value.toFixed(4)));
-    const breakpoints = [...new Set(cuts)].sort((a, b) => a - b);
+    const breaks = [...new Set([
+      -width / 2, width / 2,
+      ...openings.flatMap(opening => [opening.left, opening.right])
+    ])].sort((a, b) => a - b);
 
-    // Split each bay into wall segments above/below the window or entry opening.
-    // This produces a continuous facade without covering the entrance or glass.
-    for (let i = 0; i < breakpoints.length - 1; i++) {
-      const left = breakpoints[i];
-      const right = breakpoints[i + 1];
-      const centerX = (left + right) / 2;
-      const opening = apertures.find(a => centerX > a.left && centerX < a.right);
-      const width = right - left;
-      const x = centerX;
-      const z = front - wall / 2;
-      const addWall = (bottom, top, suffix) => {
-        if (top - bottom < 0.015) return;
-        part(`Fasáda P${floor} / ${suffix}`, x, (bottom + top) / 2, z,
-          width, top - bottom, wall, concrete);
+    // Assemble concrete panels above and below each real aperture.
+    for (let i = 0; i < breaks.length - 1; i++) {
+      const left = breaks[i], right = breaks[i + 1];
+      if (right - left < 0.012) continue;
+      const x = (left + right) / 2;
+      const opening = openings.find(item => x > item.left + 0.0001 && x < item.right - 0.0001);
+      const addPanel = (bottom, top, label) => {
+        if (top - bottom < 0.018) return;
+        box(`Fasádní panel P${floor + 1} / ${label}`, x, (bottom + top) / 2, front - wallThickness / 2,
+          right - left, top - bottom, wallThickness,
+          (i + floor) % 3 === 0 ? concreteLight : concrete);
       };
-      if (!opening) {
-        addWall(wallBottom, wallTop, "panel");
-      } else {
-        addWall(wallBottom, opening.bottom, "parapet");
-        addWall(opening.top, wallTop, opening.type === "entry" ? "nadpraží vstupu" : "nadokenní panel");
+      if (!opening) addPanel(wallBottom, wallTop, "beton");
+      else {
+        addPanel(wallBottom, opening.bottom, "parapet");
+        addPanel(opening.top, wallTop, opening.kind === "entry" ? "nadpraží vchodu" : "nadokenní dílec");
       }
     }
 
-    // Recessed panel seams follow the concrete-panel rhythm, not the glass openings.
-    for (const seamX of [-bayW * 1.5, -bayW * 0.5, bayW * 0.5, bayW * 1.5]) {
-      if (floor === 0 && Math.abs(seamX) < 0.01) continue;
-      part(`Fasáda P${floor} / svislá spára`,
-        seamX, y0 + H / 2 + 0.12, front + 0.031,
-        0.035, H - 0.24, 0.045, concreteDark);
+    for (const opening of openings) {
+      if (opening.kind === "flat") {
+        addWindowParts(`P${floor + 1} / byt`, opening.x,
+          opening.bottom + windowHeight / 2, windowWidth, windowHeight);
+      } else if (opening.kind === "stairs") {
+        addWindowParts(`P${floor + 1} / schodiště`, opening.x,
+          (opening.bottom + opening.top) / 2,
+          opening.right - opening.left, opening.top - opening.bottom);
+      }
     }
+
+    // Panel seams and concrete floor band create the repeated prefab rhythm.
+    for (let bay = 1; bay < 4; bay++) {
+      const x = -width / 2 + bayWidth * bay;
+      box(`Fasáda P${floor + 1} / panelová spára`, x,
+        y0 + floorHeight / 2 + 0.02, front + 0.018,
+        0.035, floorHeight - 0.30, 0.045, concreteSeam);
+    }
+    box(`Fasáda P${floor + 1} / vodorovný pás`, 0,
+      y0 + floorHeight - 0.045, front + 0.045,
+      width + 0.04, 0.075, 0.09, concreteShade);
   }
 
-  // Raised concrete plinth, split at the entrance so the doorway remains clear.
-  part("Panelák / sokl levý", -(W / 2 + 0.175), 0.28, 0,
-    0.35, 0.56, D + 0.35, concreteDark);
-  part("Panelák / sokl pravý", W / 2 + 0.175, 0.28, 0,
-    0.35, 0.56, D + 0.35, concreteDark);
-  part("Panelák / sokl zadní", 0, 0.28, back - 0.175,
-    W + 0.35, 0.56, 0.35, concreteDark);
-  part("Panelák / sokl přední levý", -(W / 4 + 0.4625), 0.28, front + 0.175,
-    W / 2 - 0.925, 0.56, 0.35, concreteDark);
-  part("Panelák / sokl přední pravý", W / 4 + 0.4625, 0.28, front + 0.175,
-    W / 2 - 0.925, 0.56, 0.35, concreteDark);
+  // Heavy concrete plinth, split so it does not block the entrance.
+  box("Panelák / sokl levý", -(width / 2 + 0.18), 0.28, 0, 0.36, 0.56, depth + 0.36, foundationMat);
+  box("Panelák / sokl pravý", width / 2 + 0.18, 0.28, 0, 0.36, 0.56, depth + 0.36, foundationMat);
+  box("Panelák / sokl zadní", 0, 0.28, back - 0.18, width + 0.36, 0.56, 0.36, foundationMat);
+  box("Panelák / sokl přední levý", -(width / 4 + 0.50), 0.28, front + 0.17,
+    width / 2 - 1.0, 0.56, 0.34, foundationMat);
+  box("Panelák / sokl přední pravý", width / 4 + 0.50, 0.28, front + 0.17,
+    width / 2 - 1.0, 0.56, 0.34, foundationMat);
 
-  for (let floor = 0; floor < floors; floor++) {
-    const y0 = floor * H;
-    part(`Panelák / podlahová deska P${floor}`,
-      0, y0 + 0.12, 0, W, 0.24, D, slabMat);
+  for (let floor = 0; floor < floorCount; floor++) {
+    const y0 = floor * floorHeight;
+    const roomY = y0 + floorHeight / 2 + 0.10;
+    const roomH = floorHeight - 0.25;
+    box(`Panelák / železobetonová deska P${floor + 1}`, 0, y0 + floorSlab / 2,
+      0, width, floorSlab, depth, roofMaterial, { shadow: true });
+    box(`Panelák / zadní obvodová stěna P${floor + 1}`, 0, roomY,
+      back + wallThickness / 2, width, roomH, wallThickness, innerConcrete);
+    box(`Panelák / levý štít P${floor + 1}`, -width / 2 + wallThickness / 2,
+      roomY, 0, wallThickness, roomH, depth, concrete);
+    box(`Panelák / pravý štít P${floor + 1}`, width / 2 - wallThickness / 2,
+      roomY, 0, wallThickness, roomH, depth, concrete);
 
-    // Four empty bays per storey. Ground-floor middle bays remain open behind the
-    // entrance, forming a clear route into the building instead of a wall dead-end.
+    // Empty apartment shells only. The central ground-level lobby remains open.
     for (let bay = 0; bay < 4; bay++) {
-      const x = -W / 2 + bayW * (bay + 0.5);
-      const roomY = y0 + H / 2 + 0.12;
-      const roomH = H - 0.24;
-
-      part(`Byt P${floor} B${bay + 1} / zadní stěna`,
-        x, roomY, back + wall / 2, bayW, roomH, wall, inside);
-
-      if (bay === 0) {
-        part(`Panelák / levý štít P${floor}`,
-          -W / 2 + wall / 2, roomY, 0, wall, roomH, D, concrete);
-      }
-      if (bay === 3) {
-        part(`Panelák / pravý štít P${floor}`,
-          W / 2 - wall / 2, roomY, 0, wall, roomH, D, concrete);
-      }
-
-      // Keep the central ground-floor entry aligned with a walkable lobby opening.
+      const x = -width / 2 + bayWidth * (bay + 0.5);
       if (bay < 3 && !(floor === 0 && bay === 1)) {
-        const px = -W / 2 + bayW * (bay + 1);
-        part(`Byt / příčka P${floor}`, px, roomY, 0,
-          wall, roomH, D - 0.2, inside);
+        const partitionX = -width / 2 + bayWidth * (bay + 1);
+        box(`Panelák / příčná stěna P${floor + 1}`, partitionX, roomY,
+          0, wallThickness, roomH, depth - 0.24, innerConcrete);
       }
-
-      // The lobby continues into the paired middle units on the ground floor.
       if (!(floor === 0 && (bay === 1 || bay === 2))) {
-        part(`Byt P${floor} B${bay + 1} / vnitřní příčka`,
-          x, roomY, back + D * 0.39, bayW - 0.25, roomH, wall, inside);
+        box(`Panelák / bytová příčka P${floor + 1} B${bay + 1}`, x, roomY,
+          back + depth * 0.39, bayWidth - 0.24, roomH, wallThickness, innerConcrete);
       }
 
-      addWindow(bay, floor, y0);
-
-      // Four shallow loggias give the facade depth while leaving each flat empty.
-      part(`Lodžie P${floor} B${bay + 1} / deska`,
-        x, y0 + 0.17, front + 0.68, bayW - 0.16, 0.16, 1.3, slabMat);
-      part(`Lodžie P${floor} B${bay + 1} / zábradlí`,
-        x, y0 + 0.72, front + 1.28, bayW - 0.2, 0.82, 0.055, metal);
-      part(`Lodžie P${floor} B${bay + 1} / horní madlo`,
-        x, y0 + 1.15, front + 1.28, bayW - 0.16, 0.065, 0.095, metal);
-      for (let n = 1; n <= 5; n++) {
-        const rx = x - bayW / 2 + n * (bayW / 6);
-        part(`Lodžie P${floor} / svislá příčka`,
-          rx, y0 + 0.72, front + 1.28, 0.035, 0.76, 0.06, metal);
-      }
+      // Concrete balcony slab, chunky loggia cheeks and a plain steel rail.
+      const balconyZ = front + 0.72;
+      box(`Lodžie P${floor + 1} B${bay + 1} / betonová deska`,
+        x, y0 + 0.20, front + 0.66, bayWidth - 0.16, 0.16, 1.42, roofMaterial);
       for (const side of [-1, 1]) {
-        part(`Lodžie P${floor} / boční zábradlí`,
-          x + side * (bayW / 2 - 0.09), y0 + 0.72, front + 0.68,
-          0.055, 0.82, 1.14, metal);
+        box(`Lodžie P${floor + 1} / betonová bočnice`,
+          x + side * (bayWidth / 2 - 0.075), y0 + 0.60, balconyZ,
+          0.10, 0.76, 1.20, concreteShade);
+      }
+      box(`Lodžie P${floor + 1} / ocelové zábradlí`, x,
+        y0 + 0.71, front + 1.365, bayWidth - 0.30, 0.84, 0.055, metal);
+      box(`Lodžie P${floor + 1} / horní madlo`, x, y0 + 1.15,
+        front + 1.365, bayWidth - 0.25, 0.065, 0.09, metal);
+      for (let bar = 1; bar <= 7; bar++) {
+        const railX = x - (bayWidth - 0.30) / 2 + bar * ((bayWidth - 0.30) / 8);
+        box(`Lodžie P${floor + 1} / svislá tyč`, railX, y0 + 0.71,
+          front + 1.365, 0.035, 0.80, 0.055, metal);
       }
     }
 
-    buildFacade(floor, y0);
-    part(`Panelák / vodorovná spára P${floor}`,
-      0, y0 + H - 0.025, front + 0.055, W, 0.07, 0.08, concreteDark);
+    buildFrontFacade(floor, y0);
+
+    // Simple end-wall windows keep the narrow side elevations from reading as blanks.
+    for (const side of [-1, 1]) {
+      const sideX = side * (width / 2 + 0.018);
+      const windowY = y0 + 1.54, sideZ = 0.8;
+      box(`Štít P${floor + 1} / zapuštěné okno`, sideX - side * 0.015,
+        windowY, sideZ, 0.035, 1.12, 1.20, darkGlass);
+      box(`Štít P${floor + 1} / horní překlad`, sideX + side * 0.01,
+        windowY + 0.60, sideZ, 0.10, 0.08, 1.33, concreteLight);
+      box(`Štít P${floor + 1} / parapet`, sideX + side * 0.01,
+        windowY - 0.60, sideZ, 0.13, 0.10, 1.33, concreteLight);
+      box(`Štít P${floor + 1} / svislý rám`, sideX + side * 0.045,
+        windowY, sideZ, 0.08, 1.12, 0.045, frame);
+    }
   }
 
-  const totalH = floors * H;
-  part("Panelák / plochá střecha", 0, totalH + 0.10, 0,
-    W + 0.4, 0.2, D + 0.4, concreteDark);
-  part("Panelák / atika vpředu", 0, totalH + 0.36, front + 0.12,
-    W + 0.4, 0.32, 0.18, concrete);
-  part("Panelák / atika vzadu", 0, totalH + 0.36, back - 0.12,
-    W + 0.4, 0.32, 0.18, concrete);
-  part("Panelák / atika levá", -W / 2 - 0.12, totalH + 0.36, 0,
-    0.18, 0.32, D, concrete);
-  part("Panelák / atika pravá", W / 2 + 0.12, totalH + 0.36, 0,
-    0.18, 0.32, D, concrete);
+  const totalHeight = floorCount * floorHeight;
+  box("Panelák / střešní deska", 0, totalHeight + 0.10, 0,
+    width + 0.44, 0.20, depth + 0.44, foundationMat);
+  box("Panelák / atika vpředu", 0, totalHeight + 0.35, front + 0.14,
+    width + 0.44, 0.32, 0.20, concrete);
+  box("Panelák / atika vzadu", 0, totalHeight + 0.35, back - 0.14,
+    width + 0.44, 0.32, 0.20, concrete);
 
-  // A restrained rooftop service core, vents and rain pipes finish the silhouette.
-  part("Panelák / technický výstup na střechu", 0, totalH + 0.72,
-    back + 1.05, 2.2, 0.9, 2.1, concrete);
-  part("Panelák / dveře technického výstupu", 0, totalH + 0.58,
-    back + 2.12, 0.8, 0.6, 0.05, doorMat);
-  for (const [x, z, sx, sz] of [
-    [-4.8, -2.4, 1.3, 1.05],
-    [-1.3, 2.8, 1.1, 0.95],
-    [2.6, -2.8, 1.25, 1.0]
-  ]) {
-    part("Panelák / střešní ventilace", x, totalH + 0.34, z,
-      sx, 0.28, sz, concrete);
-    part("Panelák / odtah", x, totalH + 0.56, z,
-      0.32, 0.18, 0.32, metal);
-  }
-  for (const x of [-W / 2 - 0.10, W / 2 + 0.10]) {
-    const pipe = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.035, 0.035, totalH, 5),
-      metal
-    );
+  for (const side of [-1, 1]) {
+    box("Panelák / boční atika", side * (width / 2 + 0.14), totalHeight + 0.35,
+      0, 0.20, 0.32, depth + 0.30, concrete);
+    const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, totalHeight, 5), metal);
     pipe.name = "Panelák / dešťový svod";
-    pipe.position.set(x, totalH / 2, front + 0.16);
+    pipe.position.set(side * (width / 2 + 0.11), totalHeight / 2, front + 0.17);
     root.add(pipe);
   }
 
-  // Ground-floor entrance portal. Its opening is aligned with the world collision gap.
-  part("Panelák / vstupní portál levý", -0.84, 1.12, front + 0.06,
-    0.16, 2.24, 0.14, concreteDark);
-  part("Panelák / vstupní portál pravý", 0.84, 1.12, front + 0.06,
-    0.16, 2.24, 0.14, concreteDark);
-  part("Panelák / vstupní portál nadpraží", 0, 2.16, front + 0.06,
-    1.84, 0.16, 0.14, concreteDark);
-  part("Panelák / vstupní dveře", 0, 1.05, front + 0.16,
-    entryW, entryH, 0.06, glass);
-  part("Panelák / vstupní stříška", 0, 2.32, front + 0.48,
-    2.5, 0.16, 0.95, slabMat);
-  part("Panelák / chodník u vchodu", 0, 0.055, front + 2.1,
-    5.2, 0.11, 2.7, concreteDark);
+  box("Panelák / výlez na střechu", 0, totalHeight + 0.64, back + 1.05,
+    2.25, 0.90, 2.10, concreteShade);
+  box("Panelák / dveře střešního výlezu", 0, totalHeight + 0.55, back + 2.12,
+    0.82, 0.60, 0.06, doorMaterial);
+  for (const [x, z, sx, sz] of [
+    [-5.4, -2.5, 1.5, 1.15], [-1.5, 2.5, 1.25, 1.0],
+    [2.9, -2.7, 1.4, 1.15], [5.2, 2.1, 1.0, 0.9]
+  ]) {
+    box("Panelák / střešní ventilační komora", x, totalHeight + 0.29, z, sx, 0.34, sz, concreteShade);
+    box("Panelák / ventilační výdech", x, totalHeight + 0.52, z, 0.36, 0.15, 0.36, metal);
+  }
+
+  // Ground entrance with recessed door, cast-concrete portal, flat canopy and two steps.
+  box("Panelák / vstupní portál levý", -0.79, 1.12, front + 0.075, 0.16, 2.24, 0.17, concreteShade);
+  box("Panelák / vstupní portál pravý", 0.79, 1.12, front + 0.075, 0.16, 2.24, 0.17, concreteShade);
+  box("Panelák / vstupní nadpraží", 0, 2.18, front + 0.075, 1.74, 0.16, 0.17, concreteShade);
+  box("Panelák / hlavní vstupní dveře", 0, 1.10, front + 0.12, 1.30, 2.04, 0.055, doorMaterial);
+  box("Panelák / sklo vstupu", 0, 1.12, front + 0.16, 0.72, 1.84, 0.025, darkGlass);
+  box("Panelák / vstupní stříška", 0, 2.34, front + 0.55, 2.75, 0.16, 1.02, roofMaterial);
+  box("Panelák / schod 1", 0, 0.09, front + 1.47, 2.65, 0.18, 0.42, foundationMat);
+  box("Panelák / schod 2", 0, 0.045, front + 1.80, 2.85, 0.09, 0.30, concreteLight);
+  box("Panelák / vstupní chodník", 0, 0.015, front + 2.45, 4.4, 0.07, 3.5, concreteShade);
+  box("Panelák / domovní tabulka", 1.10, 1.75, front + 0.11, 0.28, 0.34, 0.045, metal);
+  box("Panelák / zvonkový panel", 0.98, 1.25, front + 0.12, 0.10, 0.24, 0.035, frame);
 
   scene.add(root);
   return root;

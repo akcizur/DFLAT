@@ -2,7 +2,7 @@
 
 A first-person apartment exploration game built with Three.js, Vite and Bun. Three.js is local, with no CDN dependency. Vite bundles the npm package for the production build; a version-matched vendored module plus an import map also keeps the unbundled source entry compatible with static branch hosting.
 
-The default browser world includes a four-storey Czech panel block (P + 3), a connected entrance approach, low-poly street furniture, warm street lamps and non-colliding spectral figures. Keyboard, mouse, touch and Gamepad API inputs remain supported, with fullscreen available from the HUD.
+The default browser world includes a four-storey Soviet-era prefabricated panel block (P + 3), repetitive concrete facade panels, recessed windows, loggias, a flat service roof and a connected entrance approach. Keyboard, mouse, touch and Gamepad API inputs remain supported, with fullscreen available from the HUD.
 
 ## Run locally
 

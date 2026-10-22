@@ -143,7 +143,6 @@ const shimmerMaterials = (() => {
 
 function updateSimulation(deltaSeconds, nowMs) {
   const nearest = controller.update(deltaSeconds);
-  world.ghosts?.update(nowMs * 0.001);
   for (const door of world.doorAnimations) {
     const target = door.targetOpen ? 1 : 0;
     door.progress += (target - door.progress) * (1 - Math.exp(-deltaSeconds * 5.5));

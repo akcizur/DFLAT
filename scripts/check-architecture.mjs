@@ -18,7 +18,6 @@ const required = [
   "src/boot-debug.js",
   "src/game/materials.js",
   "src/game/panelak.js",
-  "src/game/ghosts.js",
   "src/game/world.js",
   "src/game/player.js",
   "src/game/ui.js",
@@ -87,13 +86,10 @@ const worldSource = await readFile(path.join(root, "src/game/world.js"), "utf8")
 if (!worldSource.includes("export function createEmptyApartment")) fail("playable empty-apartment map shell is required");
 if (!worldSource.includes("function createPanelakWorld({ THREE, scene, state, ui })")) fail("default DFLAT V2 panelak scene is missing");
 const panelakSource = await readFile(path.join(root, "src/game/panelak.js"), "utf8");
-if (!panelakSource.includes("floors = 4")) fail("browser panelak model must contain exactly four storeys");
-if (!panelakSource.includes("function buildFacade")) fail("panelak facade openings must be built as wall panels, not floating window slabs");
-const ghostsSource = await readFile(path.join(root, "src/game/ghosts.js"), "utf8");
-if (!ghostsSource.includes("export function createGhosts")) fail("ambient ghost module is missing");
-if (!worldSource.includes('import { createGhosts } from "./ghosts.js"')) fail("panelak world must load ambient ghosts");
-if (!worldSource.includes("ghosts };")) fail("panelak world must expose the ghost animation controller");
-if (!mainSource.includes("world.ghosts?.update(nowMs * 0.001)")) fail("ambient ghosts must animate in the game simulation");
+if (!panelakSource.includes("floorCount = 4")) fail("browser panelak model must contain exactly four storeys");
+if (!panelakSource.includes("function buildFrontFacade")) fail("panelak facade openings must be built as wall panels, not floating window slabs");
+if (!panelakSource.includes("Sovětský panelový dům")) fail("Soviet-style prefabricated panel building is missing");
+if (/ghost|apparition/i.test(worldSource)) fail("the game world must not include ghost effects");
 if (!worldSource.includes('get("scene") !== "v1"')) fail("panelak V2 must be the default while the legacy apartment stays opt-in");
 if (!worldSource.includes('groundBox("V2 / chodník před vchodem"')) fail("panelak scene must include a connected entrance approach");
 if (!worldSource.includes('id: "panelakEntrance"')) fail("panelak entry interaction is missing");
