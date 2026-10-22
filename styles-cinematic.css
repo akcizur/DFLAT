@@ -825,3 +825,78 @@
 #startScreen.nexus-menu .nexus-monitor {
   margin: 0;
 }
+
+
+/* Vintage render pass: remove CRT scanlines and switch the terminal to a calm DOS-era palette. */
+.boot-screen:before,
+.boot-screen:after,
+.boot-noise,
+#startScreen.tv-bios-mode .term:before,
+#pauseScreen .term:before,
+#startScreen.tv-bios-mode .term:after,
+#pauseScreen .term:after {
+  display: none !important;
+  background: none !important;
+  animation: none !important;
+  opacity: 0 !important;
+}
+#startScreen.tv-bios-mode,
+#pauseScreen {
+  color: #d7c9a5;
+  background: rgba(13, 17, 20, .84);
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, .65);
+}
+#startScreen.tv-bios-mode .term,
+#pauseScreen .term {
+  border-radius: 0;
+  color: #d7c9a5;
+  border: 2px solid #777b73;
+  background: #242923;
+  box-shadow: inset 2px 2px 0 #43493f, inset -2px -2px 0 #11150f, 0 8px 0 rgba(0,0,0,.16);
+  animation: none;
+  text-shadow: none;
+}
+#startScreen.tv-bios-mode .tv-bios-title,
+#startScreen.tv-bios-mode .cmd,
+#pauseScreen .cmd {
+  color: #f0e5c6;
+  text-shadow: none;
+}
+#startScreen.tv-bios-mode .cmd,
+#pauseScreen .cmd {
+  border-radius: 0;
+  border: 2px solid #8a8e82;
+  background: #343a32;
+  box-shadow: inset 2px 2px 0 #52594d, inset -2px -2px 0 #1b201a;
+}
+#startScreen.tv-bios-mode .cmd:hover,
+#startScreen.tv-bios-mode .cmd:focus-visible,
+#pauseScreen .cmd:hover,
+#pauseScreen .cmd:focus-visible {
+  color: #1b211b;
+  background: #c9d5a1;
+  border-color: #e2e9c7;
+  box-shadow: inset 2px 2px 0 #eef2d9, inset -2px -2px 0 #8c9971;
+}
+.hud { color: #d7c9a5; text-shadow: 1px 1px 0 #161813; }
+.brand, .status, .objective, .interaction, .hint, .toast,
+.touch-controls button, .touch-action {
+  color: #d7c9a5;
+  background: rgba(30, 34, 29, .94);
+  border-color: #73786a;
+  border-radius: 0;
+  box-shadow: inset 1px 1px 0 rgba(211,213,183,.12), inset -1px -1px 0 rgba(0,0,0,.32);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  text-shadow: 1px 1px 0 #11140f;
+}
+.brand span, .status, .hint, .bottomline .right { color: #a6aa91; }
+.objective { border-left-color: #b7c58a; }
+.objective b, .interaction { color: #e7dfbd; }
+.objective .done { color: #c5d79b; text-shadow: none; }
+.crosshair:before, .crosshair:after { background: #e7dfbd; box-shadow: 1px 1px 0 #171914; }
+.toast { border-color: #a69d79; }
+.touch-controls button:active, .touch-action:active {
+  color: #1b211b;
+  background: #c9d5a1;
+}
