@@ -22,12 +22,13 @@ bun run preview
 
 ## Rendering
 
-- **Pixel-grid WebGL:** the scene renders into a compact canvas and scales with nearest-neighbour sampling for a stronger, crisp pixel look.
-- **No screen-wide post-processing:** DOS palette quantization, CRT/PS1/VHS profiles, color tinting, chromatic aberration, scanlines, noise, curvature and depth blur are removed.
+- **Pixel-grid WebGL:** the scene renders into a compact canvas and scales with nearest-neighbour sampling for a strong, crisp pixel look.
+- **Soft Pixel Tone:** one small shader pass adds restrained warmth and contrast at 20% intensity. Toggle it with `F2` or in the pause menu; use `?postfx=0` to start with it disabled.
+- **No heavyweight filter stack:** there are no scanlines, grain, blur, chromatic aberration, curvature, bloom or depth-of-field passes.
 - **Stable simulation:** gameplay updates target 60 Hz and scene rendering is capped at 60 FPS.
 - **World materials remain intact:** authored textures, material colors, lighting, fog and shadows still come from the game scene itself.
 
-The look is produced by native low-resolution rasterization, not a screen-wide effect filter. Level geometry, movement, interactions and the UI remain unchanged.
+The effect runs at the same compact resolution as the pixel-grid scene and uses a single full-screen pass. The native raster stays crisp, while movement, interactions and the UI remain unchanged.
 
 ## GitHub Pages
 
@@ -38,6 +39,7 @@ The deployment workflow builds the static site into `dist/` and deploys to [akci
 - `W A S D` / arrow keys — move
 - Mouse — look around with reduced sensitivity
 - `E` — interact
+- `F2` — toggle Soft Pixel Tone
 - `Enter` — start or resume
 - `Esc` — pause
 - Touch screens — on-screen movement/action controls and drag-to-look

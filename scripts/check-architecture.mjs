@@ -21,6 +21,7 @@ const required = [
   "src/game/player.js",
   "src/game/ui.js",
   "src/game/input.js",
+  "src/game/soft-pixel-tone.js",
   "tools/generate_socialist_block_17.py",
   "tools/VP_OS_Building_Architecture_v4.py"
 ];
@@ -57,11 +58,14 @@ if (/from\s+["']https?:\/\//i.test(mainSource)) fail("runtime modules must be bu
 if (!mainSource.includes("createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui })") && !mainSource.includes("createEmptyApartment({ THREE, scene, M })")) fail("gameplay must boot into a supported apartment scene");
 if (!mainSource.includes("const SIMULATION_HZ = 60")) fail("game simulation must target 60 Hz");
 if (!mainSource.includes("const SCENE_RENDER_HZ = 60")) fail("scene rendering must target 60 FPS");
-if (!mainSource.includes("renderer.render(scene, camera)")) fail("scene must render directly without a compositor");
+if (!mainSource.includes("softPixelTone.render(scene, camera)")) fail("scene must render through the Soft Pixel Tone pass");
 if (!mainSource.includes("renderer.setSize(width, height, false)")) fail("scene must render through a controllable raster canvas");
-if (!mainSource.includes("const PIXEL_SCALE = LOW_POWER ? 3.6 : 3.2")) fail("pixel-art raster scale must be active without post-processing");
+if (!mainSource.includes("const PIXEL_SCALE = LOW_POWER ? 3.6 : 3.2")) fail("pixel-art raster scale must remain active with the tone pass");
 if (!mainSource.includes('imageRendering: "pixelated"')) fail("render canvas must use nearest-neighbour pixel scaling");
-if (mainSource.includes("createPixelPostProcess") || mainSource.includes("postFx.")) fail("screen-wide post-processing must be removed");
+const softPixelToneSource = await readFile(path.join(root, "src/game/soft-pixel-tone.js"), "utf8");
+if (!softPixelToneSource.includes("new THREE.WebGLRenderTarget") || !softPixelToneSource.includes("THREE.NearestFilter")) fail("Soft Pixel Tone must use a nearest-neighbour render target");
+if (!softPixelToneSource.includes("uniform float uStrength") || !softPixelToneSource.includes("#include <colorspace_fragment>")) fail("Soft Pixel Tone must expose subtle strength control and correct output color conversion");
+if (/EffectComposer|UnrealBloomPass|BokehPass|AfterimagePass|FilmPass/.test(softPixelToneSource)) fail("Soft Pixel Tone must stay a single lightweight shader pass");
 if (mainSource.includes("style.filter =")) fail("game canvas CSS filters must be removed");
 if (!mainSource.includes("renderer.toneMapping = THREE.NoToneMapping")) fail("direct renderer must not apply cinematic tone mapping");
 if (!mainSource.includes("preserveDrawingBuffer: true")) fail("WebGL frame buffer must remain readable for the browser smoke check");

@@ -4,6 +4,7 @@ import { createApartment } from "./game/world.js";
 import { createPlayerController } from "./game/player.js";
 import { createUI } from "./game/ui.js";
 import { bindInput } from "./game/input.js";
+import { createSoftPixelTone } from "./game/soft-pixel-tone.js";
 
 const mount = document.getElementById("game");
 const scene = new THREE.Scene();
@@ -55,6 +56,12 @@ renderer.shadowMap.type = THREE.BasicShadowMap;
 renderer.shadowMap.autoUpdate = true;
 renderer.domElement.id = "screenCanvas";
 renderer.domElement.tabIndex = 0;
+const softPixelTone = createSoftPixelTone({
+  THREE,
+  renderer,
+  enabled: new URLSearchParams(location.search).get("postfx") !== "0",
+  strength: 0.2
+});
 mount.appendChild(renderer.domElement);
 
 function resize() {
@@ -64,6 +71,7 @@ function resize() {
   const width = Math.max(240, Math.floor(displayWidth / PIXEL_SCALE));
   const height = Math.max(135, Math.floor(displayHeight / PIXEL_SCALE));
   renderer.setSize(width, height, false);
+  softPixelTone.setSize(width, height);
   Object.assign(renderer.domElement.style, {
     position: "absolute",
     inset: "0",
@@ -114,7 +122,7 @@ if (new URLSearchParams(location.search).get("smoke") === "1") {
     }
   });
 }
-bindInput({ renderer, state, controller, ui });
+bindInput({ renderer, state, controller, ui, softPixelTone });
 
 const clockStart = performance.now();
 const SIMULATION_HZ = 60;
@@ -192,7 +200,7 @@ function animate(now) {
     simulationAccumulator %= SIMULATION_STEP_MS;
   }
   if (now >= nextSceneRenderAt) {
-    renderer.render(scene, camera);
+    softPixelTone.render(scene, camera);
     nextSceneRenderAt = now + SCENE_RENDER_INTERVAL_MS;
   }
 }
