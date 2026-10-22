@@ -67,7 +67,8 @@ if (!mainSource.includes("renderer.toneMapping = THREE.NoToneMapping")) fail("di
 if (!mainSource.includes("preserveDrawingBuffer: true")) fail("WebGL frame buffer must remain readable for the browser smoke check");
 const baseStylesSource = await readFile(path.join(root, "styles.css"), "utf8");
 const cinematicStylesSource = await readFile(path.join(root, "styles-cinematic.css"), "utf8");
-if (baseStylesSource.includes("image-rendering: pixelated")) fail("global styles must not force pixelated scene rendering");
+if (/body\s*\{[^}]*image-rendering:\s*pixelated/s.test(baseStylesSource)) fail("body must not globally force pixelation");
+if (!/canvas\s*\{[^}]*image-rendering:\s*pixelated/s.test(baseStylesSource)) fail("scene canvas must use nearest-neighbour pixel scaling");
 if (baseStylesSource.includes("#pixelDisplayCanvas") || cinematicStylesSource.includes("#pixelDisplayCanvas")) fail("obsolete effect presentation canvas styles remain");
 const inputSource = await readFile(path.join(root, "src/game/input.js"), "utf8");
 if (!inputSource.includes('window.addEventListener("keydown", onKeyDown, { capture: true })')) fail("keyboard input must be handled during the capture phase");
