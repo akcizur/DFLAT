@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { createMaterials } from "./game/materials.js";
-import { createEmptyApartment } from "./game/world.js";
+import { createApartment } from "./game/world.js";
 import { createPanelak } from "./game/panelak.js";
 import { createPlayerController } from "./game/player.js";
 import { createUI } from "./game/ui.js";
@@ -69,11 +69,11 @@ resize();
 
 const state = {
   hasKeys: false, doorOpen: false, finished: false, started: false,
-  paused: false, balconyDoorOpen: false, emptyMap: true
+  paused: false, balconyDoorOpen: false
 };
 const ui = createUI();
 const { M, mat } = createMaterials(THREE);
-const world = createEmptyApartment({ THREE, scene, M });
+const world = createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui });
 
 // Remove the old five-storey facade and any ghost/NPC-like apparitions.
 scene.traverse(object => {
@@ -83,8 +83,7 @@ scene.traverse(object => {
 try {
   createPanelak({ THREE, scene });
 } catch (error) {
-  // A decorative exterior must never prevent the playable apartment from booting.
-  console.error("The Flat: panelák model failed; continuing without the exterior.", error);
+  console.error("The Flat: panelák model failed; keeping the playable apartment available.", error);
 }
 
 scene.traverse(object => {
