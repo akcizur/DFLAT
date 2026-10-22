@@ -73,7 +73,12 @@ export function createPixelPostProcess(THREE, renderer) {
       interlace: { value: 0.035 },
       mask: { value: 0.035 },
       levels: { value: 0 },
-      retro: { value: 1 }
+      retro: { value: 1 },
+      blurStrength: { value: 3.2 },
+      blurX: { value: 1 },
+      blurY: { value: 1 },
+      blurStart: { value: 1.2 },
+      blurEnd: { value: 3.6 }
     },
     vertexShader: `
       varying vec2 vUv;
@@ -83,6 +88,7 @@ export function createPixelPostProcess(THREE, renderer) {
       }
     `,
     fragmentShader: `
+      #include <common>
       uniform sampler2D tDiffuse;
       uniform sampler2D tDepth;
       uniform vec2 resolution;
@@ -99,6 +105,11 @@ export function createPixelPostProcess(THREE, renderer) {
       uniform float mask;
       uniform float levels;
       uniform float retro;
+      uniform float blurStrength;
+      uniform float blurX;
+      uniform float blurY;
+      uniform float blurStart;
+      uniform float blurEnd;
       varying vec2 vUv;
 
       float hash(vec2 p) {
@@ -118,8 +129,8 @@ export function createPixelPostProcess(THREE, renderer) {
         // Depth-aware, two-axis Gaussian-like blur. X and Y radii are calculated
         // independently from the framebuffer dimensions to avoid stretching on mobile.
         // It starts softly at 1.2 m and reaches full strength beyond 3.6 m.
-        float blur = smoothstep(1.2, 3.6, distanceToCamera) * 3.2;
-        vec2 px = texel * blur;
+        float blur = smoothstep(blurStart, blurEnd, distanceToCamera) * blurStrength;
+        vec2 px = texel * blur * vec2(blurX, blurY);
         vec3 color = texture2D(tDiffuse, uv).rgb * 0.16;
         // Horizontal axis (X).
         color += texture2D(tDiffuse, uv + vec2(px.x, 0.0)).rgb * 0.12;
@@ -256,6 +267,47 @@ export function createPixelPostProcess(THREE, renderer) {
 
   function getProfile() { return profileName; }
 
+  // Runtime blur controls are intentionally independent on X and Y. Query parameters
+  // make the effect easy to tune on desktop and mobile without editing shader code.
+  function setBlur(options = {}) {
+    const values = {
+      strength: options.strength,
+      x: options.x,
+      y: options.y,
+      start: options.start,
+      end: options.end
+    };
+    const limits = {
+      strength: [0, 5],
+      x: [0, 3],
+      y: [0, 3],
+      start: [0.1, 20],
+      end: [0.2, 30]
+    };
+    for (const [key, value] of Object.entries(values)) {
+      if (!Number.isFinite(value)) continue;
+      const [min, max] = limits[key];
+      const uniform = key === "strength" ? "blurStrength" : key === "x" ? "blurX" :
+        key === "y" ? "blurY" : key === "start" ? "blurStart" : "blurEnd";
+      postMaterial.uniforms[uniform].value = Math.max(min, Math.min(max, value));
+    }
+    if (postMaterial.uniforms.blurEnd.value <= postMaterial.uniforms.blurStart.value) {
+      postMaterial.uniforms.blurEnd.value = Math.min(30, postMaterial.uniforms.blurStart.value + 0.1);
+    }
+    return getBlur();
+  }
+
+  function getBlur() {
+    const u = postMaterial.uniforms;
+    return {
+      strength: u.blurStrength.value,
+      x: u.blurX.value,
+      y: u.blurY.value,
+      start: u.blurStart.value,
+      end: u.blurEnd.value
+    };
+  }
+
   function setSize(nextWidth, nextHeight) {
     width = Math.max(1, Math.floor(nextWidth));
     height = Math.max(1, Math.floor(nextHeight));
@@ -324,9 +376,23 @@ export function createPixelPostProcess(THREE, renderer) {
     renderer.domElement.style.zIndex = "";
   }
 
-  const requestedProfile = new URLSearchParams(window.location.search).get("fx");
+  const params = new URLSearchParams(window.location.search);
+  const requestedProfile = params.get("fx");
   setProfile(requestedProfile && profiles[requestedProfile] ? requestedProfile : "dos");
+  const numberParam = (name) => {
+    const raw = params.get(name);
+    if (raw === null || raw.trim() === "") return undefined;
+    const value = Number(raw);
+    return Number.isFinite(value) ? value : undefined;
+  };
+  setBlur({
+    strength: numberParam("blur"),
+    x: numberParam("blurX"),
+    y: numberParam("blurY"),
+    start: numberParam("blurStart"),
+    end: numberParam("blurEnd")
+  });
   renderer.getSize(size);
   setSize(size.x, size.y);
-  return { setSize, renderScene, present, triggerZoom, setProfile, getProfile, profiles, dispose };
+  return { setSize, renderScene, present, triggerZoom, setProfile, getProfile, profiles, setBlur, getBlur, dispose };
 }
