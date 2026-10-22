@@ -69,7 +69,7 @@ if (!compositorSource.includes("new THREE.ShaderMaterial")) fail("distance-based
 if (!compositorSource.includes("smoothstep(blurStart,blurEnd,distanceToCamera)")) fail("depth blur must use configurable near/far ramp distances");
 if (!compositorSource.includes("uniform float blurStrength,blurX,blurY,blurStart,blurEnd;")) fail("blur must expose independent X and Y controls");
 if (!compositorSource.includes("#include <common>") || !compositorSource.includes("#include <colorspace_fragment>")) fail("shader must use Three.js shader include chunks");
-if (!compositorSource.includes("function setBlur(options = {})")) fail("runtime blur settings system is required");
+if (!compositorSource.includes("function setBlur(options={})")) fail("runtime blur settings system is required");
 if (!compositorSource.includes("texture2D(tDiffuse,uv+vec2(-px.x,-px.y))")) fail("Gaussian blur must use a symmetric sample kernel in distorted UV space");
 if (!mainSource.includes("preserveDrawingBuffer: true")) fail("WebGL frame buffer must be preserved for pixel compositing");
 const playerSource = await readFile(path.join(root, "src/game/player.js"), "utf8");
