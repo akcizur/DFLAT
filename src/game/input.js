@@ -1,5 +1,5 @@
 // Keyboard, mouse, virtual touch remote and Gamepad API. Game-world logic stays in player.js.
-export function bindInput({ renderer, state, controller, ui }) {
+export function bindInput({ renderer, state, controller, ui, softPixelTone }) {
   const { player, keysDown, doInteract } = controller;
   const moveStick = document.getElementById("moveStick");
   const moveKnob = document.getElementById("moveKnob");
@@ -9,6 +9,27 @@ export function bindInput({ renderer, state, controller, ui }) {
   let stickPointer = null;
   let previousGamepadButtons = [];
   let gamepadLabel = "";
+  const pixelToneButton = document.getElementById("togglePostFxButton");
+  const pixelToneStatus = document.getElementById("postFxStatus");
+
+  function syncPixelToneButton() {
+    const enabled = softPixelTone.enabled;
+    if (pixelToneStatus) pixelToneStatus.textContent = enabled ? "ON" : "OFF";
+    if (pixelToneButton) {
+      pixelToneButton.setAttribute("aria-pressed", String(enabled));
+      pixelToneButton.setAttribute("aria-label", `Soft Pixel Tone: ${enabled ? "zapnutý" : "vypnutý"}`);
+    }
+  }
+
+  function togglePixelTone() {
+    const enabled = softPixelTone.toggle();
+    syncPixelToneButton();
+    ui.showToast(enabled ? "SOFT PIXEL TONE: ZAPNUTO" : "SOFT PIXEL TONE: VYPNUTO");
+  }
+
+  syncPixelToneButton();
+  pixelToneButton?.addEventListener("click", togglePixelTone);
+
   const sensitivity = { mouseX: 0.0010, mouseY: 0.0009, touchX: 0.0032, touchY: 0.0022, padLook: 2.2 };
 
   function lockPointer() {
@@ -88,6 +109,11 @@ export function bindInput({ renderer, state, controller, ui }) {
   });
 
   function onKeyDown(event) {
+    if (event.code === "F2") {
+      event.preventDefault();
+      if (!event.repeat) togglePixelTone();
+      return;
+    }
     const isMovementKey = movementCodes.includes(event.code);
     if (isMovementKey) {
       event.preventDefault();

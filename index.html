@@ -31,7 +31,7 @@
     <div class="crosshair"></div>
     <div class="interaction" id="interaction"><b>E</b> — interagovat</div>
     <div class="bottomline">
-      <div class="hint">WASD / POHYB&nbsp; · &nbsp;MYŠ / ROZHLÉDNUTÍ&nbsp; · &nbsp;E / AKCE&nbsp; · &nbsp;GAMEPAD: LS / POHYB, RS / POHLED</div>
+      <div class="hint">WASD / POHYB&nbsp; · &nbsp;MYŠ / ROZHLÉDNUTÍ&nbsp; · &nbsp;E / AKCE&nbsp; · &nbsp;GAMEPAD: LS / POHYB, RS / POHLED&nbsp; · &nbsp;F2 / PIXEL TONE</div>
       <div class="right">MALÝ BYT. DLOUHÝ VEČER.<br>VERZE 0.1 — HRAJ PO SVÉM.</div>
     </div>
   </div>
@@ -88,7 +88,7 @@
               <p class="nexus-subtitle">MALÝ BYT. DLOUHÝ VEČER.</p>
               <button type="button" class="cmd nexus-command" id="startButton"><span class="nexus-chevron">&gt;</span><span>START GAME</span><span class="nexus-enter">ENTER ↵</span></button>
               <div class="nexus-menu-note">EPISODE 01 / BYT 3B</div>
-              <div class="nexus-controls"><span>WASD <b>MOVE</b></span><span>MOUSE <b>LOOK</b></span><span>E <b>INTERACT</b></span><span>ESC <b>PAUSE</b></span><span>PAD <b>LEFT STICK / MOVE</b></span><span>PAD <b>RIGHT STICK / LOOK</b></span><span>A <b>INTERACT</b></span><span>B <b>PAUSE</b></span></div>
+              <div class="nexus-controls"><span>WASD <b>MOVE</b></span><span>MOUSE <b>LOOK</b></span><span>E <b>INTERACT</b></span><span>ESC <b>PAUSE</b></span><span>PAD <b>LEFT STICK / MOVE</b></span><span>PAD <b>RIGHT STICK / LOOK</b></span><span>A <b>INTERACT</b></span><span>B <b>PAUSE</b></span><span>F2 <b>PIXEL TONE</b></span></div>
             </nav>
           </div>
           <footer class="nexus-footer">
@@ -107,12 +107,14 @@
       <div class="gap"></div>
       <button class="cmd" id="resumeButton"><span class="p">&gt;</span> RESUME<span class="cur">_</span></button>
       <div class="gap"></div>
-      <div class="dim">ESC / ENTER TO CONTINUE</div>
+      <button class="cmd" id="togglePostFxButton" type="button" aria-pressed="true" aria-label="Soft Pixel Tone: zapnutý"><span class="p">&gt;</span> PIXEL TONE: <span id="postFxStatus">ON</span></button>
+      <div class="gap"></div>
+      <div class="dim">F2 / TOGGLE PIXEL TONE<br>ESC / ENTER TO CONTINUE</div>
     </div>
   </div>
 
   <script src="./src/boot-debug.js?v=1"></script>
-  <script type="module" src="./src/main.js?v=14"></script>
+  <script type="module" src="./src/main.js?v=15"></script>
 </body>
 
 </html>
