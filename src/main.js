@@ -11,7 +11,6 @@ const mount = document.getElementById("game");
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x25231f);
 
-// Render the supplied image as real scene geometry, not only as a renderer clear color.
 const panorama = { mesh: null };
 new THREE.TextureLoader().load(
   new URL("../assets/bg-scene-hq.png", import.meta.url).href,
@@ -76,13 +75,13 @@ const ui = createUI();
 const { M, mat } = createMaterials(THREE);
 const world = createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui });
 
-// Replace the previous five-storey facade with the requested empty P+2 shell.
+// Remove the old five-storey facade and any ghost/NPC-like apparitions.
 scene.traverse(object => {
-  if (object.name === "Panelák / 4 patra") object.visible = false;
+  if (object.name === "Panelák / 4 patra" ||
+      object.name.startsWith("Distant apparition")) object.visible = false;
 });
 createPanelak({ THREE, scene });
 
-// Add the secondary UV channel used by compatible light maps.
 scene.traverse(object => {
   if (object.isMesh && object.geometry?.attributes?.uv && !object.geometry.attributes.uv2) {
     object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone());
@@ -143,7 +142,6 @@ function updateSimulation(deltaSeconds, nowMs) {
       door.collider.maxX = 31;
     }
   }
-
   const shimmer = 0.012 + Math.sin(nowMs * 0.0017) * 0.004;
   for (const material of shimmerMaterials) {
     const phase = material.userData.shimmerPhase || 0;
