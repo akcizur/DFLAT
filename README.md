@@ -20,15 +20,14 @@ bun run build
 bun run preview
 ```
 
-## Pixel rendering model
+## Rendering
 
-- **60 Hz simulation and render target:** keyboard/mouse movement, camera synchronization, door easing, object animation, UI and the world render loop target 60 FPS.
-- **Low-resolution pixel raster:** the apartment renders into a compact WebGL canvas with antialiasing disabled and nearest-neighbour scaling for sharp PS1-style pixels.
-- **Depth-aware two-axis blur:** the GPU depth buffer drives a symmetric multi-tap blur across horizontal X, vertical Y and diagonal directions. X/Y strength and near/far focus distances can be tuned independently through URL parameters. Nearest sampling preserves the blocky pixel raster.
-- **Pixel presentation:** the processed WebGL frame is copied to a Canvas2D presentation canvas with nearest-neighbour sampling. Fixed scanlines, flicker and compositor shadows are intentionally absent.
-- **Pixel textures and baked-light gradients:** compact nearest-filtered textures blend quantized warm/cool gradients and deterministic dither. A shared low-energy procedural light map adds stable, baked-style light pools; real lamps, sun lighting and shadowing still contribute depth.
+- **Direct full-resolution WebGL:** the scene is rendered straight to the screen at the canvas's actual display resolution.
+- **No screen-wide post-processing:** DOS palette quantization, CRT/PS1/VHS profiles, color tinting, chromatic aberration, scanlines, noise, curvature and depth blur are removed.
+- **Stable simulation:** gameplay updates target 60 Hz and scene rendering is capped at 60 FPS.
+- **World materials remain intact:** authored textures, material colors, lighting, fog and shadows still come from the game scene itself.
 
-The 60 FPS setting is a target, not a guarantee; actual performance depends on GPU, browser, display refresh rate and scene complexity.
+This removes the effect filter from the game image without changing the level geometry, movement, interactions or UI behavior.
 
 ## GitHub Pages
 
@@ -80,17 +79,16 @@ The supplied `SCENE.BUILDING.glb` remains a separate interchange asset. To serve
 ## Architecture
 
 - `index.html` — game shell, centered BIOS menus and HUD.
-- `styles.css`, `styles-cinematic.css` — responsive pixel/CRT interface.
+- `styles.css`, `styles-cinematic.css` — responsive HUD and menu styling, separate from scene rendering.
 - `assets/bg-scene-hq.png` — high-resolution panoramic exterior environment.
-- `src/main.js` — 60 Hz fixed-step simulation, low-resolution scene raster and presentation cadence.
+- `src/main.js` — 60 Hz fixed-step simulation and direct full-resolution WebGL rendering.
 - `vendor/three.module.min.js` — local Three.js r169 fallback for unbundled static branch hosting; its MIT license is included beside it.
-- `src/game/pixel-post.js` — modular Three.js shader chunks, configurable depth-aware X/Y blur and Canvas2D pixel presentation.
 - `src/game/materials.js` — pixel-gradient materials and procedural baked-light map.
 - `src/game/world.js` — apartment geometry, lights, collision volumes and interactables.
 - `src/game/player.js` — movement, collision response and camera synchronization.
 - `src/game/input.js` — keyboard, pointer lock, mouse/touch look and interaction.
 - `src/game/ui.js` — objective, inventory, notifications, menus and in-game clock.
-- `scripts/check-architecture.mjs` — validates entry points, local dependencies, rendering targets and the Blender generator settings.
+- `scripts/check-architecture.mjs` — validates entry points, direct rendering, local imports and the Blender generator settings.
 - `tools/generate_socialist_block_17.py` — standalone Blender script for the 8-storey concrete apartment-block model.
 
 ## Checks
@@ -102,15 +100,3 @@ bun run build
 ```
 
 GitHub Actions runs syntax and architecture checks plus a production build on pushes and pull requests, and deploys successful builds from `main`.
-
-
-### Post-processing controls
-
-The default look is DOS palette mode with a balanced X/Y depth blur. Tune it without editing source:
-
-- `?fx=dos`, `?fx=vintage`, `?fx=psx`, `?fx=clean`, `?fx=off` — visual profile.
-- `?blur=3.2` — overall blur strength (0 disables blur; default 3.2).
-- `?blurX=1.0&blurY=1.0` — independent horizontal and vertical scaling.
-- `?blurStart=1.2&blurEnd=3.6` — distance range in metres for the depth transition.
-
-Example: `?fx=dos&blur=3.2&blurX=1&blurY=1`. The shader uses Three.js include chunks so shared shader functionality remains compatible with the bundled Three.js pipeline.

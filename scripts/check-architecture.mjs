@@ -16,7 +16,6 @@ const required = [
   "assets/bg-scene-hq.png",
   "src/main.js",
   "src/boot-debug.js",
-  "src/game/pixel-post.js",
   "src/game/materials.js",
   "src/game/world.js",
   "src/game/player.js",
@@ -40,7 +39,7 @@ for (const relativePath of required) {
 }
 
 const html = await readFile(path.join(root, "index.html"), "utf8");
-if (!html.includes('href="./styles.css"')) fail("index.html must load styles.css");
+if (!/href="\.\/styles\.css(?:\?v=\d+)?"/.test(html)) fail("index.html must load styles.css");
 if (!/src="\.\/src\/main\.js\?v=\d+"/.test(html)) fail("index.html must load src/main.js with a cache-busting version");
 if (!html.includes('type="importmap"') || !html.includes('"three": "./vendor/three.module.min.js"')) {
   fail("static hosting fallback must map Three.js to the local vendored r169 module");
@@ -57,21 +56,17 @@ const mainSource = await readFile(path.join(root, "src/main.js"), "utf8");
 if (/from\s+["']https?:\/\//i.test(mainSource)) fail("runtime modules must be bundled locally; remove CDN imports");
 if (!mainSource.includes("createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui })") && !mainSource.includes("createEmptyApartment({ THREE, scene, M })")) fail("gameplay must boot into a supported apartment scene");
 if (!mainSource.includes("const SIMULATION_HZ = 60")) fail("game simulation must target 60 Hz");
-if (!mainSource.includes("const SCENE_RENDER_HZ = 60")) fail("scene raster must target 60 FPS");
-if (!mainSource.includes("postFx.renderScene(scene, camera")) fail("scene must use the buffered depth-aware pixel renderer");
-if (!mainSource.includes("postFx.present(now / 1000)")) fail("pixel compositor must present independently from scene raster");
-const compositorSource = await readFile(path.join(root, "src/game/pixel-post.js"), "utf8");
-if (!compositorSource.includes('getContext("2d"')) fail("stable Canvas2D pixel compositor is required");
-if (compositorSource.includes("shadowBlur") || compositorSource.includes("shadowColor")) fail("CRT compositor must not use glow or shadows");
-if (!compositorSource.includes("new THREE.WebGLRenderTarget")) fail("depth-aware blur needs a GPU scene target");
-if (!compositorSource.includes("new THREE.DepthTexture")) fail("depth-aware blur needs a depth texture");
-if (!compositorSource.includes("new THREE.ShaderMaterial")) fail("distance-based Gaussian blur shader is required");
-if (!compositorSource.includes("smoothstep(blurStart,blurEnd,distanceToCamera)")) fail("depth blur must use configurable near/far ramp distances");
-if (!compositorSource.includes("uniform float blurStrength,blurX,blurY,blurStart,blurEnd;")) fail("blur must expose independent X and Y controls");
-if (!compositorSource.includes("#include <common>") || !compositorSource.includes("#include <colorspace_fragment>")) fail("shader must use Three.js shader include chunks");
-if (!compositorSource.includes("function setBlur(options={})")) fail("runtime blur settings system is required");
-if (!compositorSource.includes("texture2D(tDiffuse,uv+vec2(-px.x,-px.y))")) fail("Gaussian blur must use a symmetric sample kernel in distorted UV space");
-if (!mainSource.includes("preserveDrawingBuffer: true")) fail("WebGL frame buffer must be preserved for pixel compositing");
+if (!mainSource.includes("const SCENE_RENDER_HZ = 60")) fail("scene rendering must target 60 FPS");
+if (!mainSource.includes("renderer.render(scene, camera)")) fail("scene must render directly without a compositor");
+if (!mainSource.includes("renderer.setSize(width, height, false)")) fail("scene must render at the full canvas resolution");
+if (mainSource.includes("createPixelPostProcess") || mainSource.includes("postFx.")) fail("screen-wide post-processing must be removed");
+if (mainSource.includes("style.filter =")) fail("game canvas CSS filters must be removed");
+if (!mainSource.includes("renderer.toneMapping = THREE.NoToneMapping")) fail("direct renderer must not apply cinematic tone mapping");
+if (!mainSource.includes("preserveDrawingBuffer: true")) fail("WebGL frame buffer must remain readable for the browser smoke check");
+const baseStylesSource = await readFile(path.join(root, "styles.css"), "utf8");
+const cinematicStylesSource = await readFile(path.join(root, "styles-cinematic.css"), "utf8");
+if (baseStylesSource.includes("image-rendering: pixelated")) fail("global styles must not force pixelated scene rendering");
+if (baseStylesSource.includes("#pixelDisplayCanvas") || cinematicStylesSource.includes("#pixelDisplayCanvas")) fail("obsolete effect presentation canvas styles remain");
 const playerSource = await readFile(path.join(root, "src/game/player.js"), "utf8");
 if (!playerSource.includes("z: 1.5, yaw: 0")) fail("V2 player spawn must face the panelak from the exterior");
 const uiSource = await readFile(path.join(root, "src/game/ui.js"), "utf8");

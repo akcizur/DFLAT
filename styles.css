@@ -22,10 +22,6 @@
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace
     }
 
-    body {
-      image-rendering: pixelated
-    }
-
     #game {
       position: fixed;
       inset: 0
@@ -35,7 +31,6 @@
       display: block;
       width: 100%;
       height: 100%;
-      image-rendering: pixelated;
       outline: none;
       touch-action: none
     }
@@ -603,7 +598,7 @@
 
 
 /* Calm cinematic pass: keep the room readable and the interface out of the way. */
-#game, #screenCanvas, #pixelDisplayCanvas { touch-action: none; }
+#game, #screenCanvas { touch-action: none; }
 .hud { opacity: .88; }
 .status, .objective, .interaction, .hint, .toast, .brand {
   background: rgba(12, 13, 15, .34);

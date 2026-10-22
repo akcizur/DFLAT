@@ -1,4 +1,4 @@
-/* Cinematic pixel post-processing companion styles: monochrome menu, quick intro and zoom-cut transitions. */
+/* Cinematic menu styling and short UI transitions; the game canvas is rendered without post-processing. */
 #startScreen.tv-bios-mode {
   background: #030303;
   color: #e8e8e8;
@@ -60,7 +60,7 @@
 
 
 /* DFLAT CRT Machine — amber phosphor with restrained red signal faults.
-   UI-only treatment: the Three.js canvas and game post-processing are untouched. */
+   UI-only treatment, separate from the direct WebGL scene renderer. */
 :root {
   --crt-amber: #ffb34a;
   --crt-hot: #ffd18a;
@@ -642,18 +642,16 @@
 }
 
 
-/* Explicit stacking: world image below the centered HUD and text-only BIOS menus. */
+/* Keep the directly rendered WebGL scene behind the HUD and menus. */
 #game {
   z-index: 0;
 }
-#game #pixelDisplayCanvas {
+#game #screenCanvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   z-index: 1;
-  pointer-events: none;
-  image-rendering: pixelated;
 }
 .hud {
   z-index: 2;

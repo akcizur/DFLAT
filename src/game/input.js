@@ -1,5 +1,5 @@
 // Keyboard, mouse, virtual touch remote and Gamepad API. Game-world logic stays in player.js.
-export function bindInput({ renderer, state, controller, ui, postFx }) {
+export function bindInput({ renderer, state, controller, ui }) {
   const { player, keysDown, doInteract } = controller;
   const moveStick = document.getElementById("moveStick");
   const moveKnob = document.getElementById("moveKnob");
@@ -34,7 +34,6 @@ export function bindInput({ renderer, state, controller, ui, postFx }) {
     state.started = true;
     const startScreen = document.getElementById("startScreen");
     startScreen.classList.add("transition-out");
-    postFx?.triggerZoom(0.025);
     state.paused = false;
     ui.hidePause();
     renderer.domElement.focus();
@@ -53,13 +52,11 @@ export function bindInput({ renderer, state, controller, ui, postFx }) {
     if (!state.started || state.finished) return;
     state.paused = true;
     clearMovement();
-    postFx?.triggerZoom(-0.018);
     ui.showPause();
     if (document.pointerLockElement) document.exitPointerLock();
   }
   function resumeGame() {
     if (!state.started || state.finished) return;
-    postFx?.triggerZoom(0.014);
     state.paused = false;
     ui.hidePause();
     if (matchMedia("(pointer:fine)").matches) lockPointer();

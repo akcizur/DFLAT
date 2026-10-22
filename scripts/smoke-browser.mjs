@@ -35,7 +35,6 @@ try {
 
   await page.goto("http://127.0.0.1:4173/", { waitUntil: "networkidle", timeout: 30000 });
   await page.waitForSelector("#screenCanvas", { timeout: 10000 });
-  await page.waitForSelector("#pixelDisplayCanvas", { timeout: 10000 });
   await page.waitForTimeout(1200);
 
   const beforeStart = await page.evaluate(() => ({
@@ -43,7 +42,7 @@ try {
       const canvas = document.querySelector("#screenCanvas");
       return Boolean(canvas?.getContext("webgl2") || canvas?.getContext("webgl"));
     })(),
-    renderCanvas: Boolean(document.querySelector("#pixelDisplayCanvas")),
+    renderCanvas: Boolean(document.querySelector("#screenCanvas")),
     debugText: document.querySelector("#boot-debug")?.textContent || ""
   }));
   if (!beforeStart.webgl) throw new Error("WebGL context could not be created.");
@@ -53,17 +52,17 @@ try {
   await page.waitForTimeout(900);
 
   const visual = await page.evaluate(() => {
-    const canvas = document.querySelector("#pixelDisplayCanvas");
+    const canvas = document.querySelector("#screenCanvas");
     if (!(canvas instanceof HTMLCanvasElement) || canvas.width < 100 || canvas.height < 100) {
-      return { ok: false, reason: "pixel display canvas is missing or too small" };
+      return { ok: false, reason: "direct WebGL canvas is missing or too small" };
     }
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return { ok: false, reason: "2D presentation context unavailable" };
-    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const gl = canvas.getContext("webgl2") || canvas.getContext("webgl");
+    if (!gl) return { ok: false, reason: "WebGL context unavailable" };
+    gl.finish();
+    const data = new Uint8Array(canvas.width * canvas.height * 4);
+    gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, data);
     const colors = new Set();
-    let lit = 0;
-    let nonBlack = 0;
-    let samples = 0;
+    let lit = 0, nonBlack = 0, samples = 0;
     const stride = Math.max(4, Math.floor(Math.sqrt(canvas.width * canvas.height / 20000)) * 4);
     for (let i = 0; i < data.length; i += stride) {
       const r = data[i], g = data[i + 1], b = data[i + 2];
@@ -73,7 +72,6 @@ try {
       samples++;
     }
     return {
-      // The default DOS profile deliberately quantizes the image to a restrained palette.
       ok: colors.size > 16 && lit > samples * 0.03 && nonBlack > samples * 0.15,
       width: canvas.width, height: canvas.height, distinctColorBuckets: colors.size,
       litRatio: lit / samples, nonBlackRatio: nonBlack / samples, samples
