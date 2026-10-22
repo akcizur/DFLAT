@@ -40,7 +40,7 @@ for (const relativePath of required) {
 
 const html = await readFile(path.join(root, "index.html"), "utf8");
 if (!html.includes('href="./styles.css"')) fail("index.html must load styles.css");
-if (!html.includes('<script type="module" src="./src/main.js?v=7"></script>')) fail("index.html must load src/main.js");
+if (!html.includes('<script type="module" src="./src/main.js?v=8"></script>')) fail("index.html must load src/main.js");
 if (!html.includes('type="importmap"') || !html.includes('"three": "./vendor/three.module.min.js"')) {
   fail("static hosting fallback must map Three.js to the local vendored r169 module");
 }
