@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { createMaterials } from "./game/materials.js";
 import { createApartment } from "./game/world.js";
+import { createPanelak } from "./game/panelak.js";
 import { createPlayerController } from "./game/player.js";
 import { createUI } from "./game/ui.js";
 import { bindInput } from "./game/input.js";
@@ -11,7 +12,6 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x25231f);
 
 // Render the supplied image as real scene geometry, not only as a renderer clear color.
-// This makes the city image visible through window openings and around the apartment.
 const panorama = { mesh: null };
 new THREE.TextureLoader().load(
   new URL("../assets/bg-scene-hq.png", import.meta.url).href,
@@ -20,11 +20,8 @@ new THREE.TextureLoader().load(
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
     const skyMaterial = new THREE.MeshBasicMaterial({
-      map: texture,
-      side: THREE.BackSide,
-      fog: false,
-      depthWrite: false,
-      toneMapped: false
+      map: texture, side: THREE.BackSide, fog: false,
+      depthWrite: false, toneMapped: false
     });
     panorama.mesh = new THREE.Mesh(new THREE.SphereGeometry(48, 48, 32), skyMaterial);
     panorama.mesh.name = "HQ sky image background";
@@ -34,39 +31,29 @@ new THREE.TextureLoader().load(
   undefined,
   error => console.error("The Flat: assets/bg-scene-hq.png sky background failed to load.", error)
 );
-// Soft depth haze becomes visible around 2–3 m; keeps distant room geometry from feeling too sharp.
 scene.fog = new THREE.FogExp2(0x34343b, 0.052);
 
 const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.08, 70);
 camera.rotation.order = "YXZ";
-
 const LOW_POWER = matchMedia("(pointer:coarse)").matches;
 const renderer = new THREE.WebGLRenderer({
-  antialias: false,
-  alpha: false,
-  preserveDrawingBuffer: true,
+  antialias: false, alpha: false, preserveDrawingBuffer: true,
   powerPreference: "high-performance"
 });
 renderer.setPixelRatio(1);
 renderer.domElement.style.imageRendering = "pixelated";
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-// Use Three.js's tested built-in tone mapping before copying the finished scene
-// to the 2D presentation canvas. The pixel compositor performs no custom GLSL.
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.BasicShadowMap;
 renderer.shadowMap.autoUpdate = true;
-// Very subtle analog-like frame persistence for motion, kept deliberately restrained.
-renderer.domElement.style.filter = 'contrast(1.025) saturate(.9) sepia(.06)';
+renderer.domElement.style.filter = "contrast(1.025) saturate(.9) sepia(.06)";
 renderer.toneMappingExposure = 1.04;
 renderer.domElement.id = "screenCanvas";
 renderer.domElement.tabIndex = 0;
 mount.appendChild(renderer.domElement);
 
-// Render the apartment at up to 60 FPS. The low-resolution framebuffer keeps the
-// deliberately pixelated look while camera movement and world animation stay responsive.
 const postFx = createPixelPostProcess(THREE, renderer);
-
 function resize() {
   const pixelScale = LOW_POWER ? 3.4 : 3.05;
   const width = Math.max(200, Math.floor(innerWidth / pixelScale));
@@ -82,19 +69,20 @@ addEventListener("resize", resize);
 resize();
 
 const state = {
-  hasKeys: false,
-  doorOpen: false,
-  finished: false,
-  started: false,
-  paused: false,
-  balconyDoorOpen: false
+  hasKeys: false, doorOpen: false, finished: false, started: false,
+  paused: false, balconyDoorOpen: false
 };
 const ui = createUI();
 const { M, mat } = createMaterials(THREE);
 const world = createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui });
 
-// Three.js light maps are sampled from the geometry's secondary UV channel.
-// Add that channel to all meshes which already provide regular material UVs.
+// Replace the previous five-storey facade with the requested empty P+2 shell.
+scene.traverse(object => {
+  if (object.name === "Panelák / 4 patra") object.visible = false;
+});
+createPanelak({ THREE, scene });
+
+// Add the secondary UV channel used by compatible light maps.
 scene.traverse(object => {
   if (object.isMesh && object.geometry?.attributes?.uv && !object.geometry.attributes.uv2) {
     object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone());
@@ -106,12 +94,9 @@ scene.traverse(object => {
     object.shadow.radius = 0;
   }
 });
+
 const controller = createPlayerController({
-  camera,
-  colliders: world.colliders,
-  interactables: world.interactables,
-  state,
-  ui
+  camera, colliders: world.colliders, interactables: world.interactables, state, ui
 });
 bindInput({ renderer, state, controller, ui, postFx });
 
@@ -122,14 +107,12 @@ const SCENE_RENDER_HZ = 60;
 const SCENE_RENDER_INTERVAL_MS = 1000 / SCENE_RENDER_HZ;
 const PRESENT_HZ = 60;
 const PRESENT_INTERVAL_MS = 1000 / PRESENT_HZ;
-
 let previousTime = 0;
 let simulationTime = clockStart;
 let simulationAccumulator = 0;
 let nextSceneRenderAt = 0;
 let nextPresentAt = 0;
 
-// Prepare the one-time material list outside the fixed-step loop.
 const shimmerMaterials = (() => {
   const mats = new Set();
   scene.traverse(object => {
@@ -146,9 +129,7 @@ const shimmerMaterials = (() => {
 })();
 
 function updateSimulation(deltaSeconds, nowMs) {
-  // Movement, look synchronization, doors, UI and world raster target 60 Hz.
   const nearest = controller.update(deltaSeconds);
-
   for (const door of world.doorAnimations) {
     const target = door.targetOpen ? 1 : 0;
     door.progress += (target - door.progress) * (1 - Math.exp(-deltaSeconds * 5.5));
@@ -163,7 +144,6 @@ function updateSimulation(deltaSeconds, nowMs) {
     }
   }
 
-  // Very restrained 60 Hz material shimmer; the actual raster remains at 15 FPS.
   const shimmer = 0.012 + Math.sin(nowMs * 0.0017) * 0.004;
   for (const material of shimmerMaterials) {
     const phase = material.userData.shimmerPhase || 0;
@@ -171,31 +151,25 @@ function updateSimulation(deltaSeconds, nowMs) {
       (material.userData.baseEmissiveIntensity || 0) +
       shimmer * (0.5 + 0.5 * Math.sin(nowMs * 0.0022 + phase));
   }
-
   for (const item of world.meshesToAnimate) {
     item.object.position.y = item.baseY + Math.sin(nowMs * 0.002 + item.phase) * 0.045;
     item.object.rotation.y = 0.45 + Math.sin(nowMs * 0.001) * 0.18;
   }
-
   ui.setInteraction(nearest, state);
   ui.tick(nowMs, clockStart);
 }
 
 function animate(now) {
   requestAnimationFrame(animate);
-
   if (previousTime === 0) {
     previousTime = now;
     simulationTime = now;
     nextSceneRenderAt = now;
     nextPresentAt = now;
   }
-
-  // Fixed-step game simulation with a bounded catch-up window when a tab resumes.
   const elapsed = Math.min(now - previousTime, 100);
   previousTime = now;
   simulationAccumulator += elapsed;
-
   let steps = 0;
   while (simulationAccumulator >= SIMULATION_STEP_MS && steps < 5) {
     simulationTime += SIMULATION_STEP_MS;
@@ -206,13 +180,10 @@ function animate(now) {
   if (steps === 5 && simulationAccumulator >= SIMULATION_STEP_MS) {
     simulationAccumulator %= SIMULATION_STEP_MS;
   }
-
-  // Render the 3D world at the same 60 Hz target as the pixel presentation.
   if (now >= nextSceneRenderAt) {
     postFx.renderScene(scene, camera, now / 1000);
     nextSceneRenderAt = now + SCENE_RENDER_INTERVAL_MS;
   }
-
   if (now >= nextPresentAt) {
     postFx.present(now / 1000);
     nextPresentAt = now + PRESENT_INTERVAL_MS;
