@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { createMaterials } from "./game/materials.js";
-import { createApartment } from "./game/world.js";
-import { createPanelak } from "./game/panelak.js";
+import { createEmptyApartment } from "./game/world.js";
 import { createPlayerController } from "./game/player.js";
 import { createUI } from "./game/ui.js";
 import { bindInput } from "./game/input.js";
@@ -69,22 +68,13 @@ resize();
 
 const state = {
   hasKeys: false, doorOpen: false, finished: false, started: false,
-  paused: false, balconyDoorOpen: false
+  paused: false, balconyDoorOpen: false, emptyMap: true
 };
 const ui = createUI();
 const { M, mat } = createMaterials(THREE);
-const world = createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui });
+const world = createEmptyApartment({ THREE, scene, M });
 
-// Remove the old five-storey facade and any ghost/NPC-like apparitions.
-scene.traverse(object => {
-  if (object.name === "Panelák / 4 patra" ||
-      object.name.startsWith("Distant apparition")) object.visible = false;
-});
-try {
-  createPanelak({ THREE, scene });
-} catch (error) {
-  console.error("The Flat: panelák model failed; keeping the playable apartment available.", error);
-}
+// Empty-apartment prototype: intentionally do not create the panelák, NPCs, props or objectives.
 
 scene.traverse(object => {
   if (object.isMesh && object.geometry?.attributes?.uv && !object.geometry.attributes.uv2) {
