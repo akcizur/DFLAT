@@ -12,7 +12,13 @@ export function bindInput({ renderer, state, controller, ui, postFx }) {
   const sensitivity = { mouseX: 0.0010, mouseY: 0.0009, touchX: 0.0032, touchY: 0.0022, padLook: 2.2 };
 
   function lockPointer() {
-    if (renderer.domElement.requestPointerLock) renderer.domElement.requestPointerLock();
+    if (renderer.domElement.requestPointerLock) {
+      const result = renderer.domElement.requestPointerLock();
+      // Browsers may reject pointer lock asynchronously, especially on touch devices.
+      if (result && typeof result.catch === "function") {
+        result.catch(error => console.warn("The Flat: pointer lock was denied; gameplay remains active.", error));
+      }
+    }
   }
   const movementCodes = ["KeyW","KeyA","KeyS","KeyD","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"];
   const sources = { keyboard: Object.create(null), touch: Object.create(null), gamepad: Object.create(null) };
