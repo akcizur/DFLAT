@@ -15,6 +15,7 @@ const required = [
   "assets/city-sunset.webp",
   "assets/bg-scene-hq.png",
   "src/main.js",
+  "src/boot-debug.js",
   "src/game/pixel-post.js",
   "src/game/materials.js",
   "src/game/world.js",
