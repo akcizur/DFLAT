@@ -54,19 +54,7 @@
     </div>
     <div class="boot-footer">SYSTEM READY // HANDING OFF TO REALITY</div>
   </div>
-  <script>
-    // Never let the decorative BIOS layer trap input if CSS animation is delayed.
-    (() => {
-      const boot = document.getElementById("bootScreen");
-      if (!boot) return;
-      const dismiss = (start) => {
-        boot.remove();
-        if (start) document.getElementById("startButton")?.click();
-      };
-      boot.addEventListener("pointerdown", () => dismiss(true), { once: true });
-      window.setTimeout(() => dismiss(false), 2700);
-    })();
-  </script>
+  <script src="./boot.js"></script>
 
   <div class="screen tv-bios-mode nexus-menu" id="startScreen" aria-label="Hlavní menu DFLAT">
     <main class="nexus-monitor">
