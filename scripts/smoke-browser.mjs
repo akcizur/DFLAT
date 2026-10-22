@@ -104,7 +104,7 @@ try {
   const shaderErrors = consoleErrors.filter(message => /shader error|program linking failed|webgl.*context|failed to compile/i.test(message));
   if (shaderErrors.length) throw new Error("WebGL/shader errors: " + shaderErrors.join(" | "));
 
-  console.log("Browser smoke test passed:", JSON.stringify({ beforeStart, movementBefore, movementAfter, visual, pageErrors, consoleErrors }));
+  console.log("Browser smoke test passed:", JSON.stringify({ beforeStart, movementBefore, movementDuring, visual, pageErrors, consoleErrors }));
 } finally {
   if (browser) await browser.close();
   server.kill("SIGTERM");
