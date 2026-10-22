@@ -16,6 +16,11 @@ export function createUI() {
   }
 
   function updateObjective(state) {
+    if (state.emptyMap) {
+      objectiveText.textContent = "Holobyt: zatím bez nábytku a úkolů.";
+      inventoryText.textContent = "MAPA: HOLOBYT";
+      return;
+    }
     if (state.finished) {
       objectiveText.textContent = "Hotovo. Můžeš pokračovat ven.";
       inventoryText.textContent = "ÚKOL: DOKONČEN";
