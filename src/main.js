@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { createMaterials } from "./game/materials.js";
-import { createApartment } from "./game/world.js";
+import { createEmptyApartment } from "./game/world.js";
 import { createPanelak } from "./game/panelak.js";
 import { createPlayerController } from "./game/player.js";
 import { createUI } from "./game/ui.js";
@@ -73,7 +73,7 @@ const state = {
 };
 const ui = createUI();
 const { M, mat } = createMaterials(THREE);
-const world = createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui });
+const world = createEmptyApartment({ THREE, scene, M });
 
 // Remove the old five-storey facade and any ghost/NPC-like apparitions.
 scene.traverse(object => {
