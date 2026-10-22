@@ -1,6 +1,13 @@
 // Builds the complete apartment environment and its interactable objects.
 import { createPanelak } from "./panelak.js";
 export function createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui }) {
+  // V2 is the default: a standalone exterior scene focused only on the panelák.
+  // Add ?scene=v1 to return to the legacy apartment prototype.
+  if (new URLSearchParams(globalThis.location?.search ?? "").get("scene") !== "v1") {
+    return createPanelakWorld({ THREE, scene, state, ui });
+  }
+  state.panelakScene = false;
+  state.emptyMap = false;
       const colliders = [];
       const interactables = [];
       const meshesToAnimate = [];
@@ -458,4 +465,125 @@ export function createEmptyApartment({ THREE, scene, M }) {
   }
   shellPart("Holobyt / nadpraží", 0, 2.86, 5.9, 1.62, 0.12, 0.24, M.wood2);
   return { colliders, interactables, meshesToAnimate, doorAnimations, meshes: [] };
+}
+
+
+// DFLAT V2: standalone panelák exterior. The legacy apartment above remains available via ?scene=v1.
+function createPanelakWorld({ THREE, scene, state, ui }) {
+  state.panelakScene = true;
+  state.emptyMap = false;
+
+  const colliders = [];
+  const interactables = [];
+  const meshesToAnimate = [];
+  const doorAnimations = [];
+  const panelak = createPanelak({ THREE, scene });
+
+  const groundMat = new THREE.MeshStandardMaterial({ color: 0x656760, roughness: 1 });
+  const grassMat = new THREE.MeshStandardMaterial({ color: 0x73786d, roughness: 1 });
+  const asphaltMat = new THREE.MeshStandardMaterial({ color: 0x343638, roughness: 1 });
+  const concreteMat = new THREE.MeshStandardMaterial({ color: 0xaaa99f, roughness: 1 });
+  const curbMat = new THREE.MeshStandardMaterial({ color: 0x85867f, roughness: 1 });
+  const metalMat = new THREE.MeshStandardMaterial({ color: 0x454b4d, roughness: 0.82 });
+  const glassMat = new THREE.MeshStandardMaterial({
+    color: 0x52666e, roughness: 0.3, metalness: 0.05,
+    transparent: true, opacity: 0.88, side: THREE.DoubleSide
+  });
+
+  function groundBox(name, x, y, z, sx, sy, sz, material, castShadow = false) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), material);
+    mesh.name = name;
+    mesh.position.set(x, y, z);
+    mesh.castShadow = castShadow;
+    mesh.receiveShadow = true;
+    scene.add(mesh);
+    return mesh;
+  }
+
+  // One simple outdoor plot; no neighboring houses or unrelated buildings.
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(180, 180), grassMat);
+  ground.name = "V2 / terén kolem paneláku";
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.set(0, -0.16, -14);
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  // Approach path and a single quiet road establish scale without competing with the building.
+  groundBox("V2 / chodník před vchodem", 0, -0.015, -6.85, 5.2, 0.12, 9.9, concreteMat);
+  groundBox("V2 / obrubník vlevo", -2.72, 0.025, -6.85, 0.12, 0.16, 10.0, curbMat);
+  groundBox("V2 / obrubník vpravo", 2.72, 0.025, -6.85, 0.12, 0.16, 10.0, curbMat);
+  groundBox("V2 / vozovka", 0, -0.045, 3.2, 180, 0.08, 7.0, asphaltMat);
+  groundBox("V2 / chodník za vozovkou", 0, -0.012, 8.2, 180, 0.12, 2.8, concreteMat);
+
+  // Minimal street furniture frames the entry but keeps the panelák as the only building.
+  groundBox("V2 / lavička sedák", -4.1, 0.42, -5.1, 1.7, 0.12, 0.42, metalMat, true);
+  groundBox("V2 / lavička opěradlo", -4.1, 0.72, -5.28, 1.7, 0.48, 0.10, metalMat, true);
+  for (const x of [-4.72, -3.48]) {
+    groundBox("V2 / lavička noha", x, 0.20, -5.1, 0.10, 0.42, 0.34, metalMat);
+  }
+
+  // Facade, side and rear collision boundaries. The central entry remains usable.
+  const frontZ = -15.9 + 8.2 / 2;
+  colliders.push(
+    { minX: -7.95, maxX: -0.78, minZ: frontZ - 0.22, maxZ: frontZ + 0.22 },
+    { minX: 0.78, maxX: 7.95, minZ: frontZ - 0.22, maxZ: frontZ + 0.22 },
+    { minX: -7.98, maxX: -7.62, minZ: -20.15, maxZ: -11.55 },
+    { minX: 7.62, maxX: 7.98, minZ: -20.15, maxZ: -11.55 },
+    { minX: -7.95, maxX: 7.95, minZ: -20.25, maxZ: -19.85 }
+  );
+
+  // Replace the static door leaf with a hinged leaf so the existing E interaction and
+  // fixed-step door animation work without changing the input or simulation systems.
+  panelak.traverse(object => {
+    if (object.isMesh && object.name === "Panelák / vstupní dveře") object.visible = false;
+  });
+  const doorPivot = new THREE.Group();
+  doorPivot.name = "V2 / pant vstupních dveří";
+  doorPivot.position.set(-0.525, 0, frontZ + 0.16);
+  const doorLeaf = new THREE.Mesh(new THREE.BoxGeometry(1.05, 2.0, 0.065), glassMat);
+  doorLeaf.name = "V2 / otevírací vstupní dveře";
+  doorLeaf.position.set(0.525, 1.05, 0);
+  doorLeaf.castShadow = true;
+  doorLeaf.receiveShadow = true;
+  doorPivot.add(doorLeaf);
+  scene.add(doorPivot);
+
+  const doorCollider = {
+    minX: -0.55, maxX: 0.55,
+    minZ: frontZ - 0.20, maxZ: frontZ + 0.20
+  };
+  colliders.push(doorCollider);
+  const closedBounds = { ...doorCollider };
+  doorAnimations.push({
+    pivot: doorPivot, collider: doorCollider,
+    closedRotation: 0, openRotation: -1.18,
+    targetOpen: false, angle: 0, progress: 0, closedBounds
+  });
+
+  interactables.push({
+    id: "panelakEntrance",
+    name: "Vstup do paneláku",
+    description: "Otevři vstupní dveře paneláku.",
+    x: 0, z: frontZ + 1.45, range: 2.35, used: false,
+    action: () => {
+      state.panelakDoorOpen = !state.panelakDoorOpen;
+      doorAnimations[0].targetOpen = state.panelakDoorOpen;
+      if (state.panelakDoorOpen) {
+        doorCollider.minX = 30;
+        doorCollider.maxX = 31;
+        ui.showToast("Vchod je otevřený.");
+      } else {
+        ui.showToast("Vchod se zavírá.");
+      }
+    }
+  });
+
+  // A small light near the entrance provides a readable focal point at dusk.
+  const entryLight = new THREE.PointLight(0xffd7a0, 4.0, 7.0, 2);
+  entryLight.name = "V2 / světlo nad vchodem";
+  entryLight.position.set(0, 2.55, frontZ + 0.72);
+  scene.add(entryLight);
+  groundBox("V2 / svítidlo vchodu", 0, 2.72, frontZ + 0.72, 0.42, 0.10, 0.16, concreteMat);
+
+  return { colliders, interactables, meshesToAnimate, doorAnimations, meshes: [], panelak };
 }
