@@ -1,6 +1,6 @@
 // Lightweight pixel/CRT compositor for Three.js r169.
 // Keeps the depth-aware blur and nearest-neighbour raster while adding configurable,
-// GPU-side CRT/VHS effects. Profiles can be selected with ?fx=crt|vhs|psx|clean|off.
+// GPU-side CRT/VHS effects. Profiles can be selected with ?fx=dos|vintage|crt|vhs|psx|clean|off.
 export function createPixelPostProcess(THREE, renderer) {
   const displayCanvas = document.createElement("canvas");
   displayCanvas.id = "pixelDisplayCanvas";
@@ -316,7 +316,7 @@ export function createPixelPostProcess(THREE, renderer) {
   }
 
   const requestedProfile = new URLSearchParams(window.location.search).get("fx");
-  setProfile(requestedProfile && profiles[requestedProfile] ? requestedProfile : "vintage");
+  setProfile(requestedProfile && profiles[requestedProfile] ? requestedProfile : "dos");
   renderer.getSize(size);
   setSize(size.x, size.y);
   return { setSize, renderScene, present, triggerZoom, setProfile, getProfile, profiles, dispose };
