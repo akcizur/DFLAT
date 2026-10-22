@@ -130,6 +130,7 @@ export function createPixelPostProcess(THREE, renderer) {
         // independently from the framebuffer dimensions to avoid stretching on mobile.
         // It starts softly at 1.2 m and reaches full strength beyond 3.6 m.
         float blur = smoothstep(blurStart, blurEnd, distanceToCamera) * blurStrength;
+        if (blur < 0.001 || (blurX < 0.001 && blurY < 0.001)) return texture2D(tDiffuse, uv).rgb;
         vec2 px = texel * blur * vec2(blurX, blurY);
         vec3 color = texture2D(tDiffuse, uv).rgb * 0.16;
         // Horizontal axis (X).
