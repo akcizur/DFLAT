@@ -41,7 +41,7 @@ for (const relativePath of required) {
 
 const html = await readFile(path.join(root, "index.html"), "utf8");
 if (!html.includes('href="./styles.css"')) fail("index.html must load styles.css");
-if (!html.includes('<script type="module" src="./src/main.js?v=11"></script>')) fail("index.html must load src/main.js");
+if (!/src="\.\/src\/main\.js\?v=\d+"/.test(html)) fail("index.html must load src/main.js with a cache-busting version");
 if (!html.includes('type="importmap"') || !html.includes('"three": "./vendor/three.module.min.js"')) {
   fail("static hosting fallback must map Three.js to the local vendored r169 module");
 }
@@ -66,11 +66,11 @@ if (compositorSource.includes("shadowBlur") || compositorSource.includes("shadow
 if (!compositorSource.includes("new THREE.WebGLRenderTarget")) fail("depth-aware blur needs a GPU scene target");
 if (!compositorSource.includes("new THREE.DepthTexture")) fail("depth-aware blur needs a depth texture");
 if (!compositorSource.includes("new THREE.ShaderMaterial")) fail("distance-based Gaussian blur shader is required");
-if (!compositorSource.includes("smoothstep(blurStart, blurEnd, distanceToCamera)")) fail("depth blur must use configurable near/far ramp distances");
-if (!compositorSource.includes("uniform float blurX;") || !compositorSource.includes("uniform float blurY;")) fail("blur must expose independent X and Y controls");
+if (!compositorSource.includes("smoothstep(blurStart,blurEnd,distanceToCamera)")) fail("depth blur must use configurable near/far ramp distances");
+if (!compositorSource.includes("uniform float blurStrength,blurX,blurY,blurStart,blurEnd;")) fail("blur must expose independent X and Y controls");
 if (!compositorSource.includes("#include <common>") || !compositorSource.includes("#include <colorspace_fragment>")) fail("shader must use Three.js shader include chunks");
 if (!compositorSource.includes("function setBlur(options = {})")) fail("runtime blur settings system is required");
-if (!compositorSource.includes("texture2D(tDiffuse, uv + vec2(-px.x, -px.y))")) fail("Gaussian blur must use a symmetric sample kernel in distorted UV space");
+if (!compositorSource.includes("texture2D(tDiffuse,uv+vec2(-px.x,-px.y))")) fail("Gaussian blur must use a symmetric sample kernel in distorted UV space");
 if (!mainSource.includes("preserveDrawingBuffer: true")) fail("WebGL frame buffer must be preserved for pixel compositing");
 const playerSource = await readFile(path.join(root, "src/game/player.js"), "utf8");
 if (!playerSource.includes("z: 2.8, yaw: 0")) fail("V2 player spawn must face the panelak from the exterior");
@@ -82,7 +82,7 @@ const worldSource = await readFile(path.join(root, "src/game/world.js"), "utf8")
 if (!worldSource.includes("export function createEmptyApartment")) fail("playable empty-apartment map shell is required");
 if (!worldSource.includes("function createPanelakWorld({ THREE, scene, state, ui })")) fail("default DFLAT V2 panelak-only scene is missing");
 if (!worldSource.includes('get("scene") !== "v1"')) fail("panelak V2 must be the default while the legacy apartment stays opt-in");
-if (!worldSource.includes('name: "V2 / chodník před vchodem"')) fail("panelak scene must include a connected entrance approach");
+if (!worldSource.includes('groundBox("V2 / chodník před vchodem"')) fail("panelak scene must include a connected entrance approach");
 if (!worldSource.includes('id: "panelakEntrance"')) fail("panelak entry interaction is missing");
 if (!worldSource.includes("const frontZ = -15.9 + 8.2 / 2")) fail("panelak exterior collision geometry must align with the building facade");
 if (!worldSource.includes("wall(-4.375, 6, 7.25, wallT)")) fail("entrance wall must align to the door-frame opening");
