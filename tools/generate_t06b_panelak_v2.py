@@ -562,7 +562,7 @@ front_bounds = {
     "maxX": max(obj["bounds"]["max"]["x"] for obj in front_facade_objects),
 }
 assert abs((front_bounds["maxX"]-front_bounds["minX"])-WIDTH) < 1e-5, "Front facade does not span five 3.6 m modules."
-assert len([obj for obj in object_records if obj["name"] == "Flat entrance | door leaf"]) == 8
+assert len([obj for obj in object_records if obj["name"] == "Flat entrance | open door leaf"]) == 8
 assert len([obj for obj in object_records if obj["name"] == "Stair | lower flight tread"]) == (FLOORS-1)*8
 assert len([obj for obj in object_records if obj["name"] == "Stair | upper flight tread"]) == (FLOORS-1)*8
 assert not any("Výtah" in obj["name"] or "Elevator" in obj["name"] for obj in object_records)
@@ -632,7 +632,7 @@ manifest = {
     "counts": {
         "objects": len(object_records),
         "semanticAnchors": len(anchors),
-        "entranceDoorLeaves": len([obj for obj in object_records if obj["name"] == "Flat entrance | door leaf"]),
+        "entranceDoorLeaves": len([obj for obj in object_records if obj["name"] == "Flat entrance | open door leaf"]),
         "lowerStairTreads": len([obj for obj in object_records if obj["name"] == "Stair | lower flight tread"]),
         "upperStairTreads": len([obj for obj in object_records if obj["name"] == "Stair | upper flight tread"]),
         "luxferBlocks": len([obj for obj in object_records if obj["name"] == "Staircase | luxfer glass block"]),
