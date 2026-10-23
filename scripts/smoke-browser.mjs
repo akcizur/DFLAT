@@ -45,6 +45,10 @@ try {
     renderCanvas: Boolean(document.querySelector("#screenCanvas")),
     debugText: document.querySelector("#boot-debug")?.textContent || ""
   }));
+  const startupState = await page.evaluate(() => window.__DFLAT_SMOKE__?.gameState());
+  if (!startupState?.t06bModelActive || startupState.floorCount !== 4) {
+    throw new Error("The browser did not activate the four-storey Blender-authored T06B model: " + JSON.stringify(startupState));
+  }
   if (!beforeStart.webgl) throw new Error("WebGL context could not be created.");
   if (beforeStart.debugText.trim()) throw new Error("Boot diagnostics reported an error: " + beforeStart.debugText);
 
