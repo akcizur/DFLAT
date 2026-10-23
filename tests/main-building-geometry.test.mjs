@@ -61,7 +61,8 @@ test("stair treads, landing and top-floor roof hatch share exact endpoints", () 
   assert.match(source, /const ladderZ = hatchZ/);
   assert.match(source, /const ladderBottomY = \(floors - 1\) \* floorHeight \+ 0\.01/);
 });
-\ntest("roof machinery bottoms align with the roof datum", () => {
+
+test("roof machinery bottoms align with the roof datum", () => {
   const roofY = 8 * 2.8;
   const machineRoomBottom = roofY + 0.59 - 1.18 / 2;
   const ventBottom = roofY + 0.55 - 1.1 / 2;
