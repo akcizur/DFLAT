@@ -8,6 +8,7 @@ construction-ready or standards-certified architectural design.
 """
 import bpy
 import math
+import os
 from mathutils import Vector
 
 MODULE = 3.6
@@ -102,9 +103,11 @@ grass = material("Courtyard grass | patchy", (0.17, 0.20, 0.13))
 asphalt = material("Old asphalt", (0.12, 0.13, 0.12))
 
 # Ground and the restrained edge of a typical estate access road.
-box("Site | terrain", (0, -BASEMENT_HEIGHT-0.16, 0), (90, 0.25, 90), grass)
-box("Soviet-era estate access road", (0, -BASEMENT_HEIGHT+0.005, -13), (90, 0.04, 5.5), asphalt)
-box("Concrete entrance apron", (0, -BASEMENT_HEIGHT+0.035, FRONT_Z-2.2), (7.5, 0.07, 4.2), panel)
+box("Site | terrain", (0, -0.24, 0), (90, 0.25, 90), grass)
+box("Soviet-era estate access road", (0, -0.095, -13), (90, 0.04, 5.5), asphalt)
+box("Concrete entrance apron", (0, -0.075, FRONT_Z-2.2), (7.5, 0.07, 4.2), panel)
+box("Entrance step | lower", (0, -0.015, FRONT_Z-0.95), (3.2, 0.18, 0.55), panel)
+box("Entrance step | upper", (0, 0.075, FRONT_Z-0.48), (2.8, 0.12, 0.42), panel)
 
 # Four levels over a cellar. The cellar is visible as a modelled foundation band.
 for floor in range(-1, FLOORS):
@@ -394,5 +397,26 @@ scene["above_ground_storeys"] = FLOORS
 scene["lift"] = False
 scene["apartments_per_floor"] = 2
 scene["design_status"] = "visualisation concept; not for construction"
-bpy.ops.wm.save_as_mainfile(filepath="//T06B_Panelak_V2.blend")
-print("T06B V2 generated: 18.0 m x 11.4 m, 4 above-ground storeys, 8 flats, no lift.")
+# Export a real interchange asset for the browser game. Export mesh objects only;
+# cameras and lights remain in the editable .blend file.
+repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+model_dir = os.path.join(repo_root, "public", "models")
+os.makedirs(model_dir, exist_ok=True)
+blend_path = os.path.join(repo_root, "T06B_Panelak_V2.blend")
+glb_path = os.path.join(model_dir, "t06b-panelak-v2.glb")
+mesh_objects = [obj for obj in scene.objects if obj.type == "MESH"]
+assert MODULE_COUNT == 5 and abs(WIDTH-18.0) < 1e-6
+assert FLOORS == 4 and scene["apartments_per_floor"] == 2 and scene["lift"] is False
+assert len([obj for obj in scene.objects if obj.name == "Flat entrance | door leaf"]) == 8
+assert round(sum(room_schedule.values()), 1) == 65.4
+assert not any("Výtah" in obj.name or "Elevator" in obj.name for obj in scene.objects)
+assert mesh_objects, "No mesh geometry was generated."
+bpy.ops.object.select_all(action="DESELECT")
+for obj in mesh_objects:
+    obj.select_set(True)
+bpy.context.view_layer.objects.active = mesh_objects[0]
+bpy.ops.export_scene.gltf(filepath=glb_path, export_format="GLB", use_selection=True, export_apply=True)
+bpy.ops.wm.save_as_mainfile(filepath=blend_path)
+print(f"T06B V2 generated: {WIDTH:.1f} m x {DEPTH:.1f} m, {FLOORS} above-ground storeys, 8 flats, no lift.")
+print(f"Editable Blender file: {blend_path}")
+print(f"Browser GLB asset: {glb_path}")
