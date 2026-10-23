@@ -58,8 +58,10 @@ new THREE.TextureLoader().load(
   new URL("../assets/bg-scene-hq.png", import.meta.url).href,
   texture => {
     window.clearTimeout(panoramaFallbackTimer);
-    panoramaResolved = true;
-    setLoadingProgress(72, "NAČÍTÁM OKOLÍ", "Dokončuji panoramatické pozadí.", "ASSETS");
+    if (!panoramaResolved) {
+      panoramaResolved = true;
+      setLoadingProgress(72, "NAČÍTÁM OKOLÍ", "Dokončuji panoramatické pozadí.", "ASSETS");
+    }
 
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.wrapS = THREE.RepeatWrapping;
@@ -72,6 +74,7 @@ new THREE.TextureLoader().load(
     panorama.mesh.name = "Outdoor city panorama";
     panorama.mesh.renderOrder = -1000;
     scene.add(panorama.mesh);
+    finishStartupWhenReady();
   },
   undefined,
   error => {
