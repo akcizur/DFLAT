@@ -30,9 +30,10 @@ export function bindInput({ renderer, state, controller, ui }) {
   function clearSource(source) { for (const code of movementCodes) setKey(code, false, source); }
   function clearMovement() { clearSource("keyboard"); clearSource("touch"); clearSource("gamepad"); }
   function startGame() {
-    if (state.started) return;
+    if (state.started || !state.ready) return;
     clearMovement();
     state.started = true;
+    document.getElementById("hud")?.setAttribute("aria-hidden", "false");
     const startScreen = document.getElementById("startScreen");
     startScreen.classList.add("transition-out");
     state.paused = false;
