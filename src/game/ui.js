@@ -58,12 +58,18 @@ export function createUI() {
     }
   }
 
-  function tick(now, clockStart) {
+  function tick(now, clockStart, environment = null) {
     if (toastEl.classList.contains("show") && now - lastToast > 2600) {
       toastEl.classList.remove("show");
     }
-    const minute = 7 + Math.floor((now - clockStart) / 45000);
-    clockEl.innerHTML = "21:" + String(minute % 60).padStart(2, "0") + "<br>ÚTERÝ";
+    const elapsedSeconds = Math.max(0, (now - clockStart) / 1000);
+    const totalMinutes = Math.floor(((7 + elapsedSeconds * 0.1) % 24) * 60);
+    const hours = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
+    const minutes = String(totalMinutes % 60).padStart(2, "0");
+    const timeLabel = environment?.timeLabel ?? (hours + ":" + minutes);
+    const weatherLabel = environment?.weatherLabel ?? "JASNO";
+    clockEl.textContent = timeLabel + "\\n" + weatherLabel;
+    clockEl.setAttribute("aria-label", "Čas " + timeLabel + ", počasí " + weatherLabel.toLowerCase());
   }
 
   return {
