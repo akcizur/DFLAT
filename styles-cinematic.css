@@ -971,7 +971,7 @@
 .loading-screen {
   position: fixed;
   inset: 0;
-  z-index: 16;
+  z-index: 10001;
   display: grid;
   place-items: center;
   overflow: auto;
@@ -1128,7 +1128,7 @@
 
 /* Let the boot flash finish quickly; the real loading state takes over if needed. */
 #bootScreen.boot-screen {
-  animation-duration: 1.55s;
+  animation-duration: .24s;
 }
 
 
