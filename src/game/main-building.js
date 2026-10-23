@@ -247,7 +247,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui, showBuilding 
   // U-shaped two-flight stair: both flights run along Z, side by side.
   // Each flight rises half a storey; a full-width mid-landing joins them at the far end.
   const stair = {
-    lowX: -0.72, highX: 0.72, firstZ: -25.45, secondZ: -21.95, steps: 8,
+    lowX: -0.72, highX: 0.72, firstZ: -21.4, secondZ: -17.9, steps: 8,
     treadDepth: 0.46, treadOverlap: 0.025, landingWidth: 2.9
   };
   const stepRun = Math.abs(stair.secondZ - stair.firstZ) / stair.steps;
@@ -403,8 +403,8 @@ export function createMainBuildingWorld({ THREE, scene, state, ui, showBuilding 
     // at the lower flight toe and one at the upper flight arrival; a doorway
     // at the half-storey landing would lead into a wall with no floor behind it.
     const stairDoors = [
-      { center: stair.firstZ, width: stair.treadDepth, height: 2.12 },
-      { center: stair.secondZ, width: stair.treadDepth, height: 2.12 }
+      { center: stair.firstZ, width: 1.28, height: 2.12 },
+      { center: stair.secondZ, width: 1.28, height: 2.12 }
     ];
     for (const x of [-1.8, 1.8]) {
       wallZ("Schodiště / stěna jádra", x, rearZ + 0.18, frontZ - 0.18,
