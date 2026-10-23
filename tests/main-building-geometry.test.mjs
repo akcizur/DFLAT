@@ -83,6 +83,63 @@ test("each storey has both recessed loggia doorways and the central luxfer stair
   assert.equal(world.getCoordinateData().building.floors, 4);
 });
 
+
+test("loggia floors do not volumetrically overlap apartment floor slabs", () => {
+  const { world } = makeWorld();
+  const loggias = world.meshes.filter(mesh => mesh.name === "Lodžie / betonová podlaha");
+  const terrain = world.meshes.find(mesh => mesh.name === "Sídliště / travnatý pozemek");
+  const slabs = world.meshes.filter(mesh =>
+    mesh.name === "Podlaha / přízemí" ||
+    mesh.name === "Podlaha / přízemí / pás mimo lodžie" ||
+    mesh.name.startsWith("Stropní panel /")
+  );
+  assert.equal(loggias.length, PANELAK_LAYOUT.totalFloors * 2);
+  assert.ok(terrain, "terrain is missing");
+  const terrainTop = terrain.position.y + terrain.geometry.parameters.height / 2;
+  const bounds = mesh => {
+    const p = mesh.geometry.parameters;
+    return {
+      minX: mesh.position.x - p.width / 2, maxX: mesh.position.x + p.width / 2,
+      minY: mesh.position.y - p.height / 2, maxY: mesh.position.y + p.height / 2,
+      minZ: mesh.position.z - p.depth / 2, maxZ: mesh.position.z + p.depth / 2
+    };
+  };
+  for (const loggia of loggias) {
+    const a = bounds(loggia);
+    assert.ok(Math.abs(a.maxY - terrainTop) > 1e-3,
+      "loggia top must not be coplanar with the terrain");
+    for (const slab of slabs) {
+      const b = bounds(slab);
+      const overlaps = a.maxX > b.minX + 1e-5 && a.minX < b.maxX - 1e-5 &&
+        a.maxY > b.minY + 1e-5 && a.minY < b.maxY - 1e-5 &&
+        a.maxZ > b.minZ + 1e-5 && a.minZ < b.maxZ - 1e-5;
+      assert.equal(overlaps, false, "a loggia floor intersects a floor slab: " + slab.name);
+    }
+  }
+});
+
+test("foundation plinth stays outside the footprint and clear of the ground entrance", () => {
+  const { world } = makeWorld();
+  const plinths = world.meshes.filter(mesh => mesh.name.startsWith("Suterén / základový sokl /"));
+  assert.equal(plinths.length, 4);
+  const bounds = mesh => {
+    const p = mesh.geometry.parameters;
+    return {
+      minX: mesh.position.x - p.width / 2, maxX: mesh.position.x + p.width / 2,
+      minZ: mesh.position.z - p.depth / 2, maxZ: mesh.position.z + p.depth / 2
+    };
+  };
+  for (const plinth of plinths) {
+    const b = bounds(plinth);
+    assert.ok(b.maxZ <= -16 + 1e-6 || b.minZ >= -16 - 1e-6 ||
+      b.minZ >= -28 - 1e-6 || b.maxZ <= -28 + 1e-6 ||
+      b.maxX <= -9 + 1e-6 || b.minX >= 9 - 1e-6,
+      "plinth should stay at the building perimeter");
+  }
+  const frontPlinth = plinths.find(mesh => mesh.name.endsWith("/ přední"));
+  assert.ok(frontPlinth.position.z - frontPlinth.geometry.parameters.depth / 2 >= -16 - 1e-6);
+});
+
 test("runtime coordinates include finite corners, bounds, and exact footprint anchors", () => {
   const { world } = makeWorld();
   const data = world.getCoordinateData();
