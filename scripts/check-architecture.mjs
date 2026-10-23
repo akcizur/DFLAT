@@ -83,11 +83,16 @@ if (!uiSource.includes('"Volná mapa. Před tebou stojí hlavní budova."')) fai
 if (!mainSource.includes('object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone())')) fail("mesh UV2 channels are required for baked light maps");
 
 const outdoorSource = await readFile(path.join(root, "src/game/main-building.js"), "utf8");
-if (!outdoorSource.includes('Hlavní budova / železobetonový skelet')) fail("main building geometry is missing");
+if (!outdoorSource.includes('Fasáda / prefabrikovaný betonový panel')) fail("main building facade panel geometry is missing");
 if (!outdoorSource.includes('Hlavní budova / střešní atika přední')) fail("main building roof parapet is missing");
-if (!outdoorSource.includes('Balkon / svislé zábradlí')) fail("main building balconies are missing");
+if (!outdoorSource.includes('Schodiště / dolní rameno / stupeň')) fail("stair flights and treads are missing");
+if (!outdoorSource.includes('Výtah / levá šachta')) fail("elevator shaft geometry is missing");
+if (!outdoorSource.includes('Podlaží / vstupní chodba')) fail("multi-storey floor slabs are missing");
+if (!outdoorSource.includes('id: "elevator"') || !outdoorSource.includes('id: "stairs"')) fail("stairs and elevator interactions are missing");
 if (!outdoorSource.includes('Mapa / terén')) fail("empty outdoor terrain is missing");
-if (!outdoorSource.includes('colliders.push')) fail("main building must block player movement through its footprint");
+if (!outdoorSource.includes('coreOpening')) fail("upper floor slabs must reserve a stair/elevator core opening");
+if (!mainSource.includes('0.08, 320')) fail("camera far plane must include the outdoor panorama sphere");
+if (!playerSource.includes('player.floor * FLOOR_HEIGHT')) fail("camera height must follow the current storey");
 
 const worldSource = await readFile(path.join(root, "src/game/world.js"), "utf8");
 if (!worldSource.includes("export function createEmptyApartment")) fail("playable empty-apartment map shell is required");
