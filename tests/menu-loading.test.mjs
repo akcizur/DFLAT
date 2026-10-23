@@ -22,7 +22,7 @@ test("the start screen is centered with a single-column menu layout", () => {
 
 test("loading screen communicates progress and has a responsive reduced-motion fallback", () => {
   assert.match(html, /id="loadingScreen"[^>]*role="status"/);
-  assert.match(html, /id="loadingProgress"[^>]*role="progressbar"/);
+  assert.match(html, /role="progressbar"[^>]*id="loadingProgress"/);
   assert.match(html, /id="loadingProgressBar"/);
   assert.match(css, /\.loading-screen\s*\{[\s\S]*?place-items:\s*center/);
   assert.match(css, /@media \(prefers-reduced-motion:\s*reduce\)/);
