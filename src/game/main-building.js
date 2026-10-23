@@ -595,6 +595,25 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
       stairWallDepthFront, concreteDark, { collider: true });
   }
 
+  // Full-height stair enclosure walls alongside both flights. The center partition
+  // separates the two runs; the east end remains open to the shared landing.
+  const stairWallSpanX = stair.highX - stair.lowX + stairTreadOverlap;
+  const stairWallCenterX = (stair.lowX + stair.highX) / 2;
+  const stairOuterZ = stair.firstZ - stairTreadDepth / 2 - stairWallThickness / 2;
+  const stairDividerZ = (stair.firstZ + stair.secondZ) / 2;
+  const stairFrontZ = stair.secondZ + stairTreadDepth / 2 + stairWallThickness / 2;
+  for (let floor = 0; floor < floors; floor++) {
+    const floorY = floor * floorHeight;
+    for (const [name, z] of [
+      ["Schodiště / zadní boční stěna", stairOuterZ],
+      ["Schodiště / dělicí stěna mezi rameny", stairDividerZ],
+      ["Schodiště / přední boční stěna", stairFrontZ]
+    ]) {
+      box(name, stairWallCenterX, floorY + stairWallHeight / 2, z,
+        stairWallSpanX, stairWallHeight, stairWallThickness, concrete, { collider: true });
+    }
+  }
+
   // Continuous lift shaft with a visible car at ground level and landing doors on all floors.
   const shaftDark = new THREE.MeshStandardMaterial({
     color: 0x292f31, roughness: 0.95, flatShading: true
