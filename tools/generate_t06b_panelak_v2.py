@@ -307,8 +307,8 @@ for floor in range(FLOORS):
         # B7-style service zone. Bath and WC are separated by a full-height partition
         # with a standard narrow doorway; the toilet is no longer in the bathtub zone.
         wc_z0, wc_z1 = -0.74, -0.10
-        box("Flat | B7 service-core floor", (inner, y+0.08, -0.42), (2.0, 0.10, 2.05), cream)
-        for z0, z1 in ((-1.445, wc_z0), (wc_z1, 0.605)):
+        box("Flat | B7 service-core floor", (inner, y+0.08, -0.42), (2.0, 0.10, 2.0), cream)
+        for z0, z1 in ((-1.42, wc_z0), (wc_z1, 0.58)):
             if z1 > z0:
                 box("Flat | bathroom-WC divider", (inner, y+1.05, (z0+z1)/2),
                     (WALL, 2.10, z1-z0), cream)
@@ -381,7 +381,7 @@ room_schedule = {
     "bedroom_m2": round(3.45*4.35, 2),
     "living_room_m2": round(3.45*4.65, 2),
     "hall_m2": round(3.45*2.30, 2),
-    "bathroom_wc_zone_m2": round(2.0*2.05, 2),
+    "bathroom_wc_zone_m2": round(2.0*2.0, 2),
 }
 # Store the intended dimensional design as scene metadata for downstream checks.
 scene["room_area_schedule_m2"] = json.dumps(room_schedule, sort_keys=True)
