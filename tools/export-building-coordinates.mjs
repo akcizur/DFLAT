@@ -183,27 +183,45 @@ closeTo(liftCabinFloor.position.y, initialCabinY, "Elevator cabin returns to the
 
 // Extract the exact transformed corners of every mesh from the generated scene.
 scene.updateMatrixWorld(true);
-let nextPointIndex = 0;
+const pointByCoordinate = new Map();
 const points = [];
+let meshCornerRecordCount = 0;
 const meshRecords = meshes.map((mesh, meshIndex) => {
   const corners = getWorldCorners(mesh);
   const centerWorld = new THREE.Vector3();
   mesh.getWorldPosition(centerWorld);
   const size = localSize(mesh);
-  const firstPoint = nextPointIndex;
+  const meshId = `M${String(meshIndex + 1).padStart(5, "0")}`;
+  const cornerPointIds = [];
+
   for (const corner of corners) {
-    points.push({
-      pointId: `P${String(nextPointIndex + 1).padStart(6, "0")}`,
-      meshId: `M${String(meshIndex + 1).padStart(5, "0")}`,
+    const coordinateKey = [
+      corner.world.x.toFixed(6),
+      corner.world.y.toFixed(6),
+      corner.world.z.toFixed(6)
+    ].join(",");
+    let point = pointByCoordinate.get(coordinateKey);
+    if (!point) {
+      point = {
+        pointId: `P${String(points.length + 1).padStart(6, "0")}`,
+        world: corner.world,
+        buildingLocal: corner.local,
+        incidents: []
+      };
+      pointByCoordinate.set(coordinateKey, point);
+      points.push(point);
+    }
+    point.incidents.push({
+      meshId,
       meshName: mesh.name || "(unnamed mesh)",
-      vertexIndex: corner.vertexIndex,
-      world: corner.world,
-      buildingLocal: corner.local
+      vertexIndex: corner.vertexIndex
     });
-    nextPointIndex++;
+    cornerPointIds.push(point.pointId);
+    meshCornerRecordCount++;
   }
+
   return {
-    meshId: `M${String(meshIndex + 1).padStart(5, "0")}`,
+    meshId,
     name: mesh.name || "(unnamed mesh)",
     primitive: mesh.geometry.type,
     positionWorld: vec3(centerWorld.x, centerWorld.y, centerWorld.z),
@@ -215,19 +233,22 @@ const meshRecords = meshes.map((mesh, meshIndex) => {
     sizeLocal: size,
     rotationRadians: vec3(mesh.rotation.x, mesh.rotation.y, mesh.rotation.z),
     boundsWorld: boundsFromCorners(corners),
-    firstPointIndex: firstPoint,
-    pointCount: corners.length
+    cornerPointIds,
+    cornerCount: corners.length
   };
 });
 
 const csvRows = [
-  ["point_id","mesh_id","mesh_name","vertex_index","world_x","world_y","world_z","building_x","building_y","building_z"].join(",")
+  ["point_id","world_x","world_y","world_z","building_x","building_y","building_z","incident_count","mesh_ids","mesh_names","mesh_corner_refs"].join(",")
 ];
 for (const point of points) {
+  const meshIds = [...new Set(point.incidents.map(incident => incident.meshId))];
+  const meshNames = [...new Set(point.incidents.map(incident => incident.meshName))];
+  const cornerRefs = point.incidents.map(incident => `${incident.meshId}#${incident.vertexIndex}`);
   csvRows.push([
-    point.pointId, point.meshId, point.meshName, point.vertexIndex,
-    point.world.x, point.world.y, point.world.z,
-    point.buildingLocal.x, point.buildingLocal.y, point.buildingLocal.z
+    point.pointId, point.world.x, point.world.y, point.world.z,
+    point.buildingLocal.x, point.buildingLocal.y, point.buildingLocal.z,
+    point.incidents.length, meshIds.join(";"), meshNames.join(";"), cornerRefs.join(";")
   ].map(csvCell).join(","));
 }
 
@@ -297,7 +318,7 @@ const manifest = {
   },
   counts: {
     meshCount: meshRecords.length,
-    uniqueCornerPointCount: points.length,
+    uniqueCornerPointCount: points.length,\n    meshCornerRecordCount,
     storeys: FLOOR_COUNT,
     floorSlabGroups: 1 + FLOOR_COUNT,
     balconyDecks: findMeshes("Balkon / betonová deska").length,
@@ -308,7 +329,7 @@ const manifest = {
     colliderCount: world.colliders.length,
     interactableCount: world.interactables.length
   },
-  method: "Each BoxGeometry is represented by its eight unique geometric corners transformed into world coordinates. Three.js stores duplicated per-face vertices for normal/UV seams; duplicates at the same corner are reported once per mesh. All positions are rounded to 1 micrometre (six decimal places).",
+  method: "Each BoxGeometry contributes eight transformed geometric corners. Corners from different meshes that share the same world position (rounded to six decimal places) are assigned one global point ID; all mesh/corner incidences are preserved in the point record and the mesh cornerPointIds array. World positions are rounded to 1 micrometre (six decimal places).",
   meshes: meshRecords,
   points,
   colliders: world.colliders.map((collider, index) => ({
@@ -323,6 +344,6 @@ await mkdir(OUT_DIR, { recursive: true });
 await writeFile(JSON_PATH, JSON.stringify(manifest, null, 2) + "\n", "utf8");
 await writeFile(CSV_PATH, csvRows.join("\n") + "\n", "utf8");
 
-console.log(`Coordinate export passed: ${manifest.counts.meshCount} meshes, ${manifest.counts.uniqueCornerPointCount} unique corner points, ${manifest.counts.colliderCount} collider volumes.`);
+console.log(`Coordinate export passed: ${manifest.counts.meshCount} meshes, ${manifest.counts.uniqueCornerPointCount} unique world points from ${manifest.counts.meshCornerRecordCount} mesh-corner records, ${manifest.counts.colliderCount} collider volumes.`);
 console.log(`JSON: ${path.relative(ROOT, JSON_PATH)}`);
 console.log(`CSV:  ${path.relative(ROOT, CSV_PATH)}`);
