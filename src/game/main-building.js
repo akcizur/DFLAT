@@ -1,52 +1,63 @@
-// Main-building remaster: a sparse exterior map and a structurally open, eight-storey panelák.
+import { PANELAK_LAYOUT } from "./panelak-config.js";
+
+// Runtime model of a four-storey T06B-inspired section: five 3.6 m modules,
+// two mirrored flats per level, recessed loggias and a central switchback stair.
 export function createMainBuildingWorld({ THREE, scene, state, ui }) {
   const colliders = [];
   const interactables = [];
   const meshesToAnimate = [];
   const doorAnimations = [];
   const meshes = [];
-  const liftCarMeshes = [];
-  const liftDoorPanels = [];
-  const liftDoorColliders = [];
-  const liftCabinColliders = [];
-  let liftCarFloor = 0;
 
-  const concrete = new THREE.MeshStandardMaterial({
-    color: 0xbdbbb2, roughness: 0.96, flatShading: true
-  });
-  const facadePanel = new THREE.MeshStandardMaterial({
-    color: 0xc9c7bd, roughness: 0.98, flatShading: true
-  });
-  const concreteDark = new THREE.MeshStandardMaterial({
-    color: 0x858883, roughness: 1, flatShading: true
-  });
-  const reveal = new THREE.MeshStandardMaterial({
-    color: 0x686f70, roughness: 1, flatShading: true
-  });
-  const glassDark = new THREE.MeshStandardMaterial({
-    color: 0x40545d, roughness: 0.35, metalness: 0.10, flatShading: true
-  });
-  const glassWarm = new THREE.MeshStandardMaterial({
-    color: 0x93836a, roughness: 0.48, metalness: 0.04, flatShading: true
-  });
-  const railMaterial = new THREE.MeshStandardMaterial({
-    color: 0x626a69, roughness: 0.88, metalness: 0.12, flatShading: true
-  });
-  const doorMaterial = new THREE.MeshStandardMaterial({
-    color: 0x384548, roughness: 0.76, metalness: 0.12, flatShading: true
-  });
-  const grass = new THREE.MeshStandardMaterial({
-    color: 0x747b6d, roughness: 1, flatShading: true
-  });
-  const asphalt = new THREE.MeshStandardMaterial({
-    color: 0x50565a, roughness: 1, flatShading: true
-  });
-  const pavement = new THREE.MeshStandardMaterial({
-    color: 0x98978e, roughness: 1, flatShading: true
-  });
-  const roadMark = new THREE.MeshStandardMaterial({
-    color: 0xc3c0b1, roughness: 1, flatShading: true
-  });
+  const floorHeight = PANELAK_LAYOUT.floorHeight;
+  const floors = PANELAK_LAYOUT.totalFloors;
+  const moduleWidth = PANELAK_LAYOUT.moduleWidth;
+  const width = PANELAK_LAYOUT.totalWidth;
+  const depth = PANELAK_LAYOUT.depth;
+  const wallT = PANELAK_LAYOUT.exteriorWall;
+  const buildingZ = -22;
+  const frontZ = buildingZ + depth / 2;
+  const rearZ = buildingZ - depth / 2;
+  const leftX = -width / 2;
+  const rightX = width / 2;
+  const buildingHeight = floors * floorHeight;
+  const frontWallZ = frontZ - wallT / 2;
+  const rearWallZ = rearZ + wallT / 2;
+
+  const materials = {
+    concrete: new THREE.MeshStandardMaterial({ color: 0xb7b3a7, roughness: 0.98, flatShading: true }),
+    facade: new THREE.MeshStandardMaterial({ color: 0xc3c0b3, roughness: 1, flatShading: true }),
+    panelEdge: new THREE.MeshStandardMaterial({ color: 0x89897f, roughness: 1, flatShading: true }),
+    darkConcrete: new THREE.MeshStandardMaterial({ color: 0x77786e, roughness: 1, flatShading: true }),
+    plaster: new THREE.MeshStandardMaterial({ color: 0xd0cbb8, roughness: 1, flatShading: true }),
+    glass: new THREE.MeshStandardMaterial({ color: 0x45535a, roughness: 0.35, metalness: 0.08, flatShading: true }),
+    warmGlass: new THREE.MeshStandardMaterial({ color: 0x94816a, roughness: 0.48, flatShading: true }),
+    luxfer: new THREE.MeshStandardMaterial({ color: 0xabb8b3, roughness: 0.45, metalness: 0.03, flatShading: true }),
+    windowFrame: new THREE.MeshStandardMaterial({ color: 0xd4cebb, roughness: 0.78, flatShading: true }),
+    metal: new THREE.MeshStandardMaterial({ color: 0x545b55, roughness: 0.86, metalness: 0.18, flatShading: true }),
+    oxidizedMetal: new THREE.MeshStandardMaterial({ color: 0x635747, roughness: 0.92, metalness: 0.08, flatShading: true }),
+    door: new THREE.MeshStandardMaterial({ color: 0x4a5148, roughness: 0.82, flatShading: true }),
+    floor: new THREE.MeshStandardMaterial({ color: 0x88877b, roughness: 0.98, flatShading: true }),
+    lino: new THREE.MeshStandardMaterial({ color: 0x777e70, roughness: 0.96, flatShading: true }),
+    wood: new THREE.MeshStandardMaterial({ color: 0x725b43, roughness: 0.95, flatShading: true }),
+    woodLight: new THREE.MeshStandardMaterial({ color: 0xa18a65, roughness: 0.95, flatShading: true }),
+    white: new THREE.MeshStandardMaterial({ color: 0xcac9bf, roughness: 0.9, flatShading: true }),
+    bath: new THREE.MeshStandardMaterial({ color: 0xb9beb5, roughness: 0.35, flatShading: true }),
+    tile: new THREE.MeshStandardMaterial({ color: 0x8d9a91, roughness: 0.9, flatShading: true }),
+    grass: new THREE.MeshStandardMaterial({ color: 0x646b55, roughness: 1, flatShading: true }),
+    asphalt: new THREE.MeshStandardMaterial({ color: 0x484d4d, roughness: 1, flatShading: true }),
+    pavement: new THREE.MeshStandardMaterial({ color: 0x918f84, roughness: 1, flatShading: true }),
+    marking: new THREE.MeshStandardMaterial({ color: 0xb7b4a6, roughness: 1, flatShading: true })
+  };
+
+  function addCollider(x, sx, z, sz, floor = null, active = true) {
+    colliders.push({
+      minX: x - sx / 2, maxX: x + sx / 2,
+      minZ: z - sz / 2, maxZ: z + sz / 2,
+      ...(Number.isInteger(floor) ? { floor } : {}),
+      active
+    });
+  }
 
   function box(name, x, y, z, sx, sy, sz, material, options = {}) {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), material);
@@ -56,821 +67,550 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     mesh.receiveShadow = options.receiveShadow ?? true;
     scene.add(mesh);
     meshes.push(mesh);
-    if (options.collider) {
-      colliders.push({
-        minX: x - sx / 2, maxX: x + sx / 2,
-        minZ: z - sz / 2, maxZ: z + sz / 2
-      });
-    }
+    if (options.collider) addCollider(x, sx, z, sz, options.floor ?? null, options.active ?? true);
     return mesh;
   }
 
-  // Keep the surroundings deliberately spare: open ground, one road, one footpath.
-  box("Mapa / terén", 0, -0.11, -22, 240, 0.22, 240, grass);
-  box("Mapa / hlavní silnice", 0, 0.012, 2.7, 220, 0.035, 8.2, asphalt);
-  box("Mapa / chodník u silnice", 0, 0.025, -2.05, 220, 0.05, 1.55, pavement);
-  box("Mapa / přístupová cesta", 0, 0.018, -8, 6.0, 0.036, 10.0, pavement);
-  box("Mapa / vstupní plošina", 0, 0.035, -14.8, 7.0, 0.07, 3.4, facadePanel);
-
-  for (let x = -102; x <= 102; x += 12) {
-    box("Silnice / přerušovaná čára", x, 0.034, 2.7, 4.4, 0.012, 0.12, roadMark, {
-      castShadow: false, receiveShadow: false
-    });
-  }
-
-  // Consistent dimensions: 28 m wide, 12 m deep, 8 storeys, 2.8 m floor-to-floor.
-  const building = { x: 0, z: -22, width: 28, depth: 12, floors: 8, floorHeight: 2.8, wall: 0.28 };
-  const { x: bx, z: bz, width, depth, floors, floorHeight, wall: wallT } = building;
-  const height = floors * floorHeight;
-  const frontZ = bz + depth / 2;
-  const rearZ = bz - depth / 2;
-  const leftX = bx - width / 2;
-  const rightX = bx + width / 2;
-  const frontWallZ = frontZ - wallT / 2;
-
-  // Floors are real slabs. Upper storeys keep a central void for the stairs and lift.
-  const coreOpening = { minX: -3.8, maxX: 3.8, minZ: -26.0, maxZ: -22.52 };
-  function makeFloorSlab(floor) {
-    const y = floor * floorHeight - 0.08;
-    const material = concrete;
-    if (floor === 0) {
-      box("Hlavní budova / přízemní podlaha", bx, y, bz, width + 0.28, 0.16, depth + 0.28, material);
-      return;
+  function wallX(name, z, x0, x1, bottom, height, floor, material = materials.plaster, door = null) {
+    // A real opening is omitted from both the wall mesh and its collision strip.
+    const doorLeft = door ? door.center - door.width / 2 : Infinity;
+    const doorRight = door ? door.center + door.width / 2 : -Infinity;
+    const pieces = [];
+    if (!door || doorLeft > x0 + 0.01) pieces.push([x0, door ? Math.min(x1, doorLeft) : x1]);
+    if (door && doorRight < x1 - 0.01) pieces.push([Math.max(x0, doorRight), x1]);
+    for (const piece of pieces) {
+      if (piece[1] - piece[0] < 0.04) continue;
+      box(name, (piece[0] + piece[1]) / 2, bottom + height / 2, z,
+        piece[1] - piece[0], height, wallT, material, { collider: true, floor });
     }
-    const fullLeft = leftX - 0.14;
-    const fullRight = rightX + 0.14;
-    const leftWidth = coreOpening.minX - fullLeft;
-    const rightWidth = fullRight - coreOpening.maxX;
-    const frontDepth = (frontZ + 0.14) - coreOpening.maxZ;
-    const rearDepth = coreOpening.minZ - (rearZ - 0.14);
-    box("Podlaží / levé křídlo", (fullLeft + coreOpening.minX) / 2, y,
-      bz, leftWidth, 0.16, depth + 0.28, material);
-    box("Podlaží / pravé křídlo", (coreOpening.maxX + fullRight) / 2, y,
-      bz, rightWidth, 0.16, depth + 0.28, material);
-    box("Podlaží / vstupní chodba", bx, y, (coreOpening.maxZ + frontZ + 0.14) / 2,
-      coreOpening.maxX - coreOpening.minX, 0.16, frontDepth, material);
-    box("Podlaží / zadní trakt", bx, y, (rearZ - 0.14 + coreOpening.minZ) / 2,
-      coreOpening.maxX - coreOpening.minX, 0.16, rearDepth, material);
-  }
-  function makeRoofSlab() {
-    const y = floors * floorHeight - 0.08;
-    const material = facadePanel;
-    const fullLeft = leftX - 0.14;
-    const fullRight = rightX + 0.14;
-    const slabRearZ = rearZ - 0.14;
-    const slabFrontZ = frontZ + 0.14;
-
-    // A dedicated maintenance hatch sits above the top stair landing.
-    // Unlike residential floors, the roof does not repeat the large stair/lift core void.
-    const roofHatch = {
-      minX: -1.325, maxX: -0.275,
-      minZ: -24.625, maxZ: -23.575
-    };
-    const hatchWidth = roofHatch.maxX - roofHatch.minX;
-    const hatchDepth = roofHatch.maxZ - roofHatch.minZ;
-    const fullDepth = depth + 0.28;
-
-    box("Střecha / deska vlevo od servisního poklopu",
-      (fullLeft + roofHatch.minX) / 2, y, bz,
-      roofHatch.minX - fullLeft, 0.16, fullDepth, material);
-    box("Střecha / deska vpravo od servisního poklopu",
-      (roofHatch.maxX + fullRight) / 2, y, bz,
-      fullRight - roofHatch.maxX, 0.16, fullDepth, material);
-    box("Střecha / deska za servisním poklopem",
-      (roofHatch.minX + roofHatch.maxX) / 2, y,
-      (slabRearZ + roofHatch.minZ) / 2,
-      hatchWidth, 0.16, roofHatch.minZ - slabRearZ, material);
-    box("Střecha / deska před servisním poklopem",
-      (roofHatch.minX + roofHatch.maxX) / 2, y,
-      (roofHatch.maxZ + slabFrontZ) / 2,
-      hatchWidth, 0.16, slabFrontZ - roofHatch.maxZ, material);
-
-    const roofY = height;
-    const frameT = 0.10;
-    const frameH = 0.12;
-    const frameY = roofY + frameH / 2;
-    const hatchX = (roofHatch.minX + roofHatch.maxX) / 2;
-    const hatchZ = (roofHatch.minZ + roofHatch.maxZ) / 2;
-    box("Střecha / rám poklopu vlevo", roofHatch.minX - frameT / 2,
-      frameY, hatchZ, frameT, frameH, hatchDepth + frameT, concreteDark);
-    box("Střecha / rám poklopu vpravo", roofHatch.maxX + frameT / 2,
-      frameY, hatchZ, frameT, frameH, hatchDepth + frameT, concreteDark);
-    box("Střecha / rám poklopu vzadu", hatchX, frameY,
-      roofHatch.minZ - frameT / 2, hatchWidth, frameH, frameT, concreteDark);
-    box("Střecha / rám poklopu vpředu", hatchX, frameY,
-      roofHatch.maxZ + frameT / 2, hatchWidth, frameH, frameT, concreteDark);
-
-    // The hatch lid is shown resting open on the roof, clear of the ladder opening.
-    box("Střecha / otevřený poklop", hatchX, roofY + 0.04,
-      roofHatch.maxZ + frameT + hatchDepth / 2,
-      hatchWidth, 0.08, hatchDepth, facadePanel);
-
-    // Fixed access ladder from the top landing to the roof hatch.
-    const ladderZ = roofHatch.maxZ - 0.14;
-    const ladderBottomY = (floors - 1) * floorHeight + 0.22;
-    const ladderTopY = roofY - 0.12;
-    const ladderHeight = ladderTopY - ladderBottomY;
-    const ladderCenterY = (ladderTopY + ladderBottomY) / 2;
-    const ladderLeftX = roofHatch.minX + 0.16;
-    const ladderRightX = roofHatch.maxX - 0.16;
-    box("Střecha / žebřík levá stojina", ladderLeftX, ladderCenterY, ladderZ,
-      0.045, ladderHeight, 0.045, railMaterial);
-    box("Střecha / žebřík pravá stojina", ladderRightX, ladderCenterY, ladderZ,
-      0.045, ladderHeight, 0.045, railMaterial);
-    const rungStartY = ladderBottomY + 0.10;
-    const rungEndY = ladderTopY - 0.08;
-    for (let rungY = rungStartY; rungY <= rungEndY; rungY += 0.24) {
-      box("Střecha / žebřík příčka", hatchX, rungY, ladderZ,
-        hatchWidth - 0.30, 0.035, 0.035, railMaterial);
+    if (door && door.height < height) {
+      box(name + " / nadpraží", door.center, bottom + door.height + (height - door.height) / 2,
+        z, door.width, height - door.height, wallT, material, { collider: true, floor });
     }
   }
 
-  for (let floor = 0; floor < floors; floor++) makeFloorSlab(floor);
-  makeRoofSlab();
-  box("Hlavní budova / zadní stěna", bx, height / 2, rearZ + wallT / 2, width, height, wallT, concrete);
-  box("Hlavní budova / levá štítová stěna", leftX + wallT / 2, height / 2, bz, wallT, height, depth, concrete);
-  box("Hlavní budova / pravá štítová stěna", rightX - wallT / 2, height / 2, bz, wallT, height, depth, concrete);
-
-  const doorWidth = 1.82;
-  const doorHeight = 2.50;
-  // Split the plinth around the actual entrance opening, including a small tolerance.
-  const plinthEndX = doorWidth / 2 + 0.11;
-  const plinthWidth = width / 2 - plinthEndX;
-  box("Hlavní budova / sokl vlevo od vchodu", -(width / 2 + plinthEndX) / 2,
-    0.36, frontZ - 0.025, plinthWidth, 0.72, 0.14, concreteDark);
-  box("Hlavní budova / sokl vpravo od vchodu", (width / 2 + plinthEndX) / 2,
-    0.36, frontZ - 0.025, plinthWidth, 0.72, 0.14, concreteDark);
-
-  // Front facade is built as wall sections around real rectangular openings.
-  // Windows are holes in the wall geometry, not glass cards floating on a solid slab.
-  const windowXs = [-11.4, -8.15, -4.9, -1.65, 1.65, 4.9, 8.15, 11.4];
-  const windowWidth = 1.36;
-  const windowBottom = 0.78;
-  const windowTop = 2.28;
-
-  function buildFacadeFloor(floor) {
-    const floorY = floor * floorHeight;
-    const openings = [];
-    for (let i = 0; i < windowXs.length; i++) {
-      const wx = windowXs[i];
-      if (floor === 0 && Math.abs(wx) < 2) continue;
-      const isBalconyDoor = Math.abs(Math.abs(wx) - 4.9) < 0.001;
-      const openingBottom = isBalconyDoor ? 0 : windowBottom;
-      openings.push({
-        kind: isBalconyDoor ? "balcony-door" : "window",
-        x0: wx - windowWidth / 2, x1: wx + windowWidth / 2,
-        y0: floorY + openingBottom, y1: floorY + windowTop,
-        x: wx, column: i, openingBottom
-      });
+  function wallZ(name, x, z0, z1, bottom, height, floor, material = materials.plaster, door = null) {
+    const doorStart = door ? door.center - door.width / 2 : Infinity;
+    const doorEnd = door ? door.center + door.width / 2 : -Infinity;
+    const pieces = [];
+    if (!door || doorStart > z0 + 0.01) pieces.push([z0, door ? Math.min(z1, doorStart) : z1]);
+    if (door && doorEnd < z1 - 0.01) pieces.push([Math.max(z0, doorEnd), z1]);
+    for (const piece of pieces) {
+      if (piece[1] - piece[0] < 0.04) continue;
+      box(name, x, bottom + height / 2, (piece[0] + piece[1]) / 2,
+        wallT, height, piece[1] - piece[0], material, { collider: true, floor });
     }
-    if (floor === 0) {
-      openings.push({
-        kind: "door", x0: -doorWidth / 2, x1: doorWidth / 2,
-        y0: 0.02, y1: doorHeight, x: 0
-      });
+    if (door && door.height < height) {
+      box(name + " / nadpraží", x, bottom + door.height + (height - door.height) / 2,
+        door.center, wallT, height - door.height, door.width, material, { collider: true, floor });
+    }
+  }
+
+  function facadeWithOpenings(floor, z, front) {
+    const y0 = floor * floorHeight;
+    const y1 = y0 + floorHeight;
+    const facadeZ = front ? frontWallZ : rearWallZ;
+    const windows = [];
+    let mainDoor = null;
+
+    if (front) {
+      for (const x of [-7.2, -3.6, 3.6, 7.2]) {
+        windows.push({ x, width: 1.42, bottom: y0 + 0.86, top: y0 + 2.18, kind: "window" });
+      }
+      if (floor === 0) mainDoor = { x0: -0.88, x1: 0.88, y0: y0 + 0.02, y1: y0 + 2.36, x: 0, kind: "entry" };
+      else windows.push({ x: 0, width: 2.18, bottom: y0 + 0.20, top: y0 + 2.55, kind: "luxfer" });
+    } else {
+      windows.push({ x: -7.2, width: 1.42, bottom: y0 + 0.86, top: y0 + 2.18, kind: "window" });
+      windows.push({ x: 7.2, width: 1.42, bottom: y0 + 0.86, top: y0 + 2.18, kind: "window" });
+      windows.push({ x: -3.6, width: 1.48, bottom: y0 + 0.04, top: y0 + 2.42, kind: "loggia-door" });
+      windows.push({ x: 3.6, width: 1.48, bottom: y0 + 0.04, top: y0 + 2.42, kind: "loggia-door" });
     }
 
-    const xCuts = [leftX, rightX];
-    const yCuts = [floorY, floorY + floorHeight];
+    const openings = windows.map(w => ({ x0: w.x - w.width / 2, x1: w.x + w.width / 2, y0: w.bottom, y1: w.top, kind: w.kind }));
+    if (mainDoor) openings.push({ x0: mainDoor.x0, x1: mainDoor.x1, y0: mainDoor.y0, y1: mainDoor.y1, kind: "entry" });
+    const xCuts = [leftX + wallT / 2, rightX - wallT / 2];
+    const yCuts = [y0, y1];
     for (const opening of openings) {
       xCuts.push(opening.x0, opening.x1);
       yCuts.push(opening.y0, opening.y1);
     }
     const xs = [...new Set(xCuts)].sort((a, b) => a - b);
     const ys = [...new Set(yCuts)].sort((a, b) => a - b);
-
     for (let xi = 0; xi < xs.length - 1; xi++) {
-      const x0 = xs[xi], x1 = xs[xi + 1];
-      if (x1 - x0 < 0.015) continue;
-      const cx = (x0 + x1) / 2;
       for (let yi = 0; yi < ys.length - 1; yi++) {
-        const y0 = ys[yi], y1 = ys[yi + 1];
-        if (y1 - y0 < 0.015) continue;
-        const cy = (y0 + y1) / 2;
-        const isOpening = openings.some(opening =>
-          cx > opening.x0 - 0.001 && cx < opening.x1 + 0.001 &&
-          cy > opening.y0 - 0.001 && cy < opening.y1 + 0.001
-        );
-        if (isOpening) continue;
-        box("Fasáda / prefabrikovaný betonový panel", cx, cy, frontWallZ,
-          x1 - x0, y1 - y0, wallT, (xi + yi + floor) % 4 === 0 ? facadePanel : concrete);
+        const x0 = xs[xi], x1 = xs[xi + 1], yA = ys[yi], yB = ys[yi + 1];
+        if (x1 - x0 < 0.025 || yB - yA < 0.025) continue;
+        const cx = (x0 + x1) / 2, cy = (yA + yB) / 2;
+        const insideOpening = openings.some(op => cx > op.x0 + 0.001 && cx < op.x1 - 0.001 && cy > op.y0 + 0.001 && cy < op.y1 - 0.001);
+        if (insideOpening) continue;
+        box(front ? "Fasáda / břízolitový panel" : "Fasáda zadní / panel", cx, cy, facadeZ,
+          x1 - x0, yB - yA, wallT, (yi === 0 && xi % 3 === 1) ? materials.facade : materials.concrete);
       }
     }
 
-    // Low, high-contrast reveals make the floor rhythm visible at pixel scale.
-    box("Fasáda / vodorovná spára", bx, floorY + floorHeight - 0.055,
-      frontZ + 0.025, width, 0.07, 0.055, concreteDark);
+    // Wall collision only opens at doors, never at ordinary window apertures.
+    const walkGaps = front
+      ? (floor === 0 ? [{ center: 0, width: 1.76, height: 2.36 }] : [])
+      : windows.filter(w => w.kind === "loggia-door").map(w => ({ center: w.x, width: w.width, height: w.top - w.bottom }));
+    let cursor = leftX;
+    for (const gap of walkGaps.sort((a, b) => a.center - b.center)) {
+      const start = gap.center - gap.width / 2;
+      const end = gap.center + gap.width / 2;
+      if (start > cursor) addCollider((cursor + start) / 2, start - cursor, z, wallT, floor);
+      cursor = Math.max(cursor, end);
+    }
+    if (cursor < rightX) addCollider((cursor + rightX) / 2, rightX - cursor, z, wallT, floor);
 
-    for (const opening of openings) {
-      const isBalconyDoor = opening.kind === "balcony-door";
-      const openingBottom = opening.openingBottom ?? windowBottom;
-      const openingHeight = windowTop - openingBottom;
-      const wy = floorY + (openingBottom + windowTop) / 2;
-      const pane = ((floor * 7 + opening.column * 3) % 13 === 0) ? glassWarm : glassDark;
-      const frameZ = frontZ + 0.075;
-      const frameW = 0.075;
-      const leftFrameName = isBalconyDoor ? "Balkonové dveře / levý rám" : "Okno / levý rám";
-      const rightFrameName = isBalconyDoor ? "Balkonové dveře / pravý rám" : "Okno / pravý rám";
-      const topFrameName = isBalconyDoor ? "Balkonové dveře / horní rám" : "Okno / horní rám";
-      const bottomFrameName = isBalconyDoor ? "Balkonové dveře / spodní rám" : "Okno / spodní rám";
-
-      if (isBalconyDoor) {
-        // Open door leaves are turned into the balcony depth, leaving the center passable.
-        const leafOffset = windowWidth / 2 - 0.08;
-        for (const side of [-1, 1]) {
-          box(side < 0 ? "Balkonové dveře / otevřené levé křídlo" : "Balkonové dveře / otevřené pravé křídlo",
-            opening.x + side * leafOffset, wy, frontZ + 0.30,
-            0.04, openingHeight - 0.14, 0.56, pane);
+    for (const w of windows) {
+      const h = w.top - w.bottom;
+      const cy = (w.top + w.bottom) / 2;
+      if (w.kind === "luxfer") {
+        const rows = 6, cols = 10;
+        const cellW = w.width / cols, cellH = h / rows;
+        for (let c = 0; c < cols; c++) for (let r = 0; r < rows; r++) {
+          box("Schodiště / luxferová tvárnice", w.x - w.width / 2 + (c + 0.5) * cellW, w.bottom + (r + 0.5) * cellH,
+            facadeZ + (front ? 0.09 : -0.09), cellW - 0.018, cellH - 0.018, 0.07, materials.luxfer);
         }
-      } else {
-        box("Okno / tmavé zapuštěné sklo", opening.x, wy, frontZ + 0.035,
-          windowWidth - 0.14, openingHeight - 0.14, 0.04, pane);
-        box("Okno / středová příčka", opening.x, wy, frameZ + 0.012,
-          windowWidth - 0.14, 0.045, 0.045, concreteDark);
+        continue;
       }
-
-      box(leftFrameName, opening.x - windowWidth / 2 + frameW / 2, wy,
-        frameZ, frameW, openingHeight, 0.07, facadePanel);
-      box(rightFrameName, opening.x + windowWidth / 2 - frameW / 2, wy,
-        frameZ, frameW, openingHeight, 0.07, facadePanel);
-      box(topFrameName, opening.x, floorY + windowTop - 0.035,
-        frameZ, windowWidth, 0.07, 0.07, facadePanel);
-      box(bottomFrameName, opening.x, floorY + openingBottom + 0.035,
-        frameZ, windowWidth, 0.07, 0.07, facadePanel);
+      const paneMat = ((floor * 5 + Math.round((w.x + 9) * 2)) % 7 < 2) ? materials.warmGlass : materials.glass;
+      const paneZ = facadeZ + (front ? 0.055 : -0.055);
+      box(w.kind === "loggia-door" ? "Lodžie / prosklené dveře" : "Okno / tmavé zapuštěné sklo",
+        w.x, cy, paneZ, w.width - 0.12, h - 0.12, 0.045, paneMat);
+      const frameZ = facadeZ + (front ? 0.092 : -0.092);
+      const frame = 0.065;
+      box("Okno / levý rám", w.x - w.width / 2 + frame / 2, cy, frameZ, frame, h, 0.065, materials.windowFrame);
+      box("Okno / pravý rám", w.x + w.width / 2 - frame / 2, cy, frameZ, frame, h, 0.065, materials.windowFrame);
+      box("Okno / horní rám", w.x, w.top - frame / 2, frameZ, w.width, frame, 0.065, materials.windowFrame);
+      box("Okno / spodní rám", w.x, w.bottom + frame / 2, frameZ, w.width, frame, 0.065, materials.windowFrame);
+      box("Okno / středová příčka", w.x, cy, frameZ + (front ? 0.012 : -0.012), 0.045, h - frame * 2, 0.045, materials.panelEdge);
+    }
+    if (mainDoor) {
+      box("Vchod / levé ostění", -0.94, y0 + 1.18, facadeZ + 0.11, 0.12, 2.36, 0.18, materials.darkConcrete);
+      box("Vchod / pravé ostění", 0.94, y0 + 1.18, facadeZ + 0.11, 0.12, 2.36, 0.18, materials.darkConcrete);
+      box("Vchod / otevřené levé křídlo", -0.82, y0 + 1.17, facadeZ + 0.42, 0.055, 2.30, 0.74, materials.door);
+      box("Vchod / otevřené pravé křídlo", 0.82, y0 + 1.17, facadeZ + 0.42, 0.055, 2.30, 0.74, materials.door);
+      box("Vchod / nadpraží", 0, y0 + 2.42, facadeZ + 0.10, 1.92, 0.12, 0.18, materials.darkConcrete);
     }
   }
 
-  for (let floor = 0; floor < floors; floor++) buildFacadeFloor(floor);
+  function makeFloorSlab(floor) {
+    const y = floor * floorHeight - 0.08;
+    if (floor === 0) {
+      box("Podlaha / přízemí", 0, y, buildingZ, width, 0.16, depth, materials.floor);
+      return;
+    }
+    const core = navigationCore();
+    const leftWidth = core.minX - leftX;
+    const rightWidth = rightX - core.maxX;
+    const frontDepth = frontZ - core.maxZ;
+    const rearDepth = core.minZ - rearZ;
+    box("Stropní panel / levý trakt", (leftX + core.minX) / 2, y, buildingZ, leftWidth, 0.16, depth, materials.floor);
+    box("Stropní panel / pravý trakt", (core.maxX + rightX) / 2, y, buildingZ, rightWidth, 0.16, depth, materials.floor);
+    box("Stropní panel / přední podesta", 0, y, (frontZ + core.maxZ) / 2, core.maxX - core.minX, 0.16, frontDepth, materials.floor);
+    box("Stropní panel / zadní trakt", 0, y, (core.minZ + rearZ) / 2, core.maxX - core.minX, 0.16, rearDepth, materials.floor);
+  }
 
-  // Repeating shallow loggias. Balconies have slab, side cheeks and a distinct metal railing.
+  const stair = {
+    lowX: -1.5, highX: 0.5, firstZ: -25.3, secondZ: -21.8, steps: 8,
+    treadDepth: 1.16, treadOverlap: 0.025, landingWidth: 1.1
+  };
+  const landingDepth = Math.abs(stair.firstZ - stair.secondZ) + stair.treadDepth;
+  const landingCenterZ = (stair.firstZ + stair.secondZ) / 2;
+  const core = {
+    minX: -1.8, maxX: 1.8,
+    minZ: landingCenterZ - landingDepth / 2,
+    maxZ: landingCenterZ + landingDepth / 2
+  };
+  function navigationCore() { return core; }
+
+  // Surroundings evoke a Czech normalisation-era estate, without competing with the hero building.
+  box("Sídliště / travnatý pozemek", 0, -0.11, -22, 240, 0.22, 240, materials.grass);
+  box("Sídliště / asfaltová komunikace", 0, 0.012, 2.7, 220, 0.035, 8.2, materials.asphalt);
+  box("Sídliště / chodník", 0, 0.025, -2.05, 220, 0.05, 1.55, materials.pavement);
+  box("Sídliště / přístupový chodník", 0, 0.018, -8, 3.8, 0.036, 10, materials.pavement);
+  box("Sídliště / vstupní plošina", 0, 0.035, -14.95, 5.4, 0.07, 2.6, materials.pavement);
+  for (let x = -102; x <= 102; x += 12) box("Silnice / přerušovaná čára", x, 0.034, 2.7, 4.4, 0.012, 0.12, materials.marking);
+
+  // Foundation plinth and shallow basement level (1 PP). The cellar remains below grade.
+  box("Suterén / základový sokl", 0, -0.68, buildingZ, width + 0.34, 1.36, depth + 0.34, materials.darkConcrete);
+  box("Hlavní budova / nosná zadní stěna", 0, buildingHeight / 2, rearZ + wallT / 2,
+    width, buildingHeight, wallT, materials.concrete);
+  box("Hlavní budova / levý štít", leftX + wallT / 2, buildingHeight / 2, buildingZ,
+    wallT, buildingHeight, depth, materials.concrete);
+  box("Hlavní budova / pravý štít", rightX - wallT / 2, buildingHeight / 2, buildingZ,
+    wallT, buildingHeight, depth, materials.concrete);
+
   for (let floor = 0; floor < floors; floor++) {
-    const floorY = floor * floorHeight;
-    for (const x of [-4.9, 4.9]) {
-      const slabY = floorY - 0.08;
-      const balconyZ = frontZ + 0.78;
-      box("Balkon / betonová deska", x, slabY, balconyZ, 2.48, 0.16, 1.55, facadePanel);
-      box("Balkon / horní madlo", x, floorY + 1.25, frontZ + 1.555, 2.38, 0.065, 0.065, railMaterial);
-      box("Balkon / spodní příčka", x, floorY + 0.12, frontZ + 1.555, 2.36, 0.045, 0.045, railMaterial);
-      for (let post = -2; post <= 2; post++) {
-        box("Balkon / svislé zábradlí", x + post * 0.46, floorY + 0.61,
-          frontZ + 1.555, 0.045, 1.18, 0.045, railMaterial);
-      }
+    makeFloorSlab(floor);
+    facadeWithOpenings(floor, frontZ, true);
+    facadeWithOpenings(floor, rearZ, false);
+    const y0 = floor * floorHeight;
+    // Repeated panel joints and floor bands are characteristic of prefabricated facade bays.
+    box("Fasáda / vodorovná spára", 0, y0 + floorHeight - 0.055, frontZ + 0.045, width, 0.055, 0.08, materials.panelEdge);
+    box("Fasáda / vodorovná spára zadní", 0, y0 + floorHeight - 0.055, rearZ - 0.045, width, 0.055, 0.08, materials.panelEdge);
+    for (const x of [-7.2, -3.6, 0, 3.6, 7.2]) {
+      box("Fasáda / svislá spára panelu", x, y0 + floorHeight / 2, frontZ + 0.045, 0.035, floorHeight - 0.1, 0.05, materials.panelEdge);
+    }
+  }
+
+  // Recessed loggias: their door wall sits inward of the main rear facade line.
+  // The outer rear wall is interrupted only at the two module bays serving the living rooms.
+  // Side returns and low, aged metal rails keep the openings legible from the courtyard.
+  for (let floor = 0; floor < floors; floor++) {
+    const fy = floor * floorHeight;
+    for (const x of [-3.6, 3.6]) {
+      const outerZ = rearZ + 0.04;
+      const innerZ = rearZ + 1.72;
+      box("Lodžie / betonová podlaha", x, fy - 0.075, (outerZ + innerZ) / 2, 2.55, 0.15, 1.72, materials.facade);
       for (const side of [-1, 1]) {
-        box("Balkon / bočnice", x + side * 1.19, floorY + 0.38,
-          frontZ + 0.79, 0.08, 0.76, 1.40, concreteDark);
+        box("Lodžie / boční návratový panel", x + side * 1.24, fy + 1.30, rearZ + 0.91,
+          0.10, 2.60, 1.72, materials.darkConcrete);
       }
+      box("Lodžie / zábradlí horní madlo", x, fy + 1.02, rearZ + 0.15, 2.42, 0.055, 0.055, materials.oxidizedMetal);
+      box("Lodžie / spodní příčka", x, fy + 0.22, rearZ + 0.15, 2.42, 0.045, 0.045, materials.oxidizedMetal);
+      for (let p = -3; p <= 3; p++) {
+        box("Lodžie / svislé kovové pruty", x + p * 0.35, fy + 0.61, rearZ + 0.15, 0.035, 0.78, 0.035, materials.oxidizedMetal);
+      }
+      // Worn concrete cheeks and old clothesline brackets, not modern glass balustrades.
+      box("Lodžie / konzola", x - 0.92, fy - 0.12, rearZ + 0.35, 0.14, 0.20, 0.35, materials.darkConcrete);
+      box("Lodžie / konzola", x + 0.92, fy - 0.12, rearZ + 0.35, 0.14, 0.20, 0.35, materials.darkConcrete);
     }
   }
 
-  // Entrance recess sits inside the door opening; canopy and approach stairs form one clear landmark.
-  box("Vchod / levé ostění", -doorWidth / 2 - 0.07, 1.29, frontZ + 0.045,
-    0.14, 2.58, 0.18, facadePanel);
-  box("Vchod / pravé ostění", doorWidth / 2 + 0.07, 1.29, frontZ + 0.045,
-    0.14, 2.58, 0.18, facadePanel);
-  box("Vchod / nadpraží", 0, doorHeight + 0.06, frontZ + 0.045,
-    doorWidth + 0.28, 0.12, 0.18, facadePanel);
-  // Both entrance leaves are shown swung open against the jambs, so the playable entry is visibly clear.
-  box("Vchod / otevřené levé dveřní křídlo", -0.90, 1.20, frontZ + 0.34,
-    0.055, 2.34, 0.78, doorMaterial);
-  box("Vchod / otevřené pravé dveřní křídlo", 0.90, 1.20, frontZ + 0.34,
-    0.055, 2.34, 0.78, doorMaterial);
-  for (const side of [-1, 1]) {
-    box("Vchod / zasklení otevřeného dveřního křídla",
-      side * 0.94, 1.52, frontZ + 0.34,
-      0.025, 1.08, 0.52, glassDark);
+  // Internal partitions use nominal apartment zones based on the corrected room-area budget.
+  const moduleBounds = [
+    [-9.0, -5.4, -7.2], [-5.4, -1.8, -3.6],
+    [1.8, 5.4, 3.6], [5.4, 9.0, 7.2]
+  ];
+  const roomBands = {
+    outerFrontEnd: frontZ - 3.0,
+    middleFrontEnd: frontZ - 3.5,
+    hallDepth: PANELAK_LAYOUT.hallDepth,
+    bathDepth: PANELAK_LAYOUT.bathDepth,
+    bedDepth: 4.35,
+    livingDepth: 4.65
+  };
+
+  function buildApartmentPartitions(floor) {
+    const fy = floor * floorHeight;
+    // Room doors open to the short hall/core zone. Structural separations repeat at each floor.
+    for (const [x0, x1, center] of moduleBounds) {
+      if (center === -7.2 || center === 7.2) {
+        wallX("Byt / příčka dětský pokoj a chodba", roomBands.outerFrontEnd, x0 + 0.15, x1 - 0.15,
+          fy, 2.58, floor, materials.plaster, { center, width: 0.92, height: 2.05 });
+      } else {
+        wallX("Byt / příčka kuchyně a bytové jádro", roomBands.middleFrontEnd, x0 + 0.15, x1 - 0.15,
+          fy, 2.58, floor, materials.plaster, { center, width: 0.92, height: 2.05 });
+      }
+    }
+    const rearPartitions = [
+      { z: roomBands.outerFrontEnd + roomBands.hallDepth, spans: [[-8.85, -5.55, -7.2], [5.55, 8.85, 7.2]] },
+      { z: roomBands.middleFrontEnd + roomBands.bathDepth, spans: [[-5.25, -1.95, -3.6], [1.95, 5.25, 3.6]] }
+    ];
+    for (const row of rearPartitions) {
+      for (const [x0, x1, center] of row.spans) {
+        wallX("Byt / příčka středního traktu", row.z, x0, x1, fy, 2.58, floor,
+          materials.plaster, { center, width: 0.88, height: 2.05 });
+      }
+    }
+    // Module-separation doorways link the two room bays in each flat.
+    for (const x of [-5.4, 5.4]) {
+      wallZ("Byt / příčná dělící stěna", x, rearZ + 0.18, frontZ - 0.18, fy, 2.58, floor,
+        materials.plaster, { center: buildingZ - 1.55, width: 0.92, height: 2.05 });
+    }
+    // Enclosed stairwell: each floor landing has a door to both apartments.
+    for (const x of [-1.8, 1.8]) {
+      wallZ("Schodiště / stěna jádra", x, rearZ + 0.18, frontZ - 0.18, fy, 2.58, floor,
+        materials.concrete, { center: buildingZ + 1.15, width: 1.10, height: 2.05 });
+    }
   }
-  box("Vchod / madlo pravého křídla", 0.90, 1.12, frontZ + 0.34,
-    0.035, 0.43, 0.035, facadePanel);
-  box("Vchod / přístřešek", 0, 2.92, frontZ + 0.78,
-    3.65, 0.18, 1.46, concreteDark);
-  box("Vchod / schod 1", 0, 0.09, frontZ + 0.46,
-    2.95, 0.18, 0.50, facadePanel);
-  box("Vchod / schod 2", 0, 0.045, frontZ + 0.88,
-    3.20, 0.09, 0.42, facadePanel);
-  box("Vchod / identifikační tabulka", 0, 3.31, frontZ + 0.085,
-    1.86, 0.28, 0.07, railMaterial);
-  box("Vchod / zvonkový panel", 1.17, 1.68, frontZ + 0.10,
-    0.16, 0.48, 0.08, reveal);
 
-  // Roof edge and a restrained service core finish the silhouette without adding nearby buildings.
-  const roofY = height;
-  box("Hlavní budova / střešní atika přední", bx, roofY + 0.40, frontZ - 0.05,
-    width + 0.42, 0.68, 0.24, facadePanel);
-  box("Hlavní budova / střešní atika zadní", bx, roofY + 0.40, rearZ + 0.05,
-    width + 0.42, 0.68, 0.24, facadePanel);
-  box("Hlavní budova / střešní atika levá", leftX + 0.05, roofY + 0.40, bz,
-    0.24, 0.68, depth - 0.1, facadePanel);
-  box("Hlavní budova / střešní atika pravá", rightX - 0.05, roofY + 0.40, bz,
-    0.24, 0.68, depth - 0.1, facadePanel);
-  box("Hlavní budova / strojovna výtahu", 2.2, roofY + 0.59, bz - 1.1,
-    4.2, 1.18, 3.8, concreteDark);
-  box("Hlavní budova / větrací komín", -4.4, roofY + 0.55, bz - 2.0,
-    1.0, 1.1, 1.0, concreteDark);
+  // Furniture and fittings are deliberately period-plain: panel furniture, lino,
+  // white enamel sanitaryware, fluorescent corridor lights and simple pine doors.
+  function furnishFlat(floor, sign) {
+    const fy = floor * floorHeight;
+    const outerX = sign * 7.2;
+    const innerX = sign * 3.6;
+    const frontRoomZ = frontZ - 1.65;
+    const middleZ = buildingZ + 1.0;
+    const rearRoomZ = rearZ + 3.35;
 
-  // Shared corridor partitions and open apartment doorways repeat on each residential floor.
-  const corridorWallX = [-4.75, 4.75];
-  const apartmentDoorZ = -19.35;
-  const apartmentDoorWidth = 1.28;
+    box("Interiér / kuchyňská linka", sign * 3.6, fy + 0.47, frontZ - 0.62,
+      2.75, 0.94, 0.48, materials.woodLight);
+    box("Interiér / pracovní deska kuchyně", sign * 3.6, fy + 0.97, frontZ - 0.62,
+      2.82, 0.06, 0.52, materials.darkConcrete);
+    box("Interiér / sporák", sign * 3.6 - sign * 0.74, fy + 1.01, frontZ - 0.62,
+      0.54, 0.07, 0.50, materials.white);
+    box("Interiér / lednice", sign * 4.72, fy + 0.93, frontZ - 0.70,
+      0.55, 1.86, 0.62, materials.white);
+    box("Interiér / kuchyňský stůl", sign * 3.3, fy + 0.78, frontZ - 2.20,
+      1.10, 0.08, 0.72, materials.wood);
+    for (const dx of [-0.42, 0.42]) for (const dz of [-0.24, 0.24]) {
+      box("Interiér / noha stolu", sign * 3.3 + dx, fy + 0.38, frontZ - 2.20 + dz,
+        0.055, 0.72, 0.055, materials.wood);
+    }
+    box("Interiér / jídelní židle", sign * 2.85, fy + 0.45, frontZ - 2.20,
+      0.38, 0.84, 0.38, materials.wood);
+    box("Interiér / dětský pokoj postel", outerX, fy + 0.26, frontRoomZ - 0.72,
+      1.0, 0.45, 2.0, materials.wood);
+    box("Interiér / dětský pokoj skříň", outerX + sign * 1.10, fy + 0.98, frontZ - 0.65,
+      0.42, 1.96, 1.85, materials.woodLight);
+    box("Interiér / obývací pokoj sedačka", innerX, fy + 0.42, rearRoomZ + 0.5,
+      2.15, 0.80, 0.80, materials.wood);
+    box("Interiér / obývací pokoj konferenční stolek", innerX, fy + 0.38, rearRoomZ - 0.48,
+      0.95, 0.30, 0.55, materials.woodLight);
+    box("Interiér / obývací pokoj obývací stěna", innerX + sign * 1.30, fy + 0.98, rearRoomZ - 0.60,
+      0.34, 1.90, 1.75, materials.wood);
+    box("Interiér / ložnice manželská postel", outerX, fy + 0.28, rearRoomZ,
+      1.75, 0.42, 2.05, materials.wood);
+    box("Interiér / ložnice šatní skříň", outerX + sign * 1.08, fy + 1.0, rearZ + 0.70,
+      0.46, 2.0, 1.85, materials.woodLight);
+
+    // Bathroom B7-inspired assembly, with separate fittings around an upright services shaft.
+    box("Jádro B7 / vana", innerX, fy + 0.28, middleZ,
+      1.68, 0.56, 0.72, materials.bath);
+    box("Jádro B7 / umyvadlo", innerX + sign * 1.05, fy + 0.72, middleZ + 0.28,
+      0.62, 0.18, 0.44, materials.white);
+    box("Jádro B7 / WC", innerX - sign * 0.82, fy + 0.32, middleZ - 0.25,
+      0.40, 0.44, 0.58, materials.white);
+    box("Jádro B7 / instalační šachta", innerX - sign * 1.35, fy + 1.22, middleZ,
+      0.28, 2.44, 0.42, materials.tile);
+    box("Interiér / vestavěná předsíňová skříň", outerX, fy + 0.98, middleZ,
+      0.42, 1.92, 1.50, materials.woodLight);
+    box("Interiér / zářivkové svítidlo", sign * 1.0, fy + 2.58, buildingZ + 0.95,
+      0.95, 0.055, 0.16, materials.white);
+  }
+
+  // Main facade, rear facade and low-rise side silhouette.
   for (let floor = 0; floor < floors; floor++) {
-    const floorY = floor * floorHeight;
-    for (const wallX of corridorWallX) {
-      const doorStart = apartmentDoorZ - apartmentDoorWidth / 2;
-      const doorEnd = apartmentDoorZ + apartmentDoorWidth / 2;
-      const frontEnd = frontZ - wallT / 2;
-      const rearStart = coreOpening.maxZ;
-      const frontLength = frontEnd - doorEnd;
-      const rearLength = doorStart - rearStart;
-      if (frontLength > 0.1) {
-        box("Podlaží / stěna chodby", wallX, floorY + floorHeight / 2,
-          (doorEnd + frontEnd) / 2, 0.14, floorHeight, frontLength, concrete, { collider: true });
-      }
-      if (rearLength > 0.1) {
-        box("Podlaží / stěna chodby", wallX, floorY + floorHeight / 2,
-          (rearStart + doorStart) / 2, 0.14, floorHeight, rearLength, concrete, { collider: true });
-      }
-      for (const z of [doorStart, doorEnd]) {
-        box("Byt / otevřené dveřní ostění", wallX, floorY + 1.08, z,
-          0.20, 2.16, 0.10, facadePanel);
-      }
-      box("Byt / nadpraží", wallX, floorY + 2.25, apartmentDoorZ,
-        0.18, 0.10, apartmentDoorWidth, concreteDark);
-      box("Byt / orientační štítek", wallX + (wallX < 0 ? 0.1 : -0.1),
-        floorY + 1.75, apartmentDoorZ, 0.035, 0.24, 0.42, railMaterial);
+    buildApartmentPartitions(floor);
+    furnishFlat(floor, -1);
+    furnishFlat(floor, 1);
+    // Window reveal ledges and floor datums repeat at a restrained 2.8 m pitch.
+    for (const x of [-7.2, -3.6, 3.6, 7.2]) {
+      box("Fasáda / parapetní hrana", x, floor * floorHeight + 0.82, frontZ + 0.10,
+        1.48, 0.075, 0.14, materials.panelEdge);
+      box("Fasáda zadní / parapetní hrana", x, floor * floorHeight + 0.82, rearZ - 0.10,
+        1.48, 0.075, 0.14, materials.panelEdge);
     }
   }
 
-  // The collision facade has gaps matching the main entrance and both balcony doors.
-  colliders.push(
-    { minX: leftX, maxX: leftX + wallT, minZ: rearZ, maxZ: frontZ },
-    { minX: rightX - wallT, maxX: rightX, minZ: rearZ, maxZ: frontZ },
-    { minX: leftX, maxX: rightX, minZ: rearZ - wallT / 2, maxZ: rearZ + wallT / 2 }
-  );
-  const frontPassages = [
-    { minX: -doorWidth / 2, maxX: doorWidth / 2 },
-    ...[-4.9, 4.9].map(x => ({
-      minX: x - windowWidth / 2,
-      maxX: x + windowWidth / 2
-    }))
-  ].sort((a, b) => a.minX - b.minX);
-  let frontCursor = leftX;
-  for (const passage of frontPassages) {
-    if (passage.minX > frontCursor) {
-      colliders.push({
-        minX: frontCursor, maxX: passage.minX,
-        minZ: frontZ - wallT / 2, maxZ: frontZ + wallT / 2
-      });
-    }
-    frontCursor = Math.max(frontCursor, passage.maxX);
-  }
-  if (frontCursor < rightX) {
-    colliders.push({
-      minX: frontCursor, maxX: rightX,
-      minZ: frontZ - wallT / 2, maxZ: frontZ + wallT / 2
-    });
-  }
-
-  // Switchback stair: two real flights and a shared intermediate landing per storey.
-  const stair = { lowX: -3.2, highX: -0.8, firstZ: -25.1, secondZ: -23.1, steps: 8 };
+  // Central staircase: three inter-storey runs, eight treads per flight and a real landing.
   const stepRise = (floorHeight / 2) / stair.steps;
   const stepRun = (stair.highX - stair.lowX) / stair.steps;
-  function beam(name, x1, y1, z1, x2, y2, z2, thickness, material) {
-    const dx = x2 - x1, dy = y2 - y1, dz = z2 - z1;
-    const length = Math.hypot(dx, dy, dz);
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(length, thickness, thickness), material);
-    mesh.name = name;
-    mesh.position.set((x1 + x2) / 2, (y1 + y2) / 2, (z1 + z2) / 2);
-    mesh.rotation.z = Math.atan2(dy, dx);
-    mesh.castShadow = false;
-    mesh.receiveShadow = true;
-    scene.add(mesh);
-    meshes.push(mesh);
-    return mesh;
+  function railBeam(name, x1, y1, z1, x2, y2, z2, zOffset) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const length = Math.hypot(dx, dy);
+    const rail = box(name, (x1 + x2) / 2, (y1 + y2) / 2, z1 + zOffset,
+      length, 0.055, 0.055, materials.oxidizedMetal);
+    rail.rotation.z = Math.atan2(dy, dx);
+    return rail;
   }
   for (let floor = 0; floor < floors - 1; floor++) {
     const baseY = floor * floorHeight;
     for (let i = 0; i < stair.steps; i++) {
-      const riseA = baseY + (i + 1) * stepRise;
       const xA = stair.lowX + (i + 0.5) * stepRun;
-      box("Schodiště / dolní rameno / stupeň", xA, riseA - 0.09, stair.firstZ,
-        stepRun + 0.025, 0.18, 1.16, (i % 2) ? concrete : facadePanel);
-      const riseB = baseY + floorHeight / 2 + (i + 1) * stepRise;
+      const yA = baseY + (i + 1) * stepRise - 0.09;
+      box("Schodiště / dolní rameno / stupeň", xA, yA, stair.firstZ,
+        stepRun + stair.treadOverlap, 0.18, stair.treadDepth,
+        i % 2 ? materials.concrete : materials.facade);
       const xB = stair.highX - (i + 0.5) * stepRun;
-      box("Schodiště / horní rameno / stupeň", xB, riseB - 0.09, stair.secondZ,
-        stepRun + 0.025, 0.18, 1.16, (i % 2) ? concrete : facadePanel);
+      const yB = baseY + floorHeight / 2 + (i + 1) * stepRise - 0.09;
+      box("Schodiště / horní rameno / stupeň", xB, yB, stair.secondZ,
+        stepRun + stair.treadOverlap, 0.18, stair.treadDepth,
+        i % 2 ? materials.concrete : materials.facade);
     }
-    const landingWidth = 1.28;
-    const landingDepth = Math.abs(stair.firstZ - stair.secondZ) + 1.16;
-    // The landing begins at the flight endpoint and extends to its right.
-    // This avoids intersecting the last several treads of either stair flight.
-    box("Schodiště / mezipodesta", stair.highX + landingWidth / 2,
-      baseY + floorHeight / 2 - 0.07,
-      (stair.firstZ + stair.secondZ) / 2, landingWidth, 0.14,
-      landingDepth, facadePanel);
+    box("Schodiště / mezipodesta", stair.highX + stair.landingWidth / 2,
+      baseY + floorHeight / 2 - 0.07, landingCenterZ,
+      stair.landingWidth, 0.14, landingDepth, materials.concrete);
     for (const lane of [
       { z: stair.firstZ, x1: stair.lowX, x2: stair.highX, y1: baseY + 0.88, y2: baseY + floorHeight / 2 + 0.88 },
       { z: stair.secondZ, x1: stair.highX, x2: stair.lowX, y1: baseY + floorHeight / 2 + 0.88, y2: baseY + floorHeight + 0.88 }
     ]) {
-      for (const side of [-1, 1]) {
-        beam("Schodiště / šikmé madlo", lane.x1, lane.y1, lane.z + side * 0.61,
-          lane.x2, lane.y2, lane.z + side * 0.61, 0.065, railMaterial);
+      for (const offset of [-0.52, 0.52]) {
+        railBeam("Schodiště / šikmé kovové madlo", lane.x1, lane.y1, lane.z, lane.x2, lane.y2, lane.z, offset);
+      }
+      for (let i = 0; i <= stair.steps; i++) {
+        const t = i / stair.steps;
+        const x = lane.x1 + (lane.x2 - lane.x1) * t;
+        const y = lane.y1 + (lane.y2 - lane.y1) * t - 0.40;
+        for (const offset of [-0.52, 0.52]) {
+          box("Schodiště / svislá výplň zábradlí", x, y, lane.z + offset, 0.035, 0.80, 0.035, materials.oxidizedMetal);
+        }
       }
     }
   }
 
-  // Continuous lift shaft with a visible car at ground level and landing doors on all floors.
-  const lift = { centerX: 2.2, rearZ: -25.0, frontZ: -22.52, width: 2.3, wall: 0.12 };
-  const liftLeft = lift.centerX - lift.width / 2;
-  const liftRight = lift.centerX + lift.width / 2;
-  const liftDepth = lift.frontZ - lift.rearZ;
-  const shaftDark = new THREE.MeshStandardMaterial({
-    color: 0x292f31, roughness: 0.95, flatShading: true
-  });
-  box("Výtah / levá šachta", liftLeft + lift.wall / 2, height / 2,
-    (lift.rearZ + lift.frontZ) / 2, lift.wall, height, liftDepth, concreteDark);
-  box("Výtah / pravá šachta", liftRight - lift.wall / 2, height / 2,
-    (lift.rearZ + lift.frontZ) / 2, lift.wall, height, liftDepth, concreteDark);
-  box("Výtah / zadní šachta", lift.centerX, height / 2, lift.rearZ + lift.wall / 2,
-    lift.width, height, lift.wall, shaftDark);
+  // Roof slab, parapet, vents and a modest service hatch; no elevator machinery.
+  box("Střecha / stropní deska", 0, buildingHeight - 0.08, buildingZ, width + 0.20, 0.16, depth + 0.20, materials.concrete);
+  box("Střecha / atika přední", 0, buildingHeight + 0.38, frontZ + 0.04, width + 0.30, 0.58, 0.22, materials.facade);
+  box("Střecha / atika zadní", 0, buildingHeight + 0.38, rearZ - 0.04, width + 0.30, 0.58, 0.22, materials.facade);
+  for (const x of [leftX + 0.05, rightX - 0.05]) {
+    box("Střecha / boční atika", x, buildingHeight + 0.38, buildingZ, 0.22, 0.58, depth, materials.facade);
+  }
+  box("Střecha / větrací komín", -5.9, buildingHeight + 0.45, buildingZ - 2.1, 0.85, 0.9, 0.85, materials.darkConcrete);
+  box("Střecha / větrací komín", 5.9, buildingHeight + 0.45, buildingZ - 2.1, 0.85, 0.9, 0.85, materials.darkConcrete);
+  box("Střecha / servisní poklop", 0, buildingHeight + 0.015, buildingZ + 0.4, 0.95, 0.06, 0.95, materials.darkConcrete);
 
-  const liftDoorWidth = 1.42;
-  const liftOpeningLeft = lift.centerX - liftDoorWidth / 2;
-  const liftOpeningRight = lift.centerX + liftDoorWidth / 2;
+  // Entrance identity, old intercom and basement light-wells finish the street edge.
+  box("Vchod / přístřešek z betonu", 0, 2.75, frontZ + 0.58, 3.5, 0.18, 1.12, materials.darkConcrete);
+  box("Vchod / označení VCHOD 02", 0, 3.18, frontZ + 0.095, 1.55, 0.26, 0.06, materials.oxidizedMetal);
+  box("Vchod / zvonkový panel", 1.18, 1.55, frontZ + 0.12, 0.16, 0.52, 0.08, materials.darkConcrete);
+  box("Vchod / schránky", -0.75, 1.35, frontZ - 1.1, 0.78, 1.0, 0.18, materials.metal);
+  box("Vchod / nástěnka domu", 0.78, 1.45, frontZ - 1.1, 0.62, 1.1, 0.07, materials.woodLight);
+  for (let i = 0; i < 8; i++) {
+    box("Vchod / štítek zvonku " + String(i + 1).padStart(2, "0"), 1.18, 1.68 - i * 0.055, frontZ + 0.17,
+      0.075, 0.025, 0.015, materials.white);
+  }
+
+  // Floor-scoped structural wall colliders. These preserve separate apartment floors
+  // while leaving the entry, stair doors, room doors and loggia thresholds passable.
   for (let floor = 0; floor < floors; floor++) {
-    const levelCollision = (minX, maxX, minZ, maxZ, active = true) => {
-      const collider = { minX, maxX, minZ, maxZ, floor, active };
-      colliders.push(collider);
-      return collider;
-    };
-    levelCollision(liftLeft, liftLeft + lift.wall, lift.rearZ, lift.frontZ);
-    levelCollision(liftRight - lift.wall, liftRight, lift.rearZ, lift.frontZ);
-    levelCollision(liftLeft, liftRight, lift.rearZ - lift.wall / 2, lift.rearZ + lift.wall / 2);
-    levelCollision(liftLeft, liftOpeningLeft, lift.frontZ - lift.wall / 2, lift.frontZ + lift.wall / 2);
-    levelCollision(liftOpeningRight, liftRight, lift.frontZ - lift.wall / 2, lift.frontZ + lift.wall / 2);
-  }
-  for (let floor = 0; floor < floors; floor++) {
-    const floorY = floor * floorHeight;
-    const doorWidth = 1.42;
-    const openingLeft = lift.centerX - doorWidth / 2;
-    const openingRight = lift.centerX + doorWidth / 2;
-    box("Výtah / nadpraží otvoru", lift.centerX, floorY + 2.43, lift.frontZ,
-      doorWidth, 0.74, 0.10, concreteDark);
-    for (const x of [openingLeft, openingRight]) {
-      box("Výtah / ostění", x, floorY + 1.08, lift.frontZ + 0.04,
-        0.10, 2.16, 0.12, facadePanel);
-    }
-    for (const x of [
-      (liftLeft + openingLeft) / 2,
-      (openingRight + liftRight) / 2
-    ]) {
-      const span = x < lift.centerX ? openingLeft - liftLeft : liftRight - openingRight;
-      box("Výtah / stěna čela šachty", x, floorY + 1.4, lift.frontZ,
-        span, 2.8, lift.wall, concrete);
-    }
-
-    const panelW = doorWidth / 2;
-    const openPanelWidth = Math.max(0.2, Math.min(
-      0.34,
-      liftOpeningLeft - (liftLeft + lift.wall),
-      (liftRight - lift.wall) - liftOpeningRight
-    ));
-    const openScaleX = openPanelWidth / panelW;
-    const closedOffset = panelW / 2;
-    const openOffset = doorWidth / 2 + openPanelWidth / 2;
-    for (const side of [-1, 1]) {
-      const closedX = lift.centerX + side * closedOffset;
-      const openX = lift.centerX + side * openOffset;
-      const panel = box(floor === 0 ? "Výtah / otevřené dveře" : "Výtah / dveře patra",
-        floor === 0 ? openX : closedX, floorY + 1.08, lift.frontZ + 0.11,
-        panelW, 2.10, 0.065, doorMaterial);
-      if (floor === 0) panel.scale.x = openScaleX;
-      liftDoorPanels.push({ mesh: panel, floor, closedX, openX, openScaleX });
-    }
-    box("Výtah / číselný panel", liftRight + 0.16, floorY + 1.42, lift.frontZ + 0.08,
-      0.10, 0.35, 0.08, railMaterial);
-  }
-  // The cabin, its walls and its collision footprint move together between landings.
-  liftCarMeshes.push(box("Výtah / podlaha kabiny", lift.centerX, 0.04, -23.82, 1.45, 0.08, 1.78, concreteDark));
-  liftCarMeshes.push(box("Výtah / zadní stěna kabiny", lift.centerX, 1.15, -24.64, 1.42, 2.10, 0.08, concreteDark));
-  liftCarMeshes.push(box("Výtah / levá stěna kabiny", lift.centerX - 0.69, 1.15, -23.82, 0.08, 2.10, 1.65, concreteDark));
-  liftCarMeshes.push(box("Výtah / pravá stěna kabiny", lift.centerX + 0.69, 1.15, -23.82, 0.08, 2.10, 1.65, concreteDark));
-
-  const cabinZBounds = { minZ: -23.82 - 1.65 / 2, maxZ: -23.82 + 1.65 / 2 };
-  for (let floor = 0; floor < floors; floor++) {
-    const cabinActive = floor === 0;
-    for (const centerX of [lift.centerX - 0.69, lift.centerX + 0.69]) {
-      const collider = {
-        minX: centerX - 0.04, maxX: centerX + 0.04,
-        ...cabinZBounds, floor, active: cabinActive
-      };
-      colliders.push(collider);
-      liftCabinColliders.push({ floor, collider });
-    }
-    const backCollider = {
-      minX: lift.centerX - 1.42 / 2,
-      maxX: lift.centerX + 1.42 / 2,
-      minZ: -24.64 - 0.04, maxZ: -24.64 + 0.04,
-      floor, active: cabinActive
-    };
-    colliders.push(backCollider);
-    liftCabinColliders.push({ floor, collider: backCollider });
-  }
-
-  for (let floor = 0; floor < floors; floor++) {
-    const collider = {
-      minX: liftOpeningLeft, maxX: liftOpeningRight,
-      minZ: lift.frontZ - lift.wall / 2, maxZ: lift.frontZ + lift.wall / 2,
-      floor, active: floor !== liftCarFloor
-    };
-    colliders.push(collider);
-    liftDoorColliders.push({ floor, collider });
-  }
-
-  state.onElevatorMoved = (floor) => {
-    const nextFloor = Math.max(0, Math.min(floors - 1, Math.round(floor)));
-    const deltaY = (nextFloor - liftCarFloor) * floorHeight;
-    for (const mesh of liftCarMeshes) mesh.position.y += deltaY;
-    liftCarFloor = nextFloor;
-
-    for (const panel of liftDoorPanels) {
-      const isServedFloor = panel.floor === nextFloor;
-      panel.mesh.position.x = isServedFloor ? panel.openX : panel.closedX;
-      panel.mesh.scale.x = isServedFloor ? panel.openScaleX : 1;
-      panel.mesh.name = isServedFloor ? "Výtah / otevřené dveře" : "Výtah / dveře patra";
-    }
-    for (const entry of liftDoorColliders) entry.collider.active = entry.floor !== nextFloor;
-    for (const entry of liftCabinColliders) entry.collider.active = entry.floor === nextFloor;
-  };
-  for (const x of [liftLeft + 0.26, liftRight - 0.26]) {
-    box("Výtah / vodicí lišta", x, height / 2, -24.15, 0.06, height, 0.06, railMaterial);
-  }
-
-  // Interactions make vertical circulation explorable despite the 2.5D movement model.
-  interactables.push({
-    id: "elevator", name: "Výtah", description: "Výtah obsluhuje všech osm podlaží.",
-    x: lift.centerX, z: -21.35, range: 2.4, used: false,
-    action: () => {
-      if (typeof state?.changeFloor === "function") {
-        state.changeFloor(((state.currentFloor || 0) + 1) % floors, "Výtah");
-      } else {
-        ui?.showToast?.("Výtah / hlavní budova");
+    const fy = floor * floorHeight;
+    addCollider(leftX + wallT / 2, wallT, buildingZ, depth, floor);
+    addCollider(rightX - wallT / 2, wallT, buildingZ, depth, floor);
+    if (floor > 0) {
+      // Rear wall gets two gaps into the recessed loggias.
+      const gaps = [-3.6, 3.6].map(x => ({ start: x - 0.74, end: x + 0.74 })).sort((a, b) => a.start - b.start);
+      let cursor = leftX;
+      for (const gap of gaps) {
+        if (gap.start > cursor) addCollider((cursor + gap.start) / 2, gap.start - cursor, rearZ, wallT, floor);
+        cursor = gap.end;
       }
+      if (cursor < rightX) addCollider((cursor + rightX) / 2, rightX - cursor, rearZ, wallT, floor);
+    } else {
+      // On the ground floor, the loggia bays are not walk-through paths.
+      addCollider(0, width, rearZ, wallT, floor);
     }
-  });
-  interactables.push({
-    id: "stairs", name: "Schodiště", description: "Schodiště pokračuje do dalších podlaží.",
-    x: -1.8, z: -21.45, range: 2.5, used: false,
-    action: () => {
-      ui?.showToast?.("Schodiště: projdi skutečné stupně pomocí WASD. Výška se mění při chůzi.");
+    // The front facade opening is traversable only at the main entrance on the ground floor.
+    if (floor === 0) {
+      addCollider((leftX - 0.88) / 2, -0.88 - leftX, frontZ, wallT, floor);
+      addCollider((0.88 + rightX) / 2, rightX - 0.88, frontZ, wallT, floor);
+    } else {
+      addCollider(0, width, frontZ, wallT, floor);
     }
-  });
+  }
 
+  for (let i = 0; i < floors; i++) {
+    for (const x of [-7.2, -3.6, 0, 3.6, 7.2]) {
+      box("Interiér / stropní zářivka", x, i * floorHeight + 2.67, buildingZ,
+        0.78, 0.055, 0.12, materials.white);
+    }
+  }
+
+  interactables.push({
+    id: "stairs", name: "Schodiště", description: "Čtyři nadzemní podlaží, bez výtahu.",
+    x: 0, z: buildingZ + 1.2, range: 2.4, used: false,
+    action: () => ui?.showToast?.("Schodiště T06B: projdi fyzické stupně pomocí WASD. Dům nemá výtah.")
+  });
 
   function getCoordinateData() {
-    const round = value => Math.round(value * 1e6) / 1e6;
-    const point = (x, y, z) => ({ x: round(x), y: round(y), z: round(z) });
-    const anchors = [];
-    const addAnchor = (id, name, x, y, z, provenance) => {
-      anchors.push({ id, name, position: point(x, y, z), provenance });
-    };
-
-    const objectRecords = meshes.map((mesh, index) => {
+    scene.updateMatrixWorld(true);
+    const round = n => Math.round(n * 1e6) / 1e6;
+    const v = new THREE.Vector3();
+    const objects = meshes.map((mesh, index) => {
       mesh.updateWorldMatrix(true, false);
-      const position = mesh.geometry.getAttribute("position");
-      const uniqueCorners = new Map();
-      const vertex = new THREE.Vector3();
+      const pos = mesh.geometry.getAttribute("position");
+      const pts = new Map();
       const min = { x: Infinity, y: Infinity, z: Infinity };
       const max = { x: -Infinity, y: -Infinity, z: -Infinity };
-
-      for (let i = 0; i < position.count; i++) {
-        vertex.fromBufferAttribute(position, i).applyMatrix4(mesh.matrixWorld);
-        const corner = point(vertex.x, vertex.y, vertex.z);
-        const key = `${corner.x},${corner.y},${corner.z}`;
-        uniqueCorners.set(key, corner);
-        min.x = Math.min(min.x, corner.x);
-        min.y = Math.min(min.y, corner.y);
-        min.z = Math.min(min.z, corner.z);
-        max.x = Math.max(max.x, corner.x);
-        max.y = Math.max(max.y, corner.y);
-        max.z = Math.max(max.z, corner.z);
+      for (let i = 0; i < pos.count; i++) {
+        v.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
+        const p = { x: round(v.x), y: round(v.y), z: round(v.z) };
+        pts.set(p.x + "," + p.y + "," + p.z, p);
+        min.x = Math.min(min.x, p.x); min.y = Math.min(min.y, p.y); min.z = Math.min(min.z, p.z);
+        max.x = Math.max(max.x, p.x); max.y = Math.max(max.y, p.y); max.z = Math.max(max.z, p.z);
       }
-
-      const centerVector = mesh.getWorldPosition(new THREE.Vector3());
-      const center = point(centerVector.x, centerVector.y, centerVector.z);
-      const parameters = mesh.geometry.parameters || {};
-      const floorIndex = Math.max(0, Math.min(floors, Math.floor(center.y / floorHeight)));
-      const corners = [...uniqueCorners.values()].sort((a, b) =>
-        a.z - b.z || a.y - b.y || a.x - b.x
-      );
-
+      const p = mesh.getWorldPosition(new THREE.Vector3());
+      const params = mesh.geometry.parameters || {};
       return {
-        id: `object-${String(index + 1).padStart(4, "0")}`,
-        name: mesh.name || `Unnamed object ${index + 1}`,
-        geometry: "BoxGeometry",
-        center,
-        dimensions: {
-          x: round(parameters.width ?? 0),
-          y: round(parameters.height ?? 0),
-          z: round(parameters.depth ?? 0)
-        },
-        scale: {
-          x: round(mesh.scale.x),
-          y: round(mesh.scale.y),
-          z: round(mesh.scale.z)
-        },
-        worldAabbSize: {
-          x: round(max.x - min.x),
-          y: round(max.y - min.y),
-          z: round(max.z - min.z)
-        },
-        rotation: {
-          x: round(mesh.rotation.x),
-          y: round(mesh.rotation.y),
-          z: round(mesh.rotation.z)
-        },
-        bounds: { min: point(min.x, min.y, min.z), max: point(max.x, max.y, max.z) },
-        corners,
-        floorIndex,
-        floorIndexBasis: "inferred from world-space center Y",
+        id: "object-" + String(index + 1).padStart(4, "0"),
+        name: mesh.name,
+        center: { x: round(p.x), y: round(p.y), z: round(p.z) },
+        dimensions: { x: round(params.width || 0), y: round(params.height || 0), z: round(params.depth || 0) },
+        bounds: { min, max },
+        corners: [...pts.values()],
+        floorIndex: Math.max(0, Math.min(floors, Math.floor(p.y / floorHeight))),
         provenance: "src/game/main-building.js"
       };
     });
 
-    // Stable, named semantic anchors for layout checks and downstream exporters.
-    addAnchor("building-origin", "Původ modelu", bx, 0, bz, "building.x/z");
-    addAnchor("front-left-ground", "Přední levý roh", leftX, 0, frontZ, "building bounds");
-    addAnchor("front-right-ground", "Přední pravý roh", rightX, 0, frontZ, "building bounds");
-    addAnchor("rear-left-ground", "Zadní levý roh", leftX, 0, rearZ, "building bounds");
-    addAnchor("rear-right-ground", "Zadní pravý roh", rightX, 0, rearZ, "building bounds");
-    addAnchor("roof-datum", "Horní datum střechy", bx, height, bz, "floors * floorHeight");
-    addAnchor("front-wall-center", "Střed předního líce stěny", bx, height / 2, frontWallZ, "frontZ - wallT / 2");
-
-    for (const [label, x] of [["left", -doorWidth / 2], ["right", doorWidth / 2]]) {
-      addAnchor(`entrance-${label}-bottom`, `Vchod ${label} dole`, x, 0.02, frontWallZ, "door opening");
-      addAnchor(`entrance-${label}-top`, `Vchod ${label} nahoře`, x, doorHeight, frontWallZ, "door opening");
-    }
-
-    for (let floor = 1; floor < floors; floor++) {
-      const openingY = floor * floorHeight;
-      for (const [xLabel, x] of [["left", coreOpening.minX], ["right", coreOpening.maxX]]) {
-        for (const [zLabel, z] of [["rear", coreOpening.minZ], ["front", coreOpening.maxZ]]) {
-          addAnchor(`core-f${floor}-${xLabel}-${zLabel}`,
-            `Kout jádra patro ${floor}, ${xLabel}/${zLabel}`, x, openingY, z, "coreOpening on residential slab datum");
-        }
+    const anchors = [
+      { id: "building-origin", name: "Střed půdorysu", position: { x: 0, y: 0, z: buildingZ }, provenance: "building design" },
+      { id: "front-left-ground", name: "Přední levý roh", position: { x: leftX, y: 0, z: frontZ }, provenance: "building bounds" },
+      { id: "front-right-ground", name: "Přední pravý roh", position: { x: rightX, y: 0, z: frontZ }, provenance: "building bounds" },
+      { id: "rear-left-ground", name: "Zadní levý roh", position: { x: leftX, y: 0, z: rearZ }, provenance: "building bounds" },
+      { id: "rear-right-ground", name: "Zadní pravý roh", position: { x: rightX, y: 0, z: rearZ }, provenance: "building bounds" },
+      { id: "roof-datum", name: "Výškové datum střechy", position: { x: 0, y: buildingHeight, z: buildingZ }, provenance: "four floors × 2.8 m" },
+      { id: "entrance-left-bottom", name: "Vchod vlevo dole", position: { x: -0.88, y: 0.02, z: frontZ }, provenance: "main entrance opening" },
+      { id: "entrance-right-top", name: "Vchod vpravo nahoře", position: { x: 0.88, y: 2.36, z: frontZ }, provenance: "main entrance opening" },
+      { id: "stair-mid-landing-f0", name: "Mezipodesta schodiště přízemí", position: { x: stair.highX + stair.landingWidth / 2, y: floorHeight / 2 - 0.07, z: landingCenterZ }, provenance: "stair dimensions" },
+      { id: "stair-arrival-f1", name: "Nástup schodiště 1. patro", position: { x: stair.lowX, y: floorHeight, z: stair.secondZ }, provenance: "upper stair flight" }
+    ];
+    for (let floor = 0; floor < floors; floor++) {
+      for (const x of [-3.6, 3.6]) {
+        anchors.push({
+          id: "loggia-door-f" + floor + "-x" + (x < 0 ? "L" : "R"),
+          name: "Dveře lodžie, patro " + floor,
+          position: { x, y: floor * floorHeight + 1.23, z: rearZ + 1.72 },
+          provenance: "rear recessed loggia door"
+        });
       }
     }
-
-    const liftLeft = lift.centerX - lift.width / 2;
-    const liftRight = lift.centerX + lift.width / 2;
-    for (const [xLabel, x] of [["left", liftLeft], ["right", liftRight]]) {
-      for (const [zLabel, z] of [["rear", lift.rearZ], ["front", lift.frontZ]]) {
-        addAnchor(`lift-${xLabel}-${zLabel}-base`, `Výtah ${xLabel}/${zLabel} dole`, x, 0, z, "lift envelope");
-        addAnchor(`lift-${xLabel}-${zLabel}-top`, `Výtah ${xLabel}/${zLabel} nahoře`, x, height, z, "lift envelope");
-      }
-    }
-
     for (let floor = 0; floor <= floors; floor++) {
-      const floorY = floor * floorHeight;
-      addAnchor(`floor-datum-${floor}`, `Podlažní datum ${floor}`, bx, floorY, bz, "floor * floorHeight");
+      anchors.push({
+        id: "floor-datum-" + floor,
+        name: "Podlažní datum " + floor,
+        position: { x: 0, y: floor * floorHeight, z: buildingZ },
+        provenance: "floor × floorHeight"
+      });
     }
-
-    windowXs.forEach((x, column) => {
-      for (let floor = 0; floor < floors; floor++) {
-        if (floor === 0 && Math.abs(x) < 2) continue;
-        const isBalconyDoor = Math.abs(Math.abs(x) - 4.9) < 0.001;
-        const openingBottom = isBalconyDoor ? 0 : windowBottom;
-        const y = floor * floorHeight + (openingBottom + windowTop) / 2;
-        const anchorType = isBalconyDoor ? "balcony-door" : "window";
-        addAnchor(`${anchorType}-f${floor}-c${column}`,
-          `${isBalconyDoor ? "Balkonové dveře" : "Okno"} patro ${floor}, sloupec ${column}`,
-          x, y, frontZ + 0.035,
-          isBalconyDoor ? "windowXs / balconyDoorBottom=0 / windowTop" : "windowXs / windowBottom / windowTop");
-      }
-    });
-
-    for (let floor = 0; floor < floors; floor++) {
-      const floorY = floor * floorHeight;
-      for (const x of [-4.9, 4.9]) {
-        addAnchor(`balcony-f${floor}-x${x < 0 ? "L" : "R"}`, `Střed balkonu patro ${floor}`,
-          x, floorY - 0.08, frontZ + 0.78, "balcony slab center Y = finished floor datum - slab thickness / 2");
-      }
-    }
-
-    for (let floor = 0; floor < floors - 1; floor++) {
-      const baseY = floor * floorHeight;
-      addAnchor(`stair-mid-landing-f${floor}`, `Mezipodesta schodiště patro ${floor}`,
-        stair.highX + 1.28 / 2, baseY + floorHeight / 2 - 0.07, (stair.firstZ + stair.secondZ) / 2,
-        "stair parameters: landing center X = highX + landingWidth / 2");
-      addAnchor(`stair-arrival-f${floor + 1}`, `Nástup schodiště patro ${floor + 1}`,
-        stair.lowX, baseY + floorHeight, stair.secondZ, "upper stair flight");
-    }
-
-    for (let floor = 0; floor < floors; floor++) {
-      addAnchor(`elevator-interaction-f${floor}`, `Interakční bod výtahu patro ${floor}`,
-        lift.centerX, floor * floorHeight, -21.35, "elevator interactable");
-    }
-
-    const roofHatch = { minX: -1.325, maxX: -0.275, minZ: -24.625, maxZ: -23.575 };
-    for (const [xLabel, x] of [["left", roofHatch.minX], ["right", roofHatch.maxX]]) {
-      for (const [zLabel, z] of [["rear", roofHatch.minZ], ["front", roofHatch.maxZ]]) {
-        addAnchor(`roof-hatch-${xLabel}-${zLabel}`, `Servisní poklop ${xLabel}/${zLabel}`,
-          x, height, z, "dedicated roof hatch");
-      }
-    }
-
-    const logicalCornerCount = objectRecords.reduce((sum, object) => sum + object.corners.length, 0);
     return {
-      schemaVersion: "1.0",
+      schemaVersion: "2.0",
       units: "metres",
       coordinateSystem: {
-        x: "facade width",
-        y: "up",
-        z: "depth",
-        buildingWorldOrigin: point(bx, 0, bz),
+        x: "across the 18 m facade",
+        y: "vertical upward",
+        z: "depth; facade front is positive Z",
+        buildingWorldOrigin: { x: 0, y: 0, z: buildingZ },
         localToWorld: "x_world=x_local; y_world=y_local; z_world=z_local-22"
       },
-      building: { width, depth, floors, floorHeight, wallThickness: wallT, height },
-      counts: {
-        objects: objectRecords.length,
-        logicalCorners: logicalCornerCount,
-        semanticAnchors: anchors.length
+      building: {
+        system: "T06B-inspired five-module section",
+        width, depth, floors, basementFloors: 1, floorHeight, height: buildingHeight,
+        modules: 5, moduleWidth, apartmentsPerFloor: 2, elevator: false,
+        targetApartmentArea: PANELAK_LAYOUT.apartmentArea,
+        correctedNominalRoomArea: PANELAK_LAYOUT.calculatedRoomArea
       },
-      objects: objectRecords,
-      anchors
+      counts: { objects: objects.length, logicalCorners: objects.reduce((sum, o) => sum + o.corners.length, 0), semanticAnchors: anchors.length },
+      objects, anchors
     };
   }
 
   function exportCoordinateCSV() {
     const data = getCoordinateData();
-    const header = [
-      "record_type", "id", "name", "x", "y", "z",
-      "geometry_width", "geometry_height", "geometry_depth",
-      "scale_x", "scale_y", "scale_z", "world_aabb_width", "world_aabb_height", "world_aabb_depth",
-      "rotation_x", "rotation_y", "rotation_z",
-      "min_x", "min_y", "min_z", "max_x", "max_y", "max_z",
-      "corner_index", "floor_index", "provenance"
-    ];
-    const csvField = value => {
+    const rows = [["record_type", "id", "name", "x", "y", "z", "width", "height", "depth", "min_x", "min_y", "min_z", "max_x", "max_y", "max_z", "floor_index", "provenance"]];
+    const field = value => {
       if (value === null || value === undefined) return "";
-      const text = String(value);
-      return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+      const s = String(value);
+      return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
     };
-    const rows = [header];
-
-    for (const object of data.objects) {
-      rows.push([
-        "object", object.id, object.name,
-        object.center.x, object.center.y, object.center.z,
-        object.dimensions.x, object.dimensions.y, object.dimensions.z,
-        object.scale.x, object.scale.y, object.scale.z,
-        object.worldAabbSize.x, object.worldAabbSize.y, object.worldAabbSize.z,
-        object.rotation.x, object.rotation.y, object.rotation.z,
-        object.bounds.min.x, object.bounds.min.y, object.bounds.min.z,
-        object.bounds.max.x, object.bounds.max.y, object.bounds.max.z,
-        "", object.floorIndex, object.provenance
-      ]);
-      object.corners.forEach((corner, index) => rows.push([
-        "corner", object.id, object.name,
-        corner.x, corner.y, corner.z,
-        ...Array(18).fill(""),
-        index + 1, object.floorIndex, object.provenance
-      ]));
-    }
-
-    for (const anchor of data.anchors) {
-      rows.push([
-        "anchor", anchor.id, anchor.name,
-        anchor.position.x, anchor.position.y, anchor.position.z,
-        ...Array(20).fill(""),
-        anchor.provenance
-      ]);
-    }
-
-    const invalidRow = rows.findIndex(row => row.length !== header.length);
-    if (invalidRow !== -1) {
-      throw new Error(\`Coordinate CSV row \${invalidRow + 1} has \${rows[invalidRow].length} fields; expected \${header.length}.\`);
-    }
-    return rows.map(row => row.map(csvField).join(",")).join("\r\n");
+    for (const o of data.objects) rows.push([
+      "object", o.id, o.name, o.center.x, o.center.y, o.center.z,
+      o.dimensions.x, o.dimensions.y, o.dimensions.z,
+      o.bounds.min.x, o.bounds.min.y, o.bounds.min.z, o.bounds.max.x, o.bounds.max.y, o.bounds.max.z,
+      o.floorIndex, o.provenance
+    ]);
+    for (const a of data.anchors) rows.push(["anchor", a.id, a.name, a.position.x, a.position.y, a.position.z, "", "", "", "", "", "", "", "", "", "", a.provenance]);
+    return rows.map(row => row.map(field).join(",")).join("\r\n");
   }
 
   const navigation = {
-    floorHeight,
-    floors,
-    coreOpening: { ...coreOpening },
+    floorHeight, floors, coreOpening: { ...core },
     stairs: {
-      ...stair,
-      stepRise,
-      stepRun,
-      treadDepth: 1.16,
-      treadOverlap: 0.025,
-      landingWidth: 1.28,
-      landingDepth: Math.abs(stair.firstZ - stair.secondZ) + 1.16,
-      landingCenterX: stair.highX + 1.28 / 2,
-      landingCenterZ: (stair.firstZ + stair.secondZ) / 2
+      ...stair, stepRise, stepRun, landingDepth, landingCenterX: stair.highX + stair.landingWidth / 2, landingCenterZ
     }
   };
-
-  return {
-    colliders, interactables, meshesToAnimate, doorAnimations, meshes,
-    navigation, getCoordinateData, exportCoordinateCSV
-  };
+  return { colliders, interactables, meshesToAnimate, doorAnimations, meshes, navigation, getCoordinateData, exportCoordinateCSV };
 }
