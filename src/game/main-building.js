@@ -830,8 +830,9 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
       ]);
       object.corners.forEach((corner, index) => rows.push([
         "corner", object.id, object.name,
-        corner.x, corner.y, corner.z, "", "", "", "", "", "", "", "", "",
-        "", "", "", "", "", "", "", "", "", "", "", "", index + 1, object.floorIndex, object.provenance
+        corner.x, corner.y, corner.z,
+        ...Array(18).fill(""),
+        index + 1, object.floorIndex, object.provenance
       ]));
     }
 
