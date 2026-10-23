@@ -1,7 +1,9 @@
 // First-person movement, collision handling, proximity and camera synchronization.
 export function createPlayerController({ camera, colliders, interactables, state, ui }) {
-  // Spawn on the open ground, facing the main building across the approach road.
-  const player = { x: 0, z: 9.2, yaw: Math.PI * 0.02, pitch: -0.04, speed: 2.65, radius: 0.29 };
+  // Spawn outdoors, facing the main building. Floor changes are handled by the stair/lift core.
+  const FLOOR_HEIGHT = 2.8;
+  const MAX_FLOOR = 7;
+  const player = { x: 0, z: 9.2, floor: 0, yaw: Math.PI * 0.02, pitch: -0.04, speed: 2.65, radius: 0.29 };
   camera.position.set(player.x, 1.68, player.z);
   camera.rotation.order = "YXZ";
   let walkTime = 0;
@@ -61,7 +63,7 @@ export function createPlayerController({ camera, colliders, interactables, state
     const bob = Math.sin(walkTime) * 0.012 * walkBlend;
     const sway = Math.sin(walkTime * 0.42) * 0.004 * walkBlend;
     const targetX = player.x + Math.cos(player.yaw) * sway;
-    const targetY = 1.68 + bob;
+    const targetY = player.floor * FLOOR_HEIGHT + 1.68 + bob;
     const targetZ = player.z - Math.sin(player.yaw) * sway;
     cameraX += (targetX - cameraX) * blend;
     cameraY += (targetY - cameraY) * blend;
@@ -98,5 +100,18 @@ export function createPlayerController({ camera, colliders, interactables, state
     return nearestInteractable();
   }
 
-  return { player, keysDown, doInteract, update, syncCamera };
+  function goToFloor(floor, method = "Výtah") {
+    const nextFloor = Math.max(0, Math.min(MAX_FLOOR, Math.round(floor)));
+    player.floor = nextFloor;
+    player.x = method === "Schodiště" ? -1.8 : 2.2;
+    player.z = -21.35;
+    state.currentFloor = nextFloor;
+    cameraX = player.x;
+    cameraZ = player.z;
+    syncCamera(1 / 30);
+    ui.updateObjective(state);
+    ui.showToast(method + ": " + (nextFloor + 1) + ". patro");
+  }
+
+  return { player, keysDown, doInteract, update, syncCamera, goToFloor };
 }
