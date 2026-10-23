@@ -89,7 +89,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
   const frontWallZ = frontZ - wallT / 2;
 
   // Floors are real slabs. Upper storeys keep a central void for the stairs and lift.
-  const coreOpening = { minX: -3.8, maxX: 3.8, minZ: -26.0, maxZ: -22.35 };
+  const coreOpening = { minX: -3.8, maxX: 3.8, minZ: -26.0, maxZ: -22.52 };
   function makeFloorSlab(floor) {
     const y = floor * floorHeight - 0.08;
     const material = concrete;
@@ -459,7 +459,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
         stepRun + 0.025, 0.18, 1.16, (i % 2) ? concrete : facadePanel);
     }
     const landingWidth = 1.28;
-    const landingDepth = Math.abs(stair.firstZ - stair.secondZ) + 1.1;
+    const landingDepth = Math.abs(stair.firstZ - stair.secondZ) + 1.16;
     // The landing begins at the flight endpoint and extends to its right.
     // This avoids intersecting the last several treads of either stair flight.
     box("Schodiště / mezipodesta", stair.highX + landingWidth / 2,
@@ -863,7 +863,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
       treadDepth: 1.16,
       treadOverlap: 0.025,
       landingWidth: 1.28,
-      landingDepth: Math.abs(stair.firstZ - stair.secondZ) + 1.1,
+      landingDepth: Math.abs(stair.firstZ - stair.secondZ) + 1.16,
       landingCenterX: stair.highX + 1.28 / 2,
       landingCenterZ: (stair.firstZ + stair.secondZ) / 2
     }
