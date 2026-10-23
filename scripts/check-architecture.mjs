@@ -66,6 +66,8 @@ if (!mainSource.includes("createMainBuildingWorld({ THREE, scene, state, ui, sit
 if (mainSource.includes("GLTFLoader") || mainSource.includes("models/t06b-panelak-v2.glb")) fail("the runtime must not load any building model");
 if (!mainSource.includes("state.allBuildingsRemoved = true")) fail("the live scene must explicitly confirm the no-buildings mode");
 if (!mainSource.includes("const SIMULATION_HZ = 60")) fail("game simulation must target 60 Hz");
+if (!mainSource.includes("sampleEnvironment((nowMs - clockStart) / 1000)") || !mainSource.includes("applyEnvironment({ THREE, scene, hemisphere: globalHemisphere, sun: globalSun, panorama, environment })")) fail("day/night and weather must update the live scene");
+if (!mainSource.includes("const rainVisible = environment.precipitation > 0.025")) fail("rain must be enabled on the building-free outdoor site");
 if (!mainSource.includes("const SCENE_RENDER_HZ = 60")) fail("scene rendering must target 60 FPS");
 if (!mainSource.includes("renderer.render(scene, camera)")) fail("scene must render directly without a compositor");
 if (!mainSource.includes("renderer.setSize(width, height, false)")) fail("scene must render through a controllable raster canvas");
@@ -93,7 +95,7 @@ if (!uiSource.includes('"Prázdná mapa sídliště. Všechny budovy jsou odstra
 if (!mainSource.includes('object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone())')) fail("mesh UV2 channels are required for baked light maps");
 
 const coordinateExporter = await readFile(path.join(root, "tools/export-building-coordinates.mjs"), "utf8");
-if (!coordinateExporter.includes("t06b-panelak-v2.json") || !coordinateExporter.includes("t06b-panelak-v2.glb")) fail("coordinate export must be based on the Blender model that is loaded at runtime");
+if (!coordinateExporter.includes("t06b-panelak-v2.json") || !coordinateExporter.includes("t06b-panelak-v2.glb")) fail("the retained Blender model export and manifest must be available for separate authoring use");
 if (!coordinateExporter.includes("facade pier front | level 0") || !coordinateExporter.includes("Slab piece") || !coordinateExporter.includes("loggia")) fail("coordinate export must validate the entrance, stairwell void and loggia openings");
 if (!coordinateExporter.includes("main-building-vertices.json") || !coordinateExporter.includes("main-building-vertices.csv")) fail("coordinate export must generate JSON and CSV coordinate artefacts");
 
@@ -105,6 +107,7 @@ if (!outdoorSource.includes('Výtah / levá šachta')) fail("elevator shaft geom
 if (!outdoorSource.includes('Podlaží / vstupní chodba')) fail("multi-storey floor slabs are missing");
 if (!outdoorSource.includes('id: "elevator"') || !outdoorSource.includes('id: "stairs"')) fail("stairs and elevator interactions are missing");
 if (!outdoorSource.includes('Mapa / terén')) fail("empty outdoor terrain is missing");
+if (!outdoorSource.includes("if (siteOnly)") || !outdoorSource.includes("stairs: null")) fail("the live site must have a true no-building path that does not allocate building meshes");
 if (!outdoorSource.includes('coreOpening')) fail("upper floor slabs must reserve a stair/elevator core opening");
 if (!outdoorSource.includes('Balkonové dveře / otevřené levé křídlo')) fail("balconies must have real low-sill open doorways");
 if (!outdoorSource.includes('frontPassages')) fail("front facade collision gaps must match all physical entrances");
