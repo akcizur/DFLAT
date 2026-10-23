@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "node scripts/check-architecture.mjs",
-    "check:syntax": "node --check src/main.js && node --check src/game/materials.js && node --check src/game/world.js && node --check src/game/panelak.js && node --check src/game/player.js && node --check src/game/ui.js && node --check src/game/input.js && node --check scripts/check-architecture.mjs"
+    "check:syntax": "node --check src/main.js && node --check src/game/materials.js && node --check src/game/world.js && node --check src/game/player.js && node --check src/game/ui.js && node --check src/game/input.js && node --check scripts/check-architecture.mjs"
   },
   "dependencies": {
     "three": "0.169.0"
