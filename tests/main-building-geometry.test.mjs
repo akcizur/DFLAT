@@ -39,12 +39,19 @@ test("the outdoor terrain and ground-floor slab no longer share a coplanar surfa
   const { world } = makeWorld();
   const terrain = world.meshes.find(mesh => mesh.name === "Sídliště / travnatý pozemek");
   const slab = world.meshes.find(mesh => mesh.name === "Podlaha / přízemí");
+  const plinth = world.meshes.find(mesh => mesh.name === "Suterén / základový sokl");
   assert.ok(terrain, "outdoor terrain is missing");
   assert.ok(slab, "ground-floor slab is missing");
-  const terrainTop = terrain.position.y + terrain.geometry.parameters.height / 2;
-  const slabTop = slab.position.y + slab.geometry.parameters.height / 2;
+  assert.ok(plinth, "basement/foundation plinth is missing");
+  const top = mesh => mesh.position.y + mesh.geometry.parameters.height / 2;
+  const terrainTop = top(terrain);
+  const slabTop = top(slab);
+  const plinthTop = top(plinth);
   assert.ok(slabTop > terrainTop, "ground slab must sit above the terrain to prevent z-fighting");
   assert.ok(slabTop - terrainTop <= 0.03, "ground-floor threshold should remain nearly flush");
+  assert.ok(plinthTop > terrainTop, "foundation plinth must not be coplanar with the terrain");
+  assert.ok(plinthTop - terrainTop >= 0.03, "the foundation edge needs a visible vertical separation");
+  assert.ok(Math.abs(plinthTop - slabTop) >= 0.015, "plinth and interior floor must not share a coplanar face");
 });
 
 test("the stairwell provides three floor transitions and the building has no lift", () => {
