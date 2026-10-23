@@ -62,6 +62,18 @@ test("stair treads, landing and top-floor roof hatch share exact endpoints", () 
   assert.match(source, /const ladderBottomY = \(floors - 1\) \* floorHeight/);
 });
 
+
+test("both stair flights have continuous outer walls and a separating wall without blocking the landing", () => {
+  assert.match(source, /Schodiště \/ zadní boční stěna/);
+  assert.match(source, /Schodiště \/ dělicí stěna mezi rameny/);
+  assert.match(source, /Schodiště \/ přední boční stěna/);
+  assert.match(source, /const stairOuterZ = stair\.firstZ - stairTreadDepth \/ 2 - stairWallThickness \/ 2/);
+  assert.match(source, /const stairDividerZ = \(stair\.firstZ \+ stair\.secondZ\) \/ 2/);
+  assert.match(source, /const stairFrontZ = stair\.secondZ \+ stairTreadDepth \/ 2 \+ stairWallThickness \/ 2/);
+  assert.match(source, /stairWallSpanX, stairWallHeight, stairWallThickness, concrete, \{ collider: true \}/);
+  assert.match(source, /const landingStartX = stair\.highX \+ stairTreadOverlap \/ 2/);
+});
+
 test("roof machinery bottoms align with the roof datum", () => {
   const roofY = 8 * 2.8;
   const machineRoomBottom = roofY + 0.59 - 1.18 / 2;
