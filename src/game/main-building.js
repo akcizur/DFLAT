@@ -5,6 +5,11 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
   const meshesToAnimate = [];
   const doorAnimations = [];
   const meshes = [];
+  const liftCarMeshes = [];
+  const liftDoorPanels = [];
+  const liftDoorColliders = [];
+  const liftCabinColliders = [];
+  let liftCarFloor = 0;
 
   const concrete = new THREE.MeshStandardMaterial({
     color: 0xbdbbb2, roughness: 0.96, flatShading: true
@@ -486,6 +491,22 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     (lift.rearZ + lift.frontZ) / 2, lift.wall, height, liftDepth, concreteDark);
   box("Výtah / zadní šachta", lift.centerX, height / 2, lift.rearZ + lift.wall / 2,
     lift.width, height, lift.wall, shaftDark);
+
+  const liftDoorWidth = 1.42;
+  const liftOpeningLeft = lift.centerX - liftDoorWidth / 2;
+  const liftOpeningRight = lift.centerX + liftDoorWidth / 2;
+  for (let floor = 0; floor < floors; floor++) {
+    const levelCollision = (minX, maxX, minZ, maxZ, active = true) => {
+      const collider = { minX, maxX, minZ, maxZ, floor, active };
+      colliders.push(collider);
+      return collider;
+    };
+    levelCollision(liftLeft, liftLeft + lift.wall, lift.rearZ, lift.frontZ);
+    levelCollision(liftRight - lift.wall, liftRight, lift.rearZ, lift.frontZ);
+    levelCollision(liftLeft, liftRight, lift.rearZ - lift.wall / 2, lift.rearZ + lift.wall / 2);
+    levelCollision(liftLeft, liftOpeningLeft, lift.frontZ - lift.wall / 2, lift.frontZ + lift.wall / 2);
+    levelCollision(liftOpeningRight, liftRight, lift.frontZ - lift.wall / 2, lift.frontZ + lift.wall / 2);
+  }
   for (let floor = 0; floor < floors; floor++) {
     const floorY = floor * floorHeight;
     const doorWidth = 1.42;
@@ -506,22 +527,70 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
         span, 2.8, lift.wall, concrete);
     }
 
-    const doorsOpen = floor === 0;
-    const panelW = doorsOpen ? 0.34 : doorWidth / 2;
-    const panelOffset = doorsOpen ? 0.59 : doorWidth / 4;
+    const panelW = doorWidth / 2;
+    const closedOffset = doorWidth / 4;
+    const openOffset = doorWidth / 2 + panelW / 2;
     for (const side of [-1, 1]) {
-      box(doorsOpen ? "Výtah / otevřené dveře" : "Výtah / dveře patra",
-        lift.centerX + side * panelOffset, floorY + 1.08, lift.frontZ + 0.11,
+      const closedX = lift.centerX + side * closedOffset;
+      const openX = lift.centerX + side * openOffset;
+      const panel = box(floor === 0 ? "Výtah / otevřené dveře" : "Výtah / dveře patra",
+        floor === 0 ? openX : closedX, floorY + 1.08, lift.frontZ + 0.11,
         panelW, 2.10, 0.065, doorMaterial);
+      liftDoorPanels.push({ mesh: panel, floor, closedX, openX });
     }
     box("Výtah / číselný panel", liftRight + 0.16, floorY + 1.42, lift.frontZ + 0.08,
       0.10, 0.35, 0.08, railMaterial);
   }
-  // Lift car is open towards the landing, so the interior reads clearly from the lobby.
-  box("Výtah / podlaha kabiny", lift.centerX, 0.10, -23.82, 1.45, 0.20, 1.78, concreteDark);
-  box("Výtah / zadní stěna kabiny", lift.centerX, 1.15, -24.64, 1.42, 2.10, 0.08, concreteDark);
-  box("Výtah / levá stěna kabiny", lift.centerX - 0.69, 1.15, -23.82, 0.08, 2.10, 1.65, concreteDark);
-  box("Výtah / pravá stěna kabiny", lift.centerX + 0.69, 1.15, -23.82, 0.08, 2.10, 1.65, concreteDark);
+  // The cabin, its walls and its collision footprint move together between landings.
+  liftCarMeshes.push(box("Výtah / podlaha kabiny", lift.centerX, 0.04, -23.82, 1.45, 0.08, 1.78, concreteDark));
+  liftCarMeshes.push(box("Výtah / zadní stěna kabiny", lift.centerX, 1.15, -24.64, 1.42, 2.10, 0.08, concreteDark));
+  liftCarMeshes.push(box("Výtah / levá stěna kabiny", lift.centerX - 0.69, 1.15, -23.82, 0.08, 2.10, 1.65, concreteDark));
+  liftCarMeshes.push(box("Výtah / pravá stěna kabiny", lift.centerX + 0.69, 1.15, -23.82, 0.08, 2.10, 1.65, concreteDark));
+
+  const cabinZBounds = { minZ: -23.82 - 1.65 / 2, maxZ: -23.82 + 1.65 / 2 };
+  for (let floor = 0; floor < floors; floor++) {
+    const cabinActive = floor === 0;
+    for (const centerX of [lift.centerX - 0.69, lift.centerX + 0.69]) {
+      const collider = {
+        minX: centerX - 0.04, maxX: centerX + 0.04,
+        ...cabinZBounds, floor, active: cabinActive
+      };
+      colliders.push(collider);
+      liftCabinColliders.push({ floor, collider });
+    }
+    const backCollider = {
+      minX: lift.centerX - 1.42 / 2,
+      maxX: lift.centerX + 1.42 / 2,
+      minZ: -24.64 - 0.04, maxZ: -24.64 + 0.04,
+      floor, active: cabinActive
+    };
+    colliders.push(backCollider);
+    liftCabinColliders.push({ floor, collider: backCollider });
+  }
+
+  for (let floor = 0; floor < floors; floor++) {
+    const collider = {
+      minX: liftOpeningLeft, maxX: liftOpeningRight,
+      minZ: lift.frontZ - lift.wall / 2, maxZ: lift.frontZ + lift.wall / 2,
+      floor, active: floor !== liftCarFloor
+    };
+    colliders.push(collider);
+    liftDoorColliders.push({ floor, collider });
+  }
+
+  state.onElevatorMoved = (floor) => {
+    const nextFloor = Math.max(0, Math.min(floors - 1, Math.round(floor)));
+    const deltaY = (nextFloor - liftCarFloor) * floorHeight;
+    for (const mesh of liftCarMeshes) mesh.position.y += deltaY;
+    liftCarFloor = nextFloor;
+
+    for (const panel of liftDoorPanels) {
+      panel.mesh.position.x = panel.floor === nextFloor ? panel.openX : panel.closedX;
+      panel.mesh.name = panel.floor === nextFloor ? "Výtah / otevřené dveře" : "Výtah / dveře patra";
+    }
+    for (const entry of liftDoorColliders) entry.collider.active = entry.floor !== nextFloor;
+    for (const entry of liftCabinColliders) entry.collider.active = entry.floor === nextFloor;
+  };
   for (const x of [liftLeft + 0.26, liftRight - 0.26]) {
     box("Výtah / vodicí lišta", x, height / 2, -24.15, 0.06, height, 0.06, railMaterial);
   }
