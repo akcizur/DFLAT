@@ -520,9 +520,18 @@ for text_object in [obj for obj in scene.objects if obj.type == "FONT"]:
     bpy.context.view_layer.objects.active = text_object
     bpy.ops.object.convert(target="MESH")
 mesh_objects = [obj for obj in scene.objects if obj.type == "MESH"]
+# The browser already provides the site ground, road and approach. Keep those in
+# the editable preview, but exclude them from both the runtime GLB and its manifest.
+site_object_names = {
+    "Site | terrain",
+    "Soviet-era estate access road",
+    "Concrete approach pavement",
+    "Concrete entrance apron",
+}
+export_mesh_objects = [obj for obj in mesh_objects if obj.name not in site_object_names]
 depsgraph = bpy.context.evaluated_depsgraph_get()
 object_records = []
-for index, obj in enumerate(mesh_objects):
+for index, obj in enumerate(export_mesh_objects):
     evaluated = obj.evaluated_get(depsgraph)
     evaluated_mesh = evaluated.to_mesh()
     world_vertices = [evaluated.matrix_world @ vert.co for vert in evaluated_mesh.vertices]
@@ -665,14 +674,7 @@ rotation = Matrix.Rotation(math.radians(90), 4, "X")
 for obj in list(scene.objects):
     obj.matrix_world = rotation @ obj.matrix_world
 
-# The browser supplies its own map and approach path; export only the building.
-site_object_names = {
-    "Site | terrain",
-    "Soviet-era estate access road",
-    "Concrete approach pavement",
-    "Concrete entrance apron",
-}
-export_mesh_objects = [obj for obj in mesh_objects if obj.name not in site_object_names]
+# The same building-only mesh selection is used for geometry validation and export.
 
 assert MODULE_COUNT == 5 and abs(WIDTH-18.0) < 1e-6
 assert FLOORS == 4 and scene["apartments_per_floor"] == 2 and scene["lift"] is False
