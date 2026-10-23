@@ -75,6 +75,31 @@ test("the outdoor terrain and ground-floor slab no longer share a coplanar surfa
   }
 });
 
+
+test("staircase is a U-shaped pair of parallel flights inside the glazed stairwell", () => {
+  const { world } = makeWorld();
+  const lower = world.meshes.filter(mesh => mesh.name === "Schodiště / dolní rameno / stupeň");
+  const upper = world.meshes.filter(mesh => mesh.name === "Schodiště / horní rameno / stupeň");
+  assert.equal(lower.length, 24);
+  assert.equal(upper.length, 24);
+  const zSpan = meshes => ({
+    min: Math.min(...meshes.map(mesh => mesh.position.z - mesh.geometry.parameters.depth / 2)),
+    max: Math.max(...meshes.map(mesh => mesh.position.z + mesh.geometry.parameters.depth / 2))
+  });
+  const a = zSpan(lower), b = zSpan(upper);
+  assert.ok(Math.abs(a.min - b.min) < 0.1 && Math.abs(a.max - b.max) < 0.1,
+    "upper and lower flights should be parallel and share the same run");
+  const xs = [...new Set(lower.map(mesh => Math.round(mesh.position.x * 100) / 100))];
+  assert.equal(xs.length, 1, "lower flight must stay in one stairwell lane");
+  assert.ok(world.meshes.filter(mesh => mesh.name === "Schodiště / stěna jádra").length > 0);
+  assert.ok(world.meshes.filter(mesh => mesh.name === "Schodiště / mezipodesta").every(mesh =>
+    mesh.geometry.parameters.width > 3.0 && mesh.geometry.parameters.depth < 1.5));
+  const luxfer = world.meshes.find(mesh => mesh.name === "Schodiště / luxferová tvárnice");
+  assert.ok(luxfer, "stairwell luxfer glazing must be present");
+  assert.ok(Math.abs(luxfer.position.z - lower[0].position.z) < 8,
+    "stair flights should be spatially aligned with the stairwell glazing");
+});
+
 test("the stairwell provides three floor transitions and the building has no lift", () => {
   const { world } = makeWorld();
   const lower = world.meshes.filter(mesh => mesh.name === "Schodiště / dolní rameno / stupeň");
