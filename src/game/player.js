@@ -3,11 +3,11 @@ export function createPlayerController({ camera, colliders, interactables, state
   const FLOOR_HEIGHT = navigation?.floorHeight ?? 2.8;
   const FLOOR_COUNT = navigation?.floors ?? 8;
   const MAX_FLOOR = FLOOR_COUNT - 1;
-  const coreOpening = navigation?.coreOpening ?? { minX: -3.8, maxX: 3.8, minZ: -26.0, maxZ: -22.35 };
+  const coreOpening = navigation?.coreOpening ?? { minX: -3.8, maxX: 3.8, minZ: -26.0, maxZ: -22.52 };
   const stair = navigation?.stairs ?? {
     lowX: -3.2, highX: -0.8, firstZ: -25.1, secondZ: -23.1, steps: 8,
     stepRise: FLOOR_HEIGHT / 16, stepRun: 0.3, treadDepth: 1.16, treadOverlap: 0.025,
-    landingWidth: 1.28, landingDepth: 3.1,
+    landingWidth: 1.28, landingDepth: 3.16,
     landingCenterX: -0.16, landingCenterZ: -24.1
   };
   const MAX_STEP_HEIGHT = stair.stepRise + 0.045;
