@@ -143,21 +143,46 @@ for floor in range(-1, FLOORS):
     base_y = -BASEMENT_HEIGHT if floor == -1 else floor * FLOOR_HEIGHT
     mat = stair_concrete if floor == -1 else panel
     if floor < 0:
-        box(f"Floor {floor} | structural slab", (0, base_y + SLAB/2, 0),
+        box(f"Floor {floor} | structural slab", (0, base_y - SLAB/2, 0),
             (WIDTH, SLAB, DEPTH), mat)
     else:
-        # Keep the central stair opening truly open through the upper slabs.
+        # The upper slabs stop at the central stair void and at each recessed
+        # loggia. Four short rear bridges remain outside the two loggia bays.
         core_left, core_right = -1.5, 1.5
         core_front, core_rear = -2.2, 2.2
         side_width = WIDTH/2-core_right
-        box(f"Floor {floor} | left slab wing", ((-WIDTH/2+core_left)/2, base_y-SLAB/2, 0),
-            (side_width, SLAB, DEPTH), mat)
-        box(f"Floor {floor} | right slab wing", ((core_right+WIDTH/2)/2, base_y+SLAB/2, 0),
-            (side_width, SLAB, DEPTH), mat)
-        box(f"Floor {floor} | slab before stair core", (0, base_y+SLAB/2, (FRONT_Z+core_front)/2),
+        interior_depth = LOGGIA_BACK_Z-FRONT_Z
+        interior_z = (FRONT_Z+LOGGIA_BACK_Z)/2
+        box(f"Floor {floor} | left slab wing",
+            ((-WIDTH/2+core_left)/2, base_y-SLAB/2, interior_z),
+            (side_width, SLAB, interior_depth), mat)
+        box(f"Floor {floor} | right slab wing",
+            ((core_right+WIDTH/2)/2, base_y-SLAB/2, interior_z),
+            (side_width, SLAB, interior_depth), mat)
+        box(f"Floor {floor} | slab before stair core",
+            (0, base_y-SLAB/2, (FRONT_Z+core_front)/2),
             (core_right-core_left, SLAB, core_front-FRONT_Z), mat)
-        box(f"Floor {floor} | slab after stair core", (0, base_y+SLAB/2, (core_rear+REAR_Z)/2),
-            (core_right-core_left, SLAB, REAR_Z-core_rear), mat)
+        box(f"Floor {floor} | slab after stair core",
+            (0, base_y-SLAB/2, (core_rear+LOGGIA_BACK_Z)/2),
+            (core_right-core_left, SLAB, LOGGIA_BACK_Z-core_rear), mat)
+
+        loggia_left_outer = -3.6-LOGGIA_WIDTH/2
+        loggia_left_inner = -3.6+LOGGIA_WIDTH/2
+        loggia_right_inner = 3.6-LOGGIA_WIDTH/2
+        loggia_right_outer = 3.6+LOGGIA_WIDTH/2
+        rear_bridge_bays = (
+            (-WIDTH/2, loggia_left_outer),
+            (loggia_left_inner, core_left),
+            (core_right, loggia_right_inner),
+            (loggia_right_outer, WIDTH/2),
+        )
+        rear_bridge_depth = REAR_Z-LOGGIA_BACK_Z
+        rear_bridge_z = (REAR_Z+LOGGIA_BACK_Z)/2
+        for x0, x1 in rear_bridge_bays:
+            if x1-x0 > 0.01:
+                box(f"Floor {floor} | rear bridge outside loggias",
+                    ((x0+x1)/2, base_y-SLAB/2, rear_bridge_z),
+                    (x1-x0, SLAB, rear_bridge_depth), mat)
 
 # Foundation plinth and cellar wall.
 box("Continuous cellar plinth | weather staining", (0, -BASEMENT_HEIGHT/2, FRONT_Z-0.03),
