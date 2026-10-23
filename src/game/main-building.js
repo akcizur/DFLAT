@@ -443,17 +443,27 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     { minX: doorWidth / 2, maxX: rightX, minZ: frontZ - wallT / 2, maxZ: frontZ + wallT / 2 }
   );
 
-  // Switchback stair: two real flights and a shared intermediate landing per storey.
+  // Switchback stair with continuous concrete soffits and a properly enclosed stairwell.
+  // The flight axis is X; the half-storey turn happens on the long shared landing.
   const stair = { lowX: -3.2, highX: -0.8, firstZ: -25.1, secondZ: -23.1, steps: 8 };
   const stepRise = (floorHeight / 2) / stair.steps;
   const stepRun = (stair.highX - stair.lowX) / stair.steps;
-  function beam(name, x1, y1, z1, x2, y2, z2, thickness, material) {
+  function beam(name, x1, y1, z1, x2, y2, z2, thickness, material, depth = thickness, belowSlopedSurface = false) {
     const dx = x2 - x1, dy = y2 - y1, dz = z2 - z1;
     const length = Math.hypot(dx, dy, dz);
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(length, thickness, thickness), material);
+    const angle = Math.atan2(dy, dx);
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(length, thickness, depth), material);
     mesh.name = name;
-    mesh.position.set((x1 + x2) / 2, (y1 + y2) / 2, (z1 + z2) / 2);
-    mesh.rotation.z = Math.atan2(dy, dx);
+    const normalSign = Math.sign(dx || 1);
+    const normalX = -Math.sin(angle) * normalSign;
+    const normalY = Math.cos(angle) * normalSign;
+    const offset = belowSlopedSurface ? thickness / 2 : 0;
+    mesh.position.set(
+      (x1 + x2) / 2 - normalX * offset,
+      (y1 + y2) / 2 - normalY * offset,
+      (z1 + z2) / 2
+    );
+    mesh.rotation.z = angle;
     mesh.castShadow = false;
     mesh.receiveShadow = true;
     scene.add(mesh);
@@ -462,6 +472,18 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
   }
   for (let floor = 0; floor < floors - 1; floor++) {
     const baseY = floor * floorHeight;
+
+    // One continuous underside per flight prevents the stairs from reading as
+    // disconnected floating blocks when viewed from the lobby or lower landings.
+    beam("Schodiště / dolní rameno / podhled",
+      stair.lowX, baseY - stepRise / 2, stair.firstZ,
+      stair.highX, baseY + floorHeight / 2 - stepRise / 2, stair.firstZ,
+      0.16, concreteDark, 1.16, true);
+    beam("Schodiště / horní rameno / podhled",
+      stair.highX, baseY + floorHeight / 2 - stepRise / 2, stair.secondZ,
+      stair.lowX, baseY + floorHeight - stepRise / 2, stair.secondZ,
+      0.16, concreteDark, 1.16, true);
+
     for (let i = 0; i < stair.steps; i++) {
       const riseA = baseY + (i + 1) * stepRise;
       const xA = stair.lowX + (i + 0.5) * stepRun;
@@ -472,22 +494,77 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
       box("Schodiště / horní rameno / stupeň", xB, riseB - 0.09, stair.secondZ,
         stepRun + 0.025, 0.18, 1.16, (i % 2) ? concrete : facadePanel);
     }
+
     const landingWidth = 1.28;
     const landingDepth = Math.abs(stair.firstZ - stair.secondZ) + 1.1;
     // The landing begins at the flight endpoint and extends to its right.
-    // This avoids intersecting the last several treads of either stair flight.
+    // Keep the turn area clear so the player can move between the two flights.
     box("Schodiště / mezipodesta", stair.highX + landingWidth / 2,
       baseY + floorHeight / 2 - 0.07,
       (stair.firstZ + stair.secondZ) / 2, landingWidth, 0.14,
       landingDepth, facadePanel);
+
     for (const lane of [
       { z: stair.firstZ, x1: stair.lowX, x2: stair.highX, y1: baseY + 0.88, y2: baseY + floorHeight / 2 + 0.88 },
       { z: stair.secondZ, x1: stair.highX, x2: stair.lowX, y1: baseY + floorHeight / 2 + 0.88, y2: baseY + floorHeight + 0.88 }
     ]) {
       for (const side of [-1, 1]) {
-        beam("Schodiště / šikmé madlo", lane.x1, lane.y1, lane.z + side * 0.61,
-          lane.x2, lane.y2, lane.z + side * 0.61, 0.065, railMaterial);
+        // Handrails sit just inside the concrete flight walls, not out in space.
+        beam("Schodiště / šikmé madlo", lane.x1, lane.y1, lane.z + side * 0.60,
+          lane.x2, lane.y2, lane.z + side * 0.60, 0.065, railMaterial);
       }
+    }
+  }
+
+  // Structural stairwell walls are aligned to the actual slab opening. The
+  // front wall deliberately leaves a 1.05 m doorway into the shared corridor.
+  // The 2D movement solver does not distinguish floor heights, so each unique
+  // wall footprint is added to collision once while the visible wall repeats per storey.
+  const stairWallThickness = 0.16;
+  const stairwell = {
+    minX: coreOpening.minX,
+    maxX: 0.95, // leaves a 20 mm construction joint before the elevator shaft wall
+    minZ: coreOpening.minZ,
+    maxZ: coreOpening.maxZ,
+    doorwayMinX: coreOpening.minX,
+    doorwayMaxX: coreOpening.minX + 1.05
+  };
+  const stairwellDepth = stairwell.maxZ - stairwell.minZ;
+  const stairwellWidth = stairwell.maxX - stairwell.minX;
+  const stairwellCenterX = (stairwell.minX + stairwell.maxX) / 2;
+  const stairwellCenterZ = (stairwell.minZ + stairwell.maxZ) / 2;
+  const flightWallInset = 0.38;
+  const flightWallRun = stair.highX - stair.lowX - flightWallInset * 2;
+  const flightWallCenterX = (stair.lowX + stair.highX) / 2;
+  const flightWallOffset = 1.16 / 2 + stairWallThickness / 2 + 0.04;
+
+  for (let floor = 0; floor < floors; floor++) {
+    const wallY = floor * floorHeight + floorHeight / 2;
+    const uniqueCollider = floor === 0 ? { collider: true } : {};
+
+    box("Schodiště / západní obvodová stěna",
+      stairwell.minX + stairWallThickness / 2, wallY, stairwellCenterZ,
+      stairWallThickness, floorHeight, stairwellDepth, concrete, uniqueCollider);
+    box("Schodiště / dělicí stěna u výtahu",
+      stairwell.maxX, wallY, stairwellCenterZ,
+      stairWallThickness, floorHeight, stairwellDepth, concrete, uniqueCollider);
+    box("Schodiště / zadní uzavírací stěna",
+      stairwellCenterX, wallY, stairwell.minZ + stairWallThickness / 2,
+      stairwellWidth, floorHeight, stairWallThickness, concrete, uniqueCollider);
+
+    const frontWallWidth = stairwell.maxX - stairwell.doorwayMaxX;
+    box("Schodiště / čelní stěna k chodbě",
+      stairwell.doorwayMaxX + frontWallWidth / 2, wallY,
+      stairwell.maxZ - stairWallThickness / 2,
+      frontWallWidth, floorHeight, stairWallThickness, concrete, uniqueCollider);
+
+    for (const side of [-1, 1]) {
+      box("Schodiště / boční stěna dolního ramene",
+        flightWallCenterX, wallY, stair.firstZ + side * flightWallOffset,
+        flightWallRun, floorHeight, stairWallThickness, concrete, uniqueCollider);
+      box("Schodiště / boční stěna horního ramene",
+        flightWallCenterX, wallY, stair.secondZ + side * flightWallOffset,
+        flightWallRun, floorHeight, stairWallThickness, concrete, uniqueCollider);
     }
   }
 
