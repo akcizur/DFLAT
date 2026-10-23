@@ -26,8 +26,8 @@ test("the roof has a dedicated hatch rather than reusing the residential core op
   assert.ok(start >= 0 && end > start, "dedicated roof function and invocation must exist");
   const roofFunction = source.slice(start, end);
   assert.doesNotMatch(roofFunction, /coreOpening/);
-  assert.match(roofFunction, /minX: -1\.325, maxX: -0\.275/);
-  assert.match(roofFunction, /minZ: -24\.625, maxZ: -23\.575/);
+  assert.match(roofFunction, /minX: -3\.925, maxX: -2\.875/);
+  assert.match(roofFunction, /minZ: -23\.625, maxZ: -22\.575/);
   assert.match(roofFunction, /Střecha \/ otevřený poklop/);
   assert.match(roofFunction, /Střecha \/ žebřík příčka/);
 });
