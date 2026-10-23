@@ -220,7 +220,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
   }
 
   const stair = {
-    lowX: -1.5, highX: 0.5, firstZ: -25.3, secondZ: -21.8, steps: 8,
+    lowX: -1.35, highX: 0.45, firstZ: -25.3, secondZ: -21.8, steps: 8,
     treadDepth: 1.16, treadOverlap: 0.025, landingWidth: 1.1
   };
   const landingDepth = Math.abs(stair.firstZ - stair.secondZ) + stair.treadDepth;
