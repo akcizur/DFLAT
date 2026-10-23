@@ -1,94 +1,94 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import test from "node:test";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
+import * as THREE from "three";
+import { PANELAK_LAYOUT } from "../src/game/panelak-config.js";
+import { createMainBuildingWorld } from "../src/game/main-building.js";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const source = readFileSync(path.join(root, "src/game/main-building.js"), "utf8");
+function makeWorld() {
+  const scene = new THREE.Scene();
+  const state = { currentFloor: 0, mainBuildingScene: true };
+  const ui = { showToast() {}, updateObjective() {} };
+  const world = createMainBuildingWorld({ THREE, scene, state, ui });
+  scene.updateMatrixWorld(true);
+  return { scene, state, world };
+}
 
-test("the foundation plinth is split around the clear entrance", () => {
-  assert.match(source, /sokl vlevo od vchodu/);
-  assert.match(source, /sokl vpravo od vchodu/);
-  assert.match(source, /const plinthEndX = doorWidth \/ 2 \+ 0\.11/);
-  assert.doesNotMatch(source, /Hlavní budova \/ sokl", bx, 0\.36, frontZ/);
+test("the runtime model is an 18 m five-module, four-storey section", () => {
+  const { world } = makeWorld();
+  const data = world.getCoordinateData();
+  assert.equal(PANELAK_LAYOUT.moduleCount, 5);
+  assert.equal(PANELAK_LAYOUT.moduleWidth, 3.6);
+  assert.equal(data.building.width, 18);
+  assert.equal(data.building.depth, 12);
+  assert.equal(data.building.floors, 4);
+  assert.equal(data.building.modules, 5);
+  assert.equal(data.building.moduleWidth, 3.6);
+  assert.equal(data.building.apartmentsPerFloor, 2);
+  assert.equal(data.building.elevator, false);
+  assert.equal(data.building.height, 11.2);
 });
 
-test("door glazing belongs to the open leaves, not the walking opening", () => {
-  assert.match(source, /zasklení otevřeného dveřního křídla/);
-  assert.match(source, /side \* 0\.94, 1\.52, frontZ \+ 0\.34/);
-  assert.doesNotMatch(source, /Vchod \/ zasklení dveří", 0, 1\.52/);
+test("declared room dimensions reconcile to the 65.4 m² area budget", () => {
+  assert.ok(Math.abs(PANELAK_LAYOUT.calculatedRoomArea - 65.4) < 0.01);
+  assert.ok(Math.abs(PANELAK_LAYOUT.rooms.reduce((sum, room) => sum + room.area, 0) - 65.4) < 0.01);
+  assert.ok(PANELAK_LAYOUT.hallDepth > 1.7 && PANELAK_LAYOUT.hallDepth < 1.8);
+  assert.equal(PANELAK_LAYOUT.hallDepth, PANELAK_LAYOUT.bathDepth);
 });
 
-test("the roof has a dedicated hatch rather than reusing the residential core opening", () => {
-  const start = source.indexOf("function makeRoofSlab()");
-  const end = source.indexOf("for (let floor = 0; floor < floors; floor++) makeFloorSlab(floor);", start);
-  assert.ok(start >= 0 && end > start, "dedicated roof function and invocation must exist");
-  const roofFunction = source.slice(start, end);
-  assert.doesNotMatch(roofFunction, /coreOpening/);
-  assert.match(roofFunction, /minX: -1\.325, maxX: -0\.275/);
-  assert.match(roofFunction, /minZ: -24\.625, maxZ: -23\.575/);
-  assert.match(roofFunction, /Střecha \/ otevřený poklop/);
-  assert.match(roofFunction, /Střecha \/ žebřík příčka/);
+test("the outdoor terrain and ground-floor slab no longer share a coplanar surface", () => {
+  const { world } = makeWorld();
+  const terrain = world.meshes.find(mesh => mesh.name === "Sídliště / travnatý pozemek");
+  const slab = world.meshes.find(mesh => mesh.name === "Podlaha / přízemí");
+  assert.ok(terrain, "outdoor terrain is missing");
+  assert.ok(slab, "ground-floor slab is missing");
+  const terrainTop = terrain.position.y + terrain.geometry.parameters.height / 2;
+  const slabTop = slab.position.y + slab.geometry.parameters.height / 2;
+  assert.ok(slabTop > terrainTop, "ground slab must sit above the terrain to prevent z-fighting");
+  assert.ok(slabTop - terrainTop <= 0.03, "ground-floor threshold should remain nearly flush");
 });
 
-test("stairs connect the eight occupied levels without a ninth roof flight", () => {
-  const start = source.indexOf("// Switchback stair");
-  const end = source.indexOf("// Continuous lift shaft", start);
-  assert.ok(start >= 0 && end > start);
-  const stairFunction = source.slice(start, end);
-  assert.match(stairFunction, /for \(let floor = 0; floor < floors - 1; floor\+\+\)/);
-  assert.doesNotMatch(stairFunction, /for \(let floor = 0; floor < floors; floor\+\+\)/);
-  assert.equal(8 - 1, 7, "eight floor datums require seven inter-floor stair runs");
+test("the stairwell provides three floor transitions and the building has no lift", () => {
+  const { world } = makeWorld();
+  const lower = world.meshes.filter(mesh => mesh.name === "Schodiště / dolní rameno / stupeň");
+  const upper = world.meshes.filter(mesh => mesh.name === "Schodiště / horní rameno / stupeň");
+  assert.equal(lower.length, (PANELAK_LAYOUT.totalFloors - 1) * 8);
+  assert.equal(upper.length, (PANELAK_LAYOUT.totalFloors - 1) * 8);
+  assert.ok(world.meshes.some(mesh => mesh.name === "Schodiště / mezipodesta"));
+  assert.equal(world.interactables.some(item => item.id === "elevator"), false);
+  assert.equal(world.meshes.some(mesh => /výtah|elevator/i.test(mesh.name)), false);
 });
 
-test("roof machinery bottoms align with the roof datum", () => {
-  const roofY = 8 * 2.8;
-  const machineRoomBottom = roofY + 0.59 - 1.18 / 2;
-  const ventBottom = roofY + 0.55 - 1.1 / 2;
-  assert.ok(Math.abs(machineRoomBottom - roofY) < 1e-9);
-  assert.ok(Math.abs(ventBottom - roofY) < 1e-9);
-  assert.match(source, /strojovna výtahu", 2\.2, roofY \+ 0\.59/);
-  assert.match(source, /větrací komín", -4\.4, roofY \+ 0\.55/);
+test("each storey has both recessed loggia doorways and the central luxfer stair window", () => {
+  const { world } = makeWorld();
+  for (let floor = 0; floor < PANELAK_LAYOUT.totalFloors; floor++) {
+    for (const x of [-3.6, 3.6]) {
+      const doorway = world.anchors?.find(anchor =>
+        anchor.id === "loggia-door-f" + floor + "-x" + (x < 0 ? "L" : "R")
+      );
+      assert.ok(doorway, "missing loggia doorway anchor for floor " + floor + " at x=" + x);
+    }
+  }
+  assert.ok(world.meshes.some(mesh => mesh.name === "Schodiště / luxferová tvárnice"));
+  assert.equal(world.getCoordinateData().building.floors, 4);
 });
 
-test("entrance collision opening uses the same nominal width as the facade opening", () => {
-  assert.match(source, /maxX: -doorWidth \/ 2, minZ: frontZ/);
-  assert.match(source, /minX: doorWidth \/ 2, maxX: rightX, minZ: frontZ/);
-});
-
-test("mesh collection and exports include transformed corners, world bounds, and semantic anchors", () => {
-  assert.equal((source.match(/meshes\.push\(mesh\)/g) || []).length, 2);
-  assert.match(source, /function getCoordinateData\(\)/);
-  assert.match(source, /applyMatrix4\(mesh\.matrixWorld\)/);
-  assert.match(source, /logicalCorners: logicalCornerCount/);
-  assert.match(source, /semanticAnchors: anchors\.length/);
-  assert.match(source, /function exportCoordinateCSV\(\)/);
-  assert.match(source, /join\("\\r\\n"\)/);
-  assert.match(source, /return \{[\s\S]*?colliders, interactables, meshesToAnimate, doorAnimations, meshes,\s*navigation, getCoordinateData, exportCoordinateCSV\s*\}/);
-});
-
-test("balcony openings are full-height passages with matching collision gaps", () => {
-  assert.match(source, /kind: isBalconyDoor \? "balcony-door" : "window"/);
-  assert.match(source, /const openingBottom = isBalconyDoor \? 0 : windowBottom/);
-  assert.match(source, /Balkonové dveře \/ otevřené levé křídlo/);
-  assert.match(source, /Balkonové dveře \/ otevřené pravé křídlo/);
-  assert.match(source, /const frontPassages = \[/);
-  assert.match(source, /const slabY = floorY - 0\.08/);
-  assert.match(source, /floorY \+ 0\.61/);
-});
-
-test("elevator cabin meshes and landing doors follow the active floor", () => {
-  assert.match(source, /const liftCarMeshes = \[\]/);
-  assert.match(source, /liftDoorPanels\.push\(\{ mesh: panel, floor, closedX, openX, openScaleX \}\)/);
-  assert.match(source, /state\.onElevatorMoved = \(floor\) =>/);
-  assert.match(source, /mesh\.position\.y \+= deltaY/);
-  assert.match(source, /entry\.collider\.active = entry\.floor !== nextFloor/);
-  assert.match(source, /entry\.collider\.active = entry\.floor === nextFloor/);
-});
-
-test("the stairwell, upper treads, landing and lift threshold share exact depth datums", () => {
-  assert.match(source, /coreOpening = \{ minX: -3\.8, maxX: 3\.8, minZ: -26\.0, maxZ: -22\.52 \}/);
-  assert.match(source, /const lift = \{ centerX: 2\.2, rearZ: -25\.0, frontZ: -22\.52/);
-  assert.match(source, /Math\.abs\(stair\.firstZ - stair\.secondZ\) \+ 1\.16/);
+test("runtime coordinates include finite corners, bounds, and exact footprint anchors", () => {
+  const { world } = makeWorld();
+  const data = world.getCoordinateData();
+  assert.ok(data.objects.length > 500);
+  assert.ok(data.anchors.length > 10);
+  const anchors = new Map(data.anchors.map(anchor => [anchor.id, anchor]));
+  assert.equal(anchors.size, data.anchors.length);
+  assert.equal(anchors.get("front-left-ground").position.x, -9);
+  assert.equal(anchors.get("front-right-ground").position.x, 9);
+  assert.equal(anchors.get("front-left-ground").position.z, -16);
+  assert.equal(anchors.get("rear-left-ground").position.z, -28);
+  assert.equal(anchors.get("roof-datum").position.y, 11.2);
+  for (const object of data.objects) {
+    for (const point of [object.center, object.bounds.min, object.bounds.max, ...object.corners]) {
+      assert.ok(point && [point.x, point.y, point.z].every(Number.isFinite),
+        "non-finite point in " + object.id);
+    }
+  }
+  assert.match(world.exportCoordinateCSV(), /^record_type,id,name,x,y,z,/);
 });
