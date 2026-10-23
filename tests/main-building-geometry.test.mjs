@@ -67,3 +67,12 @@ test("mesh collection and exports include transformed corners, world bounds, and
   assert.match(source, /join\("\\r\\n"\)/);
   assert.match(source, /return \{[\s\S]*?colliders, interactables, meshesToAnimate, doorAnimations, meshes,\s*navigation, getCoordinateData, exportCoordinateCSV\s*\}/);
 });
+
+test("balcony bays have full-height glazed doors and readable service details", () => {
+  assert.ok(source.includes('kind: balconyDoor ? "balcony-door" : "window"'));
+  assert.ok(source.includes("Balkonové dveře / zasklené posuvné křídlo"));
+  assert.ok(source.includes("Balkonové dveře / vodicí lišta"));
+  assert.ok(source.includes("Balkon / truhlík"));
+  assert.ok(source.includes("Dešťový svod / svislé potrubí"));
+  assert.ok(source.includes("Dešťový svod / objímka"));
+});
