@@ -7,7 +7,7 @@ export function createPlayerController({ camera, colliders, interactables, state
   const stair = navigation?.stairs ?? {
     lowX: -1.35, highX: 0.45, firstZ: -25.3, secondZ: -21.8, steps: 8,
     stepRise: FLOOR_HEIGHT / 16, stepRun: 0.225, treadDepth: 1.16, treadOverlap: 0.025,
-    landingWidth: 1.1, landingDepth: 4.66,
+    landingWidth: 1.1975, landingDepth: 4.66,
     landingCenterX: 1.06125, landingCenterZ: -23.55
   };
   const MAX_STEP_HEIGHT = stair.stepRise + 0.045;
