@@ -105,7 +105,7 @@ assert.equal(doorAnchors.length, EXPECTED.floors * 2,
   "Both mirrored apartments need a loggia doorway on each occupied level.");
 
 const stair = world.navigation.stairs;
-closeTo(stair.landingCenterX, stair.highX + stair.landingWidth / 2, "Landing center X");
+closeTo(stair.landingCenterX, stair.highX + stair.treadOverlap / 2 + stair.landingWidth / 2, "Landing center X");
 closeTo(stair.landingCenterZ - stair.landingDepth / 2,
   stair.firstZ - stair.treadDepth / 2, "Landing rear edge");
 closeTo(stair.landingCenterZ + stair.landingDepth / 2,
