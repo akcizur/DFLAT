@@ -717,9 +717,14 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     windowXs.forEach((x, column) => {
       for (let floor = 0; floor < floors; floor++) {
         if (floor === 0 && Math.abs(x) < 2) continue;
-        const y = floor * floorHeight + (windowBottom + windowTop) / 2;
-        addAnchor(`window-f${floor}-c${column}`, `Střed okna patro ${floor}, sloupec ${column}`,
-          x, y, frontZ + 0.035, "windowXs / windowBottom / windowTop");
+        const isBalconyDoor = Math.abs(Math.abs(x) - 4.9) < 0.001;
+        const openingBottom = isBalconyDoor ? 0 : windowBottom;
+        const y = floor * floorHeight + (openingBottom + windowTop) / 2;
+        const anchorType = isBalconyDoor ? "balcony-door" : "window";
+        addAnchor(`${anchorType}-f${floor}-c${column}`,
+          `${isBalconyDoor ? "Balkonové dveře" : "Okno"} patro ${floor}, sloupec ${column}`,
+          x, y, frontZ + 0.035,
+          isBalconyDoor ? "windowXs / balconyDoorBottom=0 / windowTop" : "windowXs / windowBottom / windowTop");
       }
     });
 
@@ -727,7 +732,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
       const floorY = floor * floorHeight;
       for (const x of [-4.9, 4.9]) {
         addAnchor(`balcony-f${floor}-x${x < 0 ? "L" : "R"}`, `Střed balkonu patro ${floor}`,
-          x, floorY + 0.17, frontZ + 0.78, "balcony placement formula");
+          x, floorY - 0.08, frontZ + 0.78, "balcony slab center Y = finished floor datum - slab thickness / 2");
       }
     }
 
