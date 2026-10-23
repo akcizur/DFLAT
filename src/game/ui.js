@@ -68,7 +68,7 @@ export function createUI() {
     const minutes = String(totalMinutes % 60).padStart(2, "0");
     const timeLabel = environment?.timeLabel ?? (hours + ":" + minutes);
     const weatherLabel = environment?.weatherLabel ?? "JASNO";
-    clockEl.textContent = timeLabel + "\\n" + weatherLabel;
+    clockEl.textContent = timeLabel + "\n" + weatherLabel;
     clockEl.setAttribute("aria-label", "Čas " + timeLabel + ", počasí " + weatherLabel.toLowerCase());
   }
 
