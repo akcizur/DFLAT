@@ -1130,3 +1130,13 @@
 #bootScreen.boot-screen {
   animation-duration: 1.55s;
 }
+
+
+/* The actual loading state gates the menu, so no extra animation delay is needed. */
+#startScreen.nexus-menu {
+  animation-delay: 0s;
+}
+#startScreen.nexus-menu .nexus-menu {
+  justify-self: center;
+  margin-inline: auto;
+}
