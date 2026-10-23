@@ -106,11 +106,12 @@ export function createPlayerController({ camera, colliders, interactables, state
         });
       }
       if (inLanding) candidates.push({ height: baseY + FLOOR_HEIGHT / 2, kind: "landing" });
-      // The short transverse platform runs at an exact storey datum between
-      // the two flight ends; model it as real floor support, not a half-storey.
-      if (inFloorLanding && baseFloor > 0) {
-        candidates.push({ height: baseY, kind: "floor-landing" });
-      }
+    }
+    // The connector exists at floors 1 through the top occupied floor. Resolve
+    // its support against the player's current storey so the top landing works too.
+    if (inFloorLanding) {
+      const floorIndex = Math.max(1, Math.min(MAX_FLOOR, Math.round(fromElevation / FLOOR_HEIGHT)));
+      candidates.push({ height: floorIndex * FLOOR_HEIGHT, kind: "floor-landing" });
     }
     return candidates;
   }
