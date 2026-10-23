@@ -39,7 +39,7 @@ function finishStartupWhenReady() {
   if (startupComplete || !firstSceneFrame || !panoramaResolved || !panelakResolved) return;
   startupComplete = true;
   state.ready = true;
-  setLoadingProgress(100, "SVĚT JE PŘIPRAVEN", "Vstup do hlavní budovy.", "READY");
+  setLoadingProgress(100, "SVĚT JE PŘIPRAVEN", "Volný pohyb po prázdném venkovním prostoru.", "READY");
   if (!loadingScreen) return;
   const remainingVisibleMs = Math.max(
     0,
