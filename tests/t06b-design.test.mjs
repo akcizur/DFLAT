@@ -82,5 +82,5 @@ test("the saved Blender file is Z-up and the runtime GLB excludes the preview si
   assert.ok(source.includes('export_mesh_objects = [obj for obj in mesh_objects if obj.name not in site_object_names]'));
   assert.ok(source.includes('asset_max_x-asset_min_x <= 18.4'));
   assert.ok(source.includes('asset_max_y-asset_min_y <= 12.4'));
-  assert.ok(source.includes('asset_max_z > FLOORS*FLOOR_HEIGHT+0.5'));
+  assert.ok(source.includes('asset_max_z > FLOORS*FLOOR_HEIGHT+0.4'));
 });
