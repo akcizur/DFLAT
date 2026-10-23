@@ -449,11 +449,11 @@ for x in (-8.65, 8.65):
 # Flat roof, gravel-like membrane and a compact service vent, no modern rooftop plant.
 box("Roof | structural slab", (0, FLOORS*FLOOR_HEIGHT-SLAB/2, 0),
     (WIDTH+0.25, SLAB, DEPTH+0.25), dark_concrete)
-box("Roof | gravel membrane", (0, FLOORS*FLOOR_HEIGHT+0.16, 0),
+box("Roof | gravel membrane", (0, FLOORS*FLOOR_HEIGHT+0.03, 0),
     (WIDTH, 0.06, DEPTH), panel)
-box("Roof | low parapet front", (0, FLOORS*FLOOR_HEIGHT+0.29, FRONT_Z-0.06),
+box("Roof | low parapet front", (0, FLOORS*FLOOR_HEIGHT+0.26, FRONT_Z-0.06),
     (WIDTH+0.30, 0.46, 0.22), concrete)
-box("Roof | low parapet rear", (0, FLOORS*FLOOR_HEIGHT+0.29, REAR_Z+0.06),
+box("Roof | low parapet rear", (0, FLOORS*FLOOR_HEIGHT+0.26, REAR_Z+0.06),
     (WIDTH+0.30, 0.46, 0.22), concrete)
 for x in (-5.4, 5.4):
     box("Roof | ventilation shaft", (x, FLOORS*FLOOR_HEIGHT+0.435, 0),
@@ -684,8 +684,16 @@ assert not any("Výtah" in obj.name or "Elevator" in obj.name for obj in scene.o
 assert export_mesh_objects, "No runtime building mesh geometry was generated."
 
 depsgraph = bpy.context.evaluated_depsgraph_get()
+# Measure the structural envelope separately from the projecting entrance canopy,
+# open door leaves and approach steps. Those accessories intentionally extend
+# beyond the nominal 18.0 x 12.0 m section footprint.
+envelope_prefixes = ("Facade pier", "Floor ", "End wall", "Roof |")
+envelope_mesh_objects = [
+    obj for obj in export_mesh_objects if obj.name.startswith(envelope_prefixes)
+]
+assert envelope_mesh_objects, "No structural envelope geometry was generated."
 world_vertices = []
-for obj in export_mesh_objects:
+for obj in envelope_mesh_objects:
     evaluated = obj.evaluated_get(depsgraph)
     evaluated_mesh = evaluated.to_mesh()
     world_vertices.extend(evaluated.matrix_world @ vertex.co for vertex in evaluated_mesh.vertices)
@@ -696,9 +704,9 @@ asset_min_y = min(vertex.y for vertex in world_vertices)
 asset_max_y = max(vertex.y for vertex in world_vertices)
 asset_min_z = min(vertex.z for vertex in world_vertices)
 asset_max_z = max(vertex.z for vertex in world_vertices)
-assert 18.0 <= asset_max_x-asset_min_x <= 18.4, "Blender model width must be 18 m."
-assert 12.0 <= asset_max_y-asset_min_y <= 12.4, "Blender model depth must be about 12 m."
-assert asset_min_z < -2.7 and asset_max_z > FLOORS*FLOOR_HEIGHT+0.5, "Model height axis is not Z-up in Blender."
+assert 18.0 <= asset_max_x-asset_min_x <= 18.4, "Blender structural shell width must be 18 m."
+assert 12.0 <= asset_max_y-asset_min_y <= 12.4, "Blender structural shell depth must be about 12 m."
+assert asset_min_z < -2.7 and asset_max_z > FLOORS*FLOOR_HEIGHT+0.4, "Model height axis is not Z-up in Blender."
 
 bpy.ops.object.select_all(action="DESELECT")
 for obj in export_mesh_objects:
