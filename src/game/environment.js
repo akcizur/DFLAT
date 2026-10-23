@@ -16,6 +16,31 @@ const smoothstep = value => {
 };
 const mix = (a, b, t) => a + (b - a) * t;
 
+let scratchThree = null;
+let colors = null;
+
+function getColorScratch(THREE) {
+  if (scratchThree === THREE && colors) return colors;
+  scratchThree = THREE;
+  colors = {
+    daySky: new THREE.Color(0x858b8e),
+    nightSky: new THREE.Color(0x252b37),
+    duskSky: new THREE.Color(0xc08c69),
+    overcastSky: new THREE.Color(0x727b82),
+    white: new THREE.Color(0xffffff),
+    hemisphereDay: new THREE.Color(0xdce8ff),
+    hemisphereNight: new THREE.Color(0x7b879b),
+    groundDay: new THREE.Color(0x625648),
+    groundNight: new THREE.Color(0x18202b),
+    sunBase: new THREE.Color(0x6379a6),
+    sunWarm: new THREE.Color(0xffc18d),
+    sunDay: new THREE.Color(0xffe6c2),
+    sky: new THREE.Color(0x858b8e),
+    sun: new THREE.Color(0xffffff)
+  };
+  return colors;
+}
+
 export function sampleEnvironment(elapsedSeconds) {
   const elapsed = Math.max(0, Number.isFinite(elapsedSeconds) ? elapsedSeconds : 0);
   const timeHours = (7 + elapsed * (24 / DAY_LENGTH_SECONDS)) % 24;
@@ -30,8 +55,6 @@ export function sampleEnvironment(elapsedSeconds) {
     weather[key] = mix(previous[key], current[key], transition);
   }
 
-  // During a front's arrival, make that change explicit instead of reporting
-  // the new weather while the visible scene is still blending to it.
   const weatherLabel = transition < 0.999 ? "MĚNÍ SE" : current.label;
   const totalMinutes = Math.floor(timeHours * 60);
   const hour = Math.floor(totalMinutes / 60);
@@ -57,39 +80,38 @@ export function sampleEnvironment(elapsedSeconds) {
 }
 
 export function applyEnvironment({ THREE, scene, hemisphere, sun, panorama, environment }) {
-  const { daylight, solarAngle } = environment;
-  const daySky = new THREE.Color(0x858b8e);
-  const nightSky = new THREE.Color(0x252b37);
-  const duskSky = new THREE.Color(0xc08c69);
-  const sky = nightSky.clone().lerp(daySky, Math.pow(daylight, 0.72));
+  const c = getColorScratch(THREE);
+  const daylight = environment.daylight;
   const horizonWarmth = Math.max(0, 1 - Math.abs(environment.timeHours - 7) / 2) * 0.65 +
     Math.max(0, 1 - Math.abs(environment.timeHours - 18) / 2) * 0.75;
-  sky.lerp(duskSky, horizonWarmth * (1 - environment.cloudiness) * 0.55);
-  sky.lerp(new THREE.Color(0x727b82), environment.cloudiness * 0.48);
-  scene.background = sky;
+
+  c.sky.copy(c.nightSky).lerp(c.daySky, Math.pow(daylight, 0.72));
+  c.sky.lerp(c.duskSky, horizonWarmth * (1 - environment.cloudiness) * 0.55);
+  c.sky.lerp(c.overcastSky, environment.cloudiness * 0.48);
+  if (scene.background !== c.sky) scene.background = c.sky;
 
   if (scene.fog?.color) {
-    scene.fog.color.copy(sky);
+    scene.fog.color.copy(c.sky);
     scene.fog.density = environment.fogDensity;
   }
 
   hemisphere.intensity = environment.ambientIntensity;
-  hemisphere.color.set(0xdce8ff).lerp(new THREE.Color(0x7b879b), 1 - daylight);
-  hemisphere.groundColor.set(0x625648).lerp(new THREE.Color(0x18202b), 1 - daylight);
+  hemisphere.color.copy(c.hemisphereDay).lerp(c.hemisphereNight, 1 - daylight);
+  hemisphere.groundColor.copy(c.groundDay).lerp(c.groundNight, 1 - daylight);
 
   const daylightFactor = Math.pow(daylight, 0.5);
-  const sunColor = new THREE.Color(0x6379a6)
-    .lerp(new THREE.Color(0xffc18d), horizonWarmth * (1 - environment.cloudiness))
-    .lerp(new THREE.Color(0xffe6c2), daylightFactor);
-  sun.color.copy(sunColor);
+  c.sun.copy(c.sunBase)
+    .lerp(c.sunWarm, horizonWarmth * (1 - environment.cloudiness))
+    .lerp(c.sunDay, daylightFactor);
+  sun.color.copy(c.sun);
   sun.intensity = environment.sunIntensity;
-  sun.position.set(-Math.cos(solarAngle) * 18, Math.max(0.3, Math.sin(solarAngle)) * 20, 8);
+  sun.position.set(-Math.cos(environment.solarAngle) * 18,
+    Math.max(0.3, Math.sin(environment.solarAngle)) * 20, 8);
 
   const skyMaterial = panorama?.mesh?.material;
   if (skyMaterial?.color) {
     const multiplier = mix(0.24, 1, environment.skyBrightness);
-    skyMaterial.color.copy(sky).lerp(new THREE.Color(0xffffff), daylight * 0.45);
+    skyMaterial.color.copy(c.sky).lerp(c.white, daylight * 0.45);
     skyMaterial.color.multiplyScalar(multiplier);
-    skyMaterial.needsUpdate = true;
   }
 }
