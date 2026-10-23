@@ -16,6 +16,11 @@ export function createUI() {
   }
 
   function updateObjective(state) {
+    if (state.allBuildingsRemoved) {
+      objectiveText.textContent = "Prázdná mapa sídliště. Všechny budovy jsou odstraněné.";
+      inventoryText.textContent = "BUDOVY: 0";
+      return;
+    }
     if (state.mainBuildingScene) {
       const floor = Math.max(0, Math.min(3, Number(state.currentFloor) || 0));
       objectiveText.textContent = "Panelák T06B. Prozkoumej čtyři podlaží, schodiště a lodžie.";
