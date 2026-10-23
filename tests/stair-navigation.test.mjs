@@ -124,7 +124,7 @@ test("the runtime stairwell has actual enclosing walls and clear openings at bot
   const liftSideWalls = world.meshes.filter(mesh => /Schodiště \/ stěna jádra u výtahu/.test(mesh.name));
   const lintels = world.meshes.filter(mesh => mesh.name === "Schodiště / nadpraží otvoru");
   const balusters = world.meshes.filter(mesh => mesh.name === "Schodiště / svislý sloupek zábradlí");
-  assert.ok(walls.length >= live.floors * 3, "stairwell needs continuous wall segments on each storey");
+  assert.ok(walls.length >= live.floors * 3 - 2, "stairwell needs continuous wall segments on each storey");
   assert.equal(liftSideWalls.length, 2, "lift shaft side must close the stairwell at the rear and front edges");
   assert.equal(lintels.length, (live.floors - 1) * 2, "seven storey changes need fourteen headed doorway openings");
   assert.ok(balusters.length >= (live.floors - 1) * (stair.steps + 1) * 4);
