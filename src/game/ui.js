@@ -16,6 +16,11 @@ export function createUI() {
   }
 
   function updateObjective(state) {
+    if (state.mainBuildingScene) {
+      objectiveText.textContent = "Volná mapa. Před tebou stojí hlavní budova.";
+      inventoryText.textContent = "LOKACE: HLAVNÍ BUDOVA";
+      return;
+    }
     if (state.emptyMap) {
       objectiveText.textContent = "Holobyt: zatím bez nábytku a úkolů.";
       inventoryText.textContent = "MAPA: HOLOBYT";
