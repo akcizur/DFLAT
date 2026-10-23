@@ -23,8 +23,8 @@ export function createUI() {
       return;
     }
     if (state.emptyMap) {
-      objectiveText.textContent = "Holobyt: zatím bez nábytku a úkolů.";
-      inventoryText.textContent = "MAPA: HOLOBYT";
+      objectiveText.textContent = "Otevřená krajina bez budov. Sleduj, jak se mění denní světlo a počasí.";
+      inventoryText.textContent = "MAPA: VOLNÝ TERÉN";
       return;
     }
     if (state.finished) {
