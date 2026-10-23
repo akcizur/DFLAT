@@ -290,7 +290,7 @@ if (new URLSearchParams(location.search).get("smoke") === "1") {
     value: {
       playerPosition: () => ({ x: controller.player.x, z: controller.player.z, elevation: controller.player.elevation, floor: controller.player.floor }),
       keysDown: () => ({ ...controller.keysDown }),
-      gameState: () => ({ started: state.started, paused: state.paused, t06bModelActive: state.t06bModelActive, currentFloor: state.currentFloor })
+      gameState: () => ({ started: state.started, paused: state.paused, ready: state.ready, t06bModelActive: state.t06bModelActive, currentFloor: state.currentFloor, floorCount: world.navigation?.floors ?? 8 })
     }
   });
 }
