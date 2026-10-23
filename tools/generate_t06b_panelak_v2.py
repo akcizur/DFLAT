@@ -146,6 +146,10 @@ for floor in range(-1, FLOORS):
         box(f"Floor {floor} | structural slab", (0, base_y - SLAB/2, 0),
             (WIDTH, SLAB, DEPTH), mat)
     else:
+        # Raise the exposed ground-floor slab 20 mm above the outdoor terrain.
+        # The site ground is supplied by the browser at y=0; exact coplanarity
+        # causes z-fighting where the floor is visible around the entrance.
+        slab_datum = base_y + (0.02 if floor == 0 else 0.0)
         # The upper slabs stop at the central stair void and at each recessed
         # loggia. Four short rear bridges remain outside the two loggia bays.
         core_left, core_right = -1.5, 1.5
@@ -154,16 +158,16 @@ for floor in range(-1, FLOORS):
         interior_depth = LOGGIA_BACK_Z-FRONT_Z
         interior_z = (FRONT_Z+LOGGIA_BACK_Z)/2
         box(f"Floor {floor} | left slab wing",
-            ((-WIDTH/2+core_left)/2, base_y-SLAB/2, interior_z),
+            ((-WIDTH/2+core_left)/2, slab_datum-SLAB/2, interior_z),
             (side_width, SLAB, interior_depth), mat)
         box(f"Floor {floor} | right slab wing",
-            ((core_right+WIDTH/2)/2, base_y-SLAB/2, interior_z),
+            ((core_right+WIDTH/2)/2, slab_datum-SLAB/2, interior_z),
             (side_width, SLAB, interior_depth), mat)
         box(f"Floor {floor} | slab before stair core",
-            (0, base_y-SLAB/2, (FRONT_Z+core_front)/2),
+            (0, slab_datum-SLAB/2, (FRONT_Z+core_front)/2),
             (core_right-core_left, SLAB, core_front-FRONT_Z), mat)
         box(f"Floor {floor} | slab after stair core",
-            (0, base_y-SLAB/2, (core_rear+LOGGIA_BACK_Z)/2),
+            (0, slab_datum-SLAB/2, (core_rear+LOGGIA_BACK_Z)/2),
             (core_right-core_left, SLAB, LOGGIA_BACK_Z-core_rear), mat)
 
         loggia_left_outer = -3.6-LOGGIA_WIDTH/2
@@ -182,7 +186,7 @@ for floor in range(-1, FLOORS):
         for x0, x1 in rear_bridge_bays:
             if x1-x0 > 0.01:
                 box(f"Floor {floor} | rear bridge outside loggias",
-                    ((x0+x1)/2, base_y-SLAB/2, rear_bridge_z),
+                    ((x0+x1)/2, slab_datum-SLAB/2, rear_bridge_z),
                     (x1-x0, SLAB, rear_bridge_depth), mat)
 
 # Foundation plinth and cellar wall.
@@ -418,7 +422,7 @@ for floor in range(FLOORS):
             (WALL, 0.60, entry_z1-entry_z0), cream)
 
         # Cross walls have real gaps for room doors rather than sealed-off display boxes.
-        for z in (-2.275, -0.075)
+        for z in (-2.275, -0.075):
             doorway_x = inner-side*1.12
             for x0, x1 in sorted(((inner-1.725, doorway_x-0.48), (doorway_x+0.48, inner+1.725))):
                 if x1 > x0:
@@ -444,7 +448,7 @@ for floor in range(FLOORS):
         # with a standard narrow doorway; the toilet is no longer in the bathtub zone.
         wc_z0, wc_z1 = -1.525, -0.875
         box("Flat | B7 service-core floor", (inner, y+0.08, -1.20), (2.0, 0.10, 2.0), cream)
-        for z0, z1 in ((-2.20, wc_z0), (wc_z1, -0.20))
+        for z0, z1 in ((-2.20, wc_z0), (wc_z1, -0.20)):
             if z1 > z0:
                 box("Flat | bathroom-WC divider", (inner, y+1.05, (z0+z1)/2),
                     (WALL, 2.10, z1-z0), cream)
