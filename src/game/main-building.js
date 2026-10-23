@@ -717,6 +717,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
       stepRise,
       stepRun,
       treadDepth: 1.16,
+      treadOverlap: 0.025,
       landingWidth: 1.28,
       landingDepth: Math.abs(stair.firstZ - stair.secondZ) + 1.1,
       landingCenterX: stair.highX + 1.28 / 2,
