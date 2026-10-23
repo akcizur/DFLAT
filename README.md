@@ -71,7 +71,7 @@ The map is currently a free-roam environment. There is no objective beyond explo
 
 ## Active Blender-authored panelák: T06B V2
 
-The browser game uses the Blender-generated model `public/models/t06b-panelak-v2.glb` when that asset is present. The intended typology is a five-module section (`5 × 3.6 m = 18.0 m)), 11.4 m deep, with four above-ground storeys, one cellar, eight flats, recessed loggias, luxfer stair glazing and **no lift**. The procedural eight-storey building is retained only as a fallback for local sessions in which the GLB has not been generated.
+The browser game uses the Blender-generated model `public/models/t06b-panelak-v2.glb` when that asset is present. The intended typology is a five-module section (`5 × 3.6 m = 18.0 m)), 12.0 m deep, with four above-ground storeys, one cellar, eight flats, recessed loggias, luxfer stair glazing and **no lift**. The procedural eight-storey building is retained only as a fallback for local sessions in which the GLB has not been generated.
 
 Generate the editable Blender project, the runtime GLB and its measured coordinate manifest:
 
