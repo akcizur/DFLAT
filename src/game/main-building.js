@@ -220,10 +220,11 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     0.14, 2.58, 0.18, facadePanel);
   box("Vchod / nadpraží", 0, doorHeight + 0.06, frontZ + 0.045,
     doorWidth + 0.28, 0.12, 0.18, facadePanel);
-  box("Vchod / levé dveřní křídlo", -0.43, 1.20, frontZ + 0.095,
-    0.82, 2.34, 0.055, doorMaterial);
-  box("Vchod / pravé dveřní křídlo", 0.43, 1.20, frontZ + 0.095,
-    0.82, 2.34, 0.055, doorMaterial);
+  // Both entrance leaves are shown swung open against the jambs, so the playable entry is visibly clear.
+  box("Vchod / otevřené levé dveřní křídlo", -0.90, 1.20, frontZ + 0.34,
+    0.055, 2.34, 0.78, doorMaterial);
+  box("Vchod / otevřené pravé dveřní křídlo", 0.90, 1.20, frontZ + 0.34,
+    0.055, 2.34, 0.78, doorMaterial);
   box("Vchod / zasklení dveří", 0, 1.52, frontZ + 0.13,
     0.94, 1.08, 0.025, glassDark);
   box("Vchod / madlo", 0.70, 1.12, frontZ + 0.16,
