@@ -298,13 +298,13 @@ export function createMainBuildingWorld({ THREE, scene, state, ui, showBuilding 
   const plinthBorder = 0.34;
   // Four perimeter strips leave the interior floor visible. A solid foundation
   // block here would cover the playable floor and share coplanar faces with terrain.
-  box("Suterén / základový sokl / přední", 0, plinthY, frontZ,
+  box("Suterén / základový sokl / přední", 0, plinthY, frontZ + plinthBorder / 2,
     width + plinthBorder, plinthHeight, plinthBorder, materials.darkConcrete);
-  box("Suterén / základový sokl / zadní", 0, plinthY, rearZ,
+  box("Suterén / základový sokl / zadní", 0, plinthY, rearZ - plinthBorder / 2,
     width + plinthBorder, plinthHeight, plinthBorder, materials.darkConcrete);
-  for (const x of [leftX, rightX]) {
+  for (const x of [leftX - plinthBorder / 2, rightX + plinthBorder / 2]) {
     box("Suterén / základový sokl / boční", x, plinthY, buildingZ,
-      plinthBorder, plinthHeight, depth - plinthBorder, materials.darkConcrete);
+      plinthBorder, plinthHeight, depth, materials.darkConcrete);
   }
   box("Hlavní budova / levý štít", leftX + wallT / 2, buildingHeight / 2, buildingZ,
     wallT, buildingHeight, depth, materials.concrete);
@@ -330,7 +330,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui, showBuilding 
   for (let floor = 0; floor < floors; floor++) {
     const fy = floor * floorHeight;
     for (const x of [-3.6, 3.6]) {
-      const outerZ = rearZ + 0.04;
+      const outerZ = rearZ;
       const innerZ = rearZ + 1.72;
       box("Lodžie / betonová podlaha", x, fy - 0.075, (outerZ + innerZ) / 2, 2.55, 0.15, 1.72, materials.facade);
       for (const side of [-1, 1]) {
