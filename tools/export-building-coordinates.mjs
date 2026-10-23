@@ -92,7 +92,7 @@ for (const requiredId of [
 
 const byName = name => source.objects.filter(object => object.name === name);
 const named = prefix => source.objects.filter(object => object.name.startsWith(prefix));
-assert.equal(byName("Flat entrance | door leaf").length, 8, "Each of eight flats needs an entry door.");
+assert.equal(byName("Flat entrance | open door leaf").length, 8, "Each of eight flats needs an entry door.");
 assert.equal(byName("Loggia | heavy concrete slab").length, 8, "Each of four floors needs two loggias.");
 assert.equal(byName("Stair | lower flight tread").length, 24, "Three inter-floor stair runs need 24 lower treads.");
 assert.equal(byName("Stair | upper flight tread").length, 24, "Three inter-floor stair runs need 24 upper treads.");
