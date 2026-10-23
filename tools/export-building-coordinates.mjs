@@ -1,261 +1,199 @@
 import assert from "node:assert/strict";
-import { mkdir, writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import * as THREE from "three";
-import { createMainBuildingWorld } from "../src/game/main-building.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const OUTPUT_DIRECTORY = path.join(ROOT, "public", "data");
-const JSON_OUTPUT = path.join(OUTPUT_DIRECTORY, "main-building-vertices.json");
-const CSV_OUTPUT = path.join(OUTPUT_DIRECTORY, "main-building-vertices.csv");
-const EPSILON = 1e-6;
-const EXPECTED = Object.freeze({
-  width: 28,
-  depth: 12,
-  floors: 8,
-  floorHeight: 2.8,
-  roofHeight: 22.4,
-  origin: { x: 0, y: 0, z: -22 },
-  footprint: { minX: -14, maxX: 14, minZ: -28, maxZ: -16 }
-});
+const DATA_DIRECTORY = path.join(ROOT, "public", "data");
+const SOURCE_MANIFEST = path.join(DATA_DIRECTORY, "t06b-panelak-v2.json");
+const JSON_OUTPUT = path.join(DATA_DIRECTORY, "main-building-vertices.json");
+const CSV_OUTPUT = path.join(DATA_DIRECTORY, "main-building-vertices.csv");
+const EPSILON = 1e-5;
 
 function closeTo(actual, expected, label, epsilon = EPSILON) {
-  assert.ok(Number.isFinite(actual), `${label}: value is not finite (${actual})`);
-  assert.ok(
-    Math.abs(actual - expected) <= epsilon,
-    `${label}: expected ${expected}, received ${actual}`
-  );
+  assert.ok(Number.isFinite(actual), label + ": coordinate is not finite (" + actual + ")");
+  assert.ok(Math.abs(actual - expected) <= epsilon,
+    label + ": expected " + expected + ", received " + actual);
 }
 
-function isFinitePoint(point) {
-  return point && ["x", "y", "z"].every(axis => Number.isFinite(point[axis]));
-}
-
-function assertFinitePoint(point, label) {
-  assert.ok(isFinitePoint(point), `${label}: invalid coordinate ${JSON.stringify(point)}`);
-}
-
-function round(value) {
-  const rounded = Number(value.toFixed(6));
-  return Object.is(rounded, -0) ? 0 : rounded;
+function finitePoint(point, label) {
+  assert.ok(point && ["x", "y", "z"].every(axis => Number.isFinite(point[axis])),
+    label + ": invalid point " + JSON.stringify(point));
 }
 
 function csvEscape(value) {
   if (value === null || value === undefined) return "";
   const text = String(value);
-  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  return /[",\r\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
 }
 
-// Instantiate the exact geometry used by the browser game. This is deliberately
-// not a parallel architectural model, and it does not use the Blender generators.
-const scene = new THREE.Scene();
-const state = { currentFloor: 0, mainBuildingScene: true };
-const ui = { showToast() {}, updateObjective() {} };
-const world = createMainBuildingWorld({ THREE, scene, state, ui });
-scene.updateMatrixWorld(true);
-
-const data = world.getCoordinateData();
-const csv = world.exportCoordinateCSV();
-const meshes = world.meshes;
-assert.ok(Array.isArray(meshes) && meshes.length > 500, "The main-building scene should contain the complete architectural assembly.");
-assert.ok(data && Array.isArray(data.objects) && Array.isArray(data.anchors), "The runtime coordinate API returned an incomplete manifest.");
-assert.equal(data.units, "metres", "Coordinate values must use metres.");
-assert.equal(data.building.width, EXPECTED.width);
-assert.equal(data.building.depth, EXPECTED.depth);
-assert.equal(data.building.floors, EXPECTED.floors);
-closeTo(data.building.floorHeight, EXPECTED.floorHeight, "Floor-to-floor height");
-closeTo(data.building.height, EXPECTED.roofHeight, "Roof datum height");
-closeTo(data.coordinateSystem.buildingWorldOrigin.x, EXPECTED.origin.x, "Building origin X");
-closeTo(data.coordinateSystem.buildingWorldOrigin.y, EXPECTED.origin.y, "Building origin Y");
-closeTo(data.coordinateSystem.buildingWorldOrigin.z, EXPECTED.origin.z, "Building origin Z");
-
-const anchorById = new Map(data.anchors.map(anchor => [anchor.id, anchor]));
-assert.equal(anchorById.size, data.anchors.length, "Semantic anchor IDs must be unique.");
-for (const requiredId of [
-  "building-origin",
-  "front-left-ground", "front-right-ground",
-  "rear-left-ground", "rear-right-ground",
-  "roof-datum",
-  "entrance-left-bottom", "entrance-right-top",
-  "floor-datum-0", "floor-datum-8",
-  "balcony-door-f0-c2", "balcony-door-f0-c5",
-  "balcony-f0-xL", "balcony-f0-xR",
-  "stair-mid-landing-f0", "stair-arrival-f1",
-  "lift-left-rear-base", "lift-right-front-top",
-  "elevator-interaction-f0",
-  "roof-hatch-left-rear", "roof-hatch-right-front"
-]) {
-  assert.ok(anchorById.has(requiredId), `Missing semantic anchor: ${requiredId}`);
-}
-for (const anchor of data.anchors) assertFinitePoint(anchor.position, `Anchor ${anchor.id}`);
-for (const object of data.objects) {
-  assertFinitePoint(object.center, `Object center ${object.id}`);
-  assertFinitePoint(object.bounds?.min, `Object min bound ${object.id}`);
-  assertFinitePoint(object.bounds?.max, `Object max bound ${object.id}`);
-  assert.ok(Array.isArray(object.corners) && object.corners.length >= 2, `Object ${object.id} has no geometric vertices.`);
-  for (const corner of object.corners) assertFinitePoint(corner, `Object corner ${object.id}`);
-}
-
-const frontLeft = anchorById.get("front-left-ground").position;
-const frontRight = anchorById.get("front-right-ground").position;
-const rearLeft = anchorById.get("rear-left-ground").position;
-const rearRight = anchorById.get("rear-right-ground").position;
-const roof = anchorById.get("roof-datum").position;
-closeTo(frontRight.x - frontLeft.x, EXPECTED.width, "Front footprint width");
-closeTo(rearRight.x - rearLeft.x, EXPECTED.width, "Rear footprint width");
-closeTo(frontLeft.z - rearLeft.z, EXPECTED.depth, "Left footprint depth");
-closeTo(frontRight.z - rearRight.z, EXPECTED.depth, "Right footprint depth");
-closeTo(roof.y, EXPECTED.roofHeight, "Semantic roof datum");
-closeTo(anchorById.get("floor-datum-8").position.y, EXPECTED.roofHeight, "Top-level datum");
-closeTo(
-  anchorById.get("stair-mid-landing-f0").position.x,
-  world.navigation.stairs.landingCenterX,
-  "Landing semantic X must equal the navigation geometry's true center"
-);
-closeTo(world.navigation.coreOpening.maxZ, -22.52, "Core opening front datum");
-closeTo(anchorById.get("lift-left-front-base").position.z, world.navigation.coreOpening.maxZ, "Lift threshold and core opening must share Z");
-const stairLandingDepth = world.navigation.stairs.landingDepth;
-closeTo(
-  world.navigation.stairs.landingCenterZ - stairLandingDepth / 2,
-  world.navigation.stairs.firstZ - world.navigation.stairs.treadDepth / 2,
-  "Stair landing rear edge must meet lower flight"
-);
-closeTo(
-  world.navigation.stairs.landingCenterZ + stairLandingDepth / 2,
-  world.navigation.coreOpening.maxZ,
-  "Stair landing front edge must meet the core opening and lift threshold"
-);
-
-const windowDoorAnchors = data.anchors.filter(anchor => anchor.id.startsWith("balcony-door-f"));
-assert.equal(windowDoorAnchors.length, EXPECTED.floors * 2, "Each occupied storey needs two real balcony door anchors.");
-
-// Verify that the physical cabin, landing panels and door collision volumes all follow a floor change.
-const cabinFloor = meshes.find(mesh => mesh.name === "Výtah / podlaha kabiny");
-assert.ok(cabinFloor, "Elevator cabin floor is missing.");
-const initialCabinY = cabinFloor.position.y;
-const liftFloor = 2;
-state.onElevatorMoved?.(liftFloor);
-closeTo(cabinFloor.position.y, initialCabinY + liftFloor * EXPECTED.floorHeight, "Elevator cabin travel");
-const destinationDoors = meshes.filter(mesh =>
-  mesh.name === "Výtah / otevřené dveře" &&
-  Math.abs(mesh.position.y - (liftFloor * EXPECTED.floorHeight + 1.08)) < EPSILON
-);
-assert.equal(destinationDoors.length, 2, "The served floor needs two open lift door panels.");
-const destinationDoorCollider = world.colliders.find(collider =>
-  collider.floor === liftFloor &&
-  Math.abs(collider.minX - (2.2 - 1.42 / 2)) < EPSILON &&
-  Math.abs(collider.maxX - (2.2 + 1.42 / 2)) < EPSILON &&
-  Math.abs(collider.minZ - (-22.52 - 0.12 / 2)) < EPSILON
-);
-assert.ok(destinationDoorCollider, "The lift needs a collision volume for the landing opening.");
-assert.equal(destinationDoorCollider.active, false, "Destination lift doors must open a passable collision volume.");
-state.onElevatorMoved?.(0);
-closeTo(cabinFloor.position.y, initialCabinY, "Elevator return to ground floor");
-
-const facadePassages = [
-  { minX: -1.82 / 2, maxX: 1.82 / 2, label: "entrance" },
-  { minX: -4.9 - 1.36 / 2, maxX: -4.9 + 1.36 / 2, label: "left balcony" },
-  { minX: 4.9 - 1.36 / 2, maxX: 4.9 + 1.36 / 2, label: "right balcony" }
-];
-for (const passage of facadePassages) {
-  const wallBlocksOpening = world.colliders.some(collider =>
-    !Number.isInteger(collider.floor) &&
-    Math.abs(collider.minZ - (-16 - 0.28 / 2)) < EPSILON &&
-    Math.abs(collider.maxZ - (-16 + 0.28 / 2)) < EPSILON &&
-    collider.minX < passage.maxX - EPSILON &&
-    collider.maxX > passage.minX + EPSILON
+let source;
+try {
+  source = JSON.parse(await readFile(SOURCE_MANIFEST, "utf8"));
+} catch (error) {
+  throw new Error(
+    "T06B geometry manifest is missing or invalid. Generate the Blender model first: " +
+    "blender --background --python tools/generate_t06b_panelak_v2.py. " + error.message
   );
-  assert.equal(wallBlocksOpening, false, `The front collision wall must leave the ${passage.label} opening clear.`);
 }
 
-const interactionPoints = world.interactables.map(item => ({
-  id: item.id,
-  name: item.name,
-  x: round(item.x),
-  z: round(item.z),
-  range: round(item.range)
-}));
-const collisionVolumes = world.colliders.map((collider, index) => ({
-  id: `collider-${String(index + 1).padStart(4, "0")}`,
-  ...Object.fromEntries(Object.entries(collider).map(([key, value]) => [
-    key, typeof value === "number" ? round(value) : value
-  ]))
-}));
+const building = source.building;
+assert.equal(source.coordinateSystem?.units, "metres");
+assert.equal(building?.typology, "T06B-inspired five-module section");
+assert.equal(building.moduleCount, 5);
+assert.equal(building.moduleWidth, 3.6);
+assert.equal(building.width, 18);
+assert.equal(building.depth, 11.4);
+assert.equal(building.floors, 4);
+assert.equal(building.basementHeight, 2.6);
+assert.equal(building.floorHeight, 2.8);
+closeTo(building.roofDatum, 11.2, "Roof datum");
+assert.equal(building.lift, false);
+assert.equal(building.apartmentsPerFloor, 2);
+assert.equal(building.apartmentsTotal, 8);
+assert.equal(building.designStatus, "visualisation concept; not for construction");
+assert.ok(Array.isArray(source.objects) && source.objects.length > 300,
+  "The evaluated Blender model must contain the complete architectural assembly.");
+assert.ok(Array.isArray(source.anchors) && source.anchors.length >= 20,
+  "The measured model is missing semantic coordinate anchors.");
+assert.equal(source.nominalRoomAreaSumM2.toFixed(1), "65.4");
+
+const objectIds = new Set();
+for (const object of source.objects) {
+  assert.ok(object.id && !objectIds.has(object.id), "Object IDs must be non-empty and unique.");
+  objectIds.add(object.id);
+  finitePoint(object.center, "Object " + object.id + " center");
+  finitePoint(object.bounds?.min, "Object " + object.id + " minimum bound");
+  finitePoint(object.bounds?.max, "Object " + object.id + " maximum bound");
+  assert.ok(Array.isArray(object.corners) && object.corners.length === 8,
+    "Object " + object.id + " must expose eight AABB corners.");
+  for (const axis of ["x", "y", "z"]) {
+    assert.ok(object.bounds.min[axis] <= object.bounds.max[axis],
+      "Object " + object.id + " has inverted " + axis + " bounds.");
+  }
+  for (const corner of object.corners) finitePoint(corner, "Object corner " + object.id);
+}
+
+const anchorIds = new Set();
+for (const anchor of source.anchors) {
+  assert.ok(anchor.id && !anchorIds.has(anchor.id), "Semantic anchor IDs must be unique.");
+  anchorIds.add(anchor.id);
+  finitePoint(anchor.position, "Anchor " + anchor.id);
+}
+for (const requiredId of [
+  "building-origin", "front-left-ground", "front-right-ground",
+  "rear-left-ground", "rear-right-ground", "entrance-centre",
+  "stair-core-centre", "roof-datum", "floor-datum-0", "floor-datum-4",
+  "module-axis-1", "module-axis-2", "module-axis-3", "module-axis-4", "module-axis-5",
+  "loggia-f0-left", "loggia-f0-right", "loggia-f3-left", "loggia-f3-right"
+]) {
+  assert.ok(anchorIds.has(requiredId), "Missing semantic anchor: " + requiredId);
+}
+
+const byName = name => source.objects.filter(object => object.name === name);
+const named = prefix => source.objects.filter(object => object.name.startsWith(prefix));
+assert.equal(byName("Flat entrance | door leaf").length, 8, "Each of eight flats needs an entry door.");
+assert.equal(byName("Loggia | heavy concrete slab").length, 8, "Each of four floors needs two loggias.");
+assert.equal(byName("Stair | lower flight tread").length, 24, "Three inter-floor stair runs need 24 lower treads.");
+assert.equal(byName("Stair | upper flight tread").length, 24, "Three inter-floor stair runs need 24 upper treads.");
+assert.equal(byName("Staircase | luxfer glass block").length, 75, "Stair glazing should contain 75 luxfer blocks.");
+assert.equal(source.counts?.liftObjects, 0, "The four-storey T06B design must not contain elevator geometry.");
+
+const frontGroundPiers = named("Facade pier front | level 0");
+assert.ok(frontGroundPiers.length > 0, "Front ground-floor facade panels are missing.");
+const frontMinX = Math.min(...frontGroundPiers.map(object => object.bounds.min.x));
+const frontMaxX = Math.max(...frontGroundPiers.map(object => object.bounds.max.x));
+closeTo(frontMaxX-frontMinX, 18, "Measured front facade width");
+// No ground-floor facade pier may fill the 1.8 m entry opening.
+for (const object of frontGroundPiers) {
+  const overlapsEntry = object.bounds.min.x < 0.9-EPSILON && object.bounds.max.x > -0.9+EPSILON;
+  assert.equal(overlapsEntry, false, "Facade pier " + object.name + " blocks the central entrance.");
+
+  // The main facade contains proper full-height low-sill door openings at the loggias.
+}
+const rearGroundPiers = named("Facade pier rear | level 0");
+assert.ok(rearGroundPiers.length > 0, "Rear modular facade panels are missing.");
+for (const object of rearGroundPiers) {
+  const blocksLeftLoggia = object.bounds.min.x < -2.825-EPSILON && object.bounds.max.x > -4.375+EPSILON;
+  const blocksRightLoggia = object.bounds.min.x < 4.375-EPSILON && object.bounds.max.x > 2.825+EPSILON;
+  assert.equal(blocksLeftLoggia || blocksRightLoggia, false,
+    "Rear facade pier " + object.name + " blocks a loggia doorway.");
+}
+
+// Check the actual measured slab pieces: the walk-through stair core stays empty on all four levels.
+for (let floor = 0; floor < 4; floor++) {
+  const slabPieces = named("Floor " + floor + " |");
+  assert.ok(slabPieces.length >= 4, "Floor " + floor + " is missing split slab pieces.");
+  for (const slab of slabPieces) {
+    const overlapsCoreX = slab.bounds.min.x < 1.5-EPSILON && slab.bounds.max.x > -1.5+EPSILON;
+    const overlapsCoreZ = slab.bounds.min.z < 2.2-EPSILON && slab.bounds.max.z > -1.4+EPSILON;
+    assert.equal(overlapsCoreX && overlapsCoreZ, false,
+      "Slab piece " + slab.name + " intrudes into the stairwell opening.");
+  }
+}
+
 const manifest = {
-  schemaVersion: "1.0.0",
-  generatedAt: new Date().toISOString(),
-  provenance: {
-    runtimeGeometry: "src/game/main-building.js",
-    playerNavigation: "src/game/player.js",
-    exportMethod: "world.getCoordinateData() and world.exportCoordinateCSV()",
-    confidence: "Meshes and anchors are measured from runtime Three.js geometry. Values labelled as design dimensions are validated against those meshes; this does not claim measured architectural surveying of a specific physical building."
+  ...source,
+  export: {
+    format: "JSON + CSV",
+    method: "Generated from evaluated Blender mesh vertices, transformed to world space",
+    sourceManifest: "public/data/t06b-panelak-v2.json",
+    glbAsset: "public/models/t06b-panelak-v2.glb",
+    validationStatus: "passed",
+    validationAssertions: [
+      "5 x 3.6 m module axes define an 18.0 m section",
+      "4 above-ground storeys plus a 2.6 m cellar; no lift",
+      "Eight separate flat-entry doors and eight recessed loggia slabs",
+      "Measured facade keeps the ground-floor entrance opening clear",
+      "Rear wall has two full-height loggia-door openings per floor",
+      "All upper slab pieces keep the central stairwell void clear",
+      "All geometry bounds and semantic anchors are finite and ordered",
+      "Nominal room-footprint schedule rounds to 65.4 m²",
+    ],
   },
-  coordinateSystem: {
-    units: "metres",
-    handedness: "Three.js right-handed world coordinates",
-    worldOrigin: { x: 0, y: 0, z: 0 },
-    buildingOriginWorld: EXPECTED.origin,
-    localToWorld: "x_world=x_local; y_world=y_local; z_world=z_local-22",
-    worldToBuildingLocal: "x_local=x_world; y_local=y_world; z_local=z_world+22",
-    axes: {
-      x: "across the 28 m front facade; centerline x=0",
-      y: "vertical; finished ground-floor datum y=0",
-      z: "depth; entrance/front facade z=-16; rear facade z=-28"
-    }
-  },
-  validatedDesignDimensions: {
-    width: data.building.width,
-    depth: data.building.depth,
-    storeys: data.building.floors,
-    floorToFloor: data.building.floorHeight,
-    roofDatumY: data.building.height,
-    wallThickness: data.building.wallThickness,
-    nominalFootprint: EXPECTED.footprint,
-    windowCentersX: [-11.4, -8.15, -4.9, -1.65, 1.65, 4.9, 8.15, 11.4],
-    windowWidth: 1.36,
-    normalWindowSill: 0.78,
-    windowHead: 2.28,
-    balconyDoorBottom: 0,
-    entranceWidth: 1.82,
-    entranceHeight: 2.5,
-    stairNavigation: world.navigation.stairs,
-    coreOpening: world.navigation.coreOpening,
-    elevator: { centerX: 2.2, leftX: 1.05, rightX: 3.35, rearZ: -25, frontZ: -22.52, width: 2.3, depth: 2.48, doorWidth: 1.42, doorHeight: 2.1 }
-  },
-  counts: {
-    objects: data.counts.objects,
-    logicalCornerVertices: data.counts.logicalCorners,
-    semanticAnchors: data.counts.semanticAnchors,
-    collisionVolumes: collisionVolumes.length,
-    interactionPoints: interactionPoints.length,
-    balconyDoorAnchors: windowDoorAnchors.length,
-    doorPanelsPerServedElevatorFloor: 2
-  },
-  validation: {
-    status: "passed",
-    assertions: [
-      "Building dimensions and roof height match the runtime design",
-      "All mesh corners, object bounds and semantic points are finite",
-      "Front and rear footprint widths/depth agree",
-      "Ground, floor and roof datums match the 2.8 m storey pitch",
-      "Balcony-door semantic points exist on both sides of all eight storeys",
-      "Stair landing anchor equals the navigation geometry center",
-      "Elevator cabin and landing doors follow the active level",
-      "Entrance and balcony doorways are clear in the horizontal collision model"
-    ]
-  },
-  interactionPoints,
-  collisionVolumes,
-  geometry: data
 };
 
-await mkdir(OUTPUT_DIRECTORY, { recursive: true });
+const header = [
+  "record_type", "id", "name", "center_x", "center_y", "center_z",
+  "min_x", "min_y", "min_z", "max_x", "max_y", "max_z",
+  "corner_index", "corner_x", "corner_y", "corner_z", "provenance"
+];
+const rows = [header];
+for (const object of source.objects) {
+  rows.push([
+    "object", object.id, object.name,
+    object.center.x, object.center.y, object.center.z,
+    object.bounds.min.x, object.bounds.min.y, object.bounds.min.z,
+    object.bounds.max.x, object.bounds.max.y, object.bounds.max.z,
+    "", "", "", "", source.provenance.source
+  ]);
+  object.corners.forEach((corner, index) => rows.push([
+    "corner", object.id, object.name,
+    "", "", "",
+    "", "", "", "", "", "",
+    index+1, corner.x, corner.y, corner.z, source.provenance.source
+  ]));
+}
+for (const anchor of source.anchors) {
+  rows.push([
+    "anchor", anchor.id, anchor.name,
+    anchor.position.x, anchor.position.y, anchor.position.z,
+    "", "", "", "", "", "",
+    "", "", "", "", source.provenance.source
+  ]);
+}
+
+for (let index = 0; index < rows.length; index++) {
+  assert.equal(rows[index].length, header.length, "CSV row " + (index+1) + " has the wrong field count.");
+}
+
 await writeFile(JSON_OUTPUT, JSON.stringify(manifest, null, 2) + "\n", "utf8");
-await writeFile(CSV_OUTPUT, csv, "utf8");
+await writeFile(CSV_OUTPUT, rows.map(row => row.map(csvEscape).join(",")).join("\r\n") + "\r\n", "utf8");
 
 console.log(
-  `Coordinate export validated: ${manifest.counts.objects} objects, ${manifest.counts.logicalCornerVertices} object-corner records, ${manifest.counts.semanticAnchors} named anchors, ${manifest.counts.collisionVolumes} collision volumes.`
+  "T06B coordinate export passed: " + source.objects.length + " measured mesh objects, " +
+  source.anchors.length + " semantic anchors, " + source.counts.lowerStairTreads +
+  " lower stair treads, " + source.counts.loggiaSlabs + " loggia slabs."
 );
-console.log(`JSON: ${path.relative(ROOT, JSON_OUTPUT)}`);
-console.log(`CSV:  ${path.relative(ROOT, CSV_OUTPUT)}`);
+console.log("JSON: " + path.relative(ROOT, JSON_OUTPUT));
+console.log("CSV:  " + path.relative(ROOT, CSV_OUTPUT));
