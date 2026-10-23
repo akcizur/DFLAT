@@ -3,12 +3,19 @@ export function createPlayerController({ camera, colliders, interactables, state
   const FLOOR_HEIGHT = navigation?.floorHeight ?? 2.8;
   const FLOOR_COUNT = navigation?.floors ?? 8;
   const MAX_FLOOR = FLOOR_COUNT - 1;
-  const coreOpening = navigation?.coreOpening ?? { minX: -3.8, maxX: 3.8, minZ: -26.0, maxZ: -22.35 };
+  const coreOpening = navigation?.coreOpening ?? { minX: -4.0, maxX: 3.8, minZ: -26.0, maxZ: -22.35 };
   const stair = navigation?.stairs ?? {
     lowX: -3.2, highX: -0.8, firstZ: -25.1, secondZ: -23.1, steps: 8,
     stepRise: FLOOR_HEIGHT / 16, stepRun: 0.3, treadDepth: 1.16, treadOverlap: 0.025,
-    landingWidth: 1.28, landingDepth: 3.1,
-    landingCenterX: -0.16, landingCenterZ: -24.1
+    landingWidth: 1.8375, landingDepth: 3.16,
+    landingCenterX: 0.13125, landingCenterZ: -24.1,
+    floorLanding: { minX: -3.93, maxX: -3.2125, minZ: -26.0, maxZ: -22.35 }
+  };
+  const floorLanding = stair.floorLanding ?? {
+    minX: coreOpening.minX + 0.07,
+    maxX: stair.lowX - (stair.treadOverlap ?? 0.025) / 2,
+    minZ: coreOpening.minZ,
+    maxZ: coreOpening.maxZ
   };
   const MAX_STEP_HEIGHT = stair.stepRise + 0.045;
   const WALK_SPEED = 3.6;
@@ -72,8 +79,10 @@ export function createPlayerController({ camera, colliders, interactables, state
     const inUpperFlight = x >= stair.lowX - 0.04 && x <= stair.highX + 0.04 &&
       z >= stair.secondZ - halfTread - 0.04 &&
       z <= upperFrontEdge + 0.04;
+    const inFloorLanding = x >= floorLanding.minX - 0.04 && x <= floorLanding.maxX + 0.04 &&
+      z >= floorLanding.minZ - 0.04 && z <= floorLanding.maxZ + 0.04;
 
-    if (!inLanding && !inLowerFlight && !inUpperFlight) return candidates;
+    if (!inLanding && !inLowerFlight && !inUpperFlight && !inFloorLanding) return candidates;
 
     for (let baseFloor = 0; baseFloor < FLOOR_COUNT - 1; baseFloor++) {
       const baseY = baseFloor * FLOOR_HEIGHT;
@@ -91,6 +100,11 @@ export function createPlayerController({ camera, colliders, interactables, state
         });
       }
       if (inLanding) candidates.push({ height: baseY + FLOOR_HEIGHT / 2, kind: "landing" });
+      // The short transverse platform runs at an exact storey datum between
+      // the two flight ends; model it as real floor support, not a half-storey.
+      if (inFloorLanding && baseFloor > 0) {
+        candidates.push({ height: baseY, kind: "floor-landing" });
+      }
     }
     return candidates;
   }
