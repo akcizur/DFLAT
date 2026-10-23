@@ -177,6 +177,19 @@ test("the storey-level connector platform remains walkable between the two floor
   assert.equal(controller.player.elevation, 2.8, "the connector is a level landing, not a half-storey surface");
 });
 
+
+test("the top-floor connector remains supported at the eighth-floor datum", () => {
+  const { controller, navigation: live } = makeController({
+    x: (navigation.stairs.floorLanding.minX + navigation.stairs.floorLanding.maxX) / 2,
+    z: navigation.stairs.secondZ, elevation: 7 * navigation.floorHeight, floor: 7
+  });
+  const startingElevation = controller.player.elevation;
+  walk(controller, "KeyW", 25);
+  assert.ok(controller.player.z < navigation.stairs.secondZ - 1.0);
+  assert.equal(controller.player.elevation, startingElevation);
+  assert.equal(controller.player.floor, 7);
+});
+
 test("teleport-based floor changes still reset foot elevation and the jump state", () => {
   const { controller, state } = makeController();
   controller.player.jumpHeight = 0.8;
