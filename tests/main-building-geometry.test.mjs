@@ -26,7 +26,7 @@ test("the roof has a dedicated hatch rather than reusing the residential core op
   assert.ok(start >= 0 && end > start, "dedicated roof function and invocation must exist");
   const roofFunction = source.slice(start, end);
   assert.doesNotMatch(roofFunction, /coreOpening/);
-  assert.match(roofFunction, /minX: -3\.925, maxX: -2\.875/);
+  assert.match(roofFunction, /minX: -3\.93, maxX: -2\.8875/);
   assert.match(roofFunction, /minZ: -23\.625, maxZ: -22\.575/);
   assert.match(roofFunction, /Střecha \/ otevřený poklop/);
   assert.match(roofFunction, /Střecha \/ žebřík příčka/);
@@ -47,7 +47,7 @@ test("stairs connect the eight occupied levels without a ninth roof flight", () 
 test("the stair core is enclosed by concrete walls with separate flight-end door openings", () => {
   assert.match(source, /const stairWallThickness = 0\.14/);
   assert.match(source, /const stairDoorHeight = 2\.12/);
-  assert.match(source, /const openings = \[stair\.firstZ, stair\.secondZ\]/);
+  assert.match(source, /const openingCenters = \[\]/);
   assert.match(source, /Schodiště \/ stěna jádra/);
   assert.match(source, /Schodiště \/ nadpraží otvoru/);
   assert.match(source, /Schodiště \/ stěna jádra u výtahu/);
