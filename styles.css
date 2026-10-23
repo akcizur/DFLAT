@@ -78,7 +78,8 @@
       color: var(--dim);
       letter-spacing: .07em;
       min-width: 100px;
-      text-align: right
+      text-align: right;
+      white-space: pre-line
     }
 
     .objective {
