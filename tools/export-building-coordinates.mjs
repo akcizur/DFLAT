@@ -43,7 +43,7 @@ assert.equal(building?.typology, "T06B-inspired five-module section");
 assert.equal(building.moduleCount, 5);
 assert.equal(building.moduleWidth, 3.6);
 assert.equal(building.width, 18);
-assert.equal(building.depth, 11.4);
+assert.equal(building.depth, 12.0);
 assert.equal(building.floors, 4);
 assert.equal(building.basementHeight, 2.6);
 assert.equal(building.floorHeight, 2.8);
@@ -114,11 +114,19 @@ for (const object of frontGroundPiers) {
 const rearGroundPiers = named("Facade pier rear | level 0");
 assert.ok(rearGroundPiers.length > 0, "Rear modular facade panels are missing.");
 for (const object of rearGroundPiers) {
-  const blocksLeftLoggia = object.bounds.min.x < -2.825-EPSILON && object.bounds.max.x > -4.375+EPSILON;
-  const blocksRightLoggia = object.bounds.min.x < 4.375-EPSILON && object.bounds.max.x > 2.825+EPSILON;
+  const blocksLeftLoggia = object.bounds.min.x < -2.0-EPSILON && object.bounds.max.x > -5.2+EPSILON;
+  const blocksRightLoggia = object.bounds.min.x < 5.2-EPSILON && object.bounds.max.x > 2.0+EPSILON;
   assert.equal(blocksLeftLoggia || blocksRightLoggia, false,
-    "Rear facade pier " + object.name + " blocks a loggia doorway.");
+    "Rear facade pier " + object.name + " blocks a 3.2 m loggia doorway.");
 }
+const loggiaSlabs = byName("Loggia | heavy concrete slab");
+assert.equal(loggiaSlabs.length, 8, "Each of four storeys must have a recessed loggia on both flats.");
+for (const slab of loggiaSlabs) {
+  closeTo(slab.dimensions.x, 3.2, "Loggia clear width");
+  closeTo(slab.dimensions.z, 1.25, "Loggia recess depth");
+}
+assert.equal(byName("Loggia door | slid-open glazed panel").length, 16,
+  "Every loggia needs a pair of sliding leaves that preserve the walking route.");
 
 // Check the actual measured slab pieces: the walk-through stair core stays empty on all four levels.
 for (let floor = 0; floor < 4; floor++) {
@@ -126,7 +134,7 @@ for (let floor = 0; floor < 4; floor++) {
   assert.ok(slabPieces.length >= 4, "Floor " + floor + " is missing split slab pieces.");
   for (const slab of slabPieces) {
     const overlapsCoreX = slab.bounds.min.x < 1.5-EPSILON && slab.bounds.max.x > -1.5+EPSILON;
-    const overlapsCoreZ = slab.bounds.min.z < 2.2-EPSILON && slab.bounds.max.z > -1.4+EPSILON;
+    const overlapsCoreZ = slab.bounds.min.z < 2.2-EPSILON && slab.bounds.max.z > -2.2+EPSILON;
     assert.equal(overlapsCoreX && overlapsCoreZ, false,
       "Slab piece " + slab.name + " intrudes into the stairwell opening.");
   }
@@ -145,7 +153,8 @@ const manifest = {
       "4 above-ground storeys plus a 2.6 m cellar; no lift",
       "Eight separate flat-entry doors and eight recessed loggia slabs",
       "Measured facade keeps the ground-floor entrance opening clear",
-      "Rear wall has two full-height loggia-door openings per floor",
+      "Rear wall has two 3.2 m full-height recessed loggia-door openings per floor",
+      "Loggia slabs have the measured 3.2 x 1.25 m footprint",
       "All upper slab pieces keep the central stairwell void clear",
       "All geometry bounds and semantic anchors are finite and ordered",
       "Nominal room-footprint schedule rounds to 65.4 m²",
