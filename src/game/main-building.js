@@ -251,13 +251,17 @@ export function createMainBuildingWorld({ THREE, scene, state, ui, showBuilding 
   const stepRun = (stair.highX - stair.lowX) / stair.steps;
   const treadWidth = stepRun + stair.treadOverlap;
   const landingDepth = Math.abs(stair.firstZ - stair.secondZ) + stair.treadDepth;
-  const landingCenterX = stair.highX + treadWidth / 2 + stair.landingWidth / 2;
   const landingCenterZ = (stair.firstZ + stair.secondZ) / 2;
   const core = {
     minX: -1.8, maxX: 1.8,
     minZ: landingCenterZ - landingDepth / 2,
     maxZ: landingCenterZ + landingDepth / 2
   };
+  // The platform begins exactly at the end of the lower-flight tread and
+  // reaches the inner face of the concrete core wall without an unsupported gap.
+  const landingStartX = stair.highX + stair.treadOverlap / 2;
+  const landingWidth = core.maxX - wallT / 2 - landingStartX;
+  const landingCenterX = landingStartX + landingWidth / 2;
   function navigationCore() { return core; }
 
   // Surroundings evoke a Czech normalisation-era estate, without competing with the hero building.
@@ -396,22 +400,16 @@ export function createMainBuildingWorld({ THREE, scene, state, ui, showBuilding 
           { center: buildingZ - 1.55, width: 0.92, height: 2.05 }
         ]);
     }
-    // Enclosed stairwell: each floor landing has a door to both apartments.
-    // Both concrete core walls open directly onto the shared landing. The old
-    // opening datum (z=-20.85) was outside the landing and created a false wall
-    // across the stair path. Use the exact landing center and keep the wall head
-    // aligned with the underside of the next floor slab.
-    const stairDoor = { center: landingCenterZ, width: 1.20, height: 2.12 };
+    // Both flight ends meet a storey-level corridor. One opening belongs
+    // at the lower flight toe and one at the upper flight arrival; a doorway
+    // at the half-storey landing would lead into a wall with no floor behind it.
+    const stairDoors = [
+      { center: stair.firstZ, width: stair.treadDepth, height: 2.12 },
+      { center: stair.secondZ, width: stair.treadDepth, height: 2.12 }
+    ];
     for (const x of [-1.8, 1.8]) {
       wallZ("Schodiště / stěna jádra", x, rearZ + 0.18, frontZ - 0.18,
-        fy, floorHeight - 0.16, floor, materials.concrete, stairDoor);
-      // Exposed reveals mark the doorway thickness without adding a collision
-      // strip across the actual clear opening.
-      for (const side of [-1, 1]) {
-        box("Schodiště / dveřní ostění", x, fy + stairDoor.height / 2,
-          stairDoor.center + side * (stairDoor.width / 2 + 0.035),
-          wallT, stairDoor.height, 0.07, materials.darkConcrete);
-      }
+        fy, floorHeight - 0.16, floor, materials.concrete, stairDoors);
     }
   }
 
@@ -511,7 +509,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui, showBuilding 
     }
     box("Schodiště / mezipodesta", landingCenterX,
       baseY + floorHeight / 2 - 0.07, landingCenterZ,
-      stair.landingWidth, 0.14, landingDepth, materials.concrete);
+      landingWidth, 0.14, landingDepth, materials.concrete);
     for (const lane of [
       { z: stair.firstZ, x1: stair.lowX, x2: stair.highX, y1: baseY + 0.88, y2: baseY + floorHeight / 2 + 0.88 },
       { z: stair.secondZ, x1: stair.highX, x2: stair.lowX, y1: baseY + floorHeight / 2 + 0.88, y2: baseY + floorHeight + 0.88 }
@@ -696,7 +694,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui, showBuilding 
     floorHeight, floors, coreOpening: { ...core },
     footprint: { minX: leftX, maxX: rightX, minZ: rearZ, maxZ: frontZ, frontZ, rearZ },
     stairs: {
-      ...stair, stepRise, stepRun, treadWidth, landingDepth, landingCenterX, landingCenterZ
+      ...stair, stepRise, stepRun, treadWidth, landingWidth, landingDepth, landingCenterX, landingCenterZ
     }
   };
   return { colliders, interactables, meshesToAnimate, doorAnimations, meshes, navigation, getCoordinateData, exportCoordinateCSV };
