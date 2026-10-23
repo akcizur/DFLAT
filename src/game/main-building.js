@@ -106,9 +106,10 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
       box(name, x, bottom + height / 2, (piece[0] + piece[1]) / 2,
         wallT, height, piece[1] - piece[0], material, { collider: true, floor });
     }
-    if (door && door.height < height) {
-      box(name + " / nadpraží", x, bottom + door.height + (height - door.height) / 2,
-        door.center, wallT, height - door.height, door.width, material);
+    for (const opening of doors) {
+      if (opening.height >= height) continue;
+      box(name + " / nadpraží", x, bottom + opening.height + (height - opening.height) / 2,
+        opening.center, wallT, height - opening.height, opening.width, material);
     }
   }
 
@@ -311,6 +312,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     }
     const rearPartitions = [
       { z: roomBands.outerFrontEnd - roomBands.hallDepth, spans: [[-8.85, -5.55, -7.2], [5.55, 8.85, 7.2]] },
+      { z: rearZ + roomBands.bedDepth, spans: [[-8.85, -5.55, -7.2], [5.55, 8.85, 7.2]] },
       { z: roomBands.middleFrontEnd - roomBands.bathDepth, spans: [[-5.25, -1.95, -3.6], [1.95, 5.25, 3.6]] }
     ];
     for (const row of rearPartitions) {
