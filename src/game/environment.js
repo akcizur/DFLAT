@@ -3,10 +3,10 @@ const WEATHER_HOLD_SECONDS = 55;
 const WEATHER_BLEND_SECONDS = 9;
 
 const WEATHER = Object.freeze([
-  { key: "clear", label: "JASNO", cloud: 0.05, rain: 0, fog: 0.0016, ambient: 1.12, sun: 1.55 },
-  { key: "overcast", label: "ZATAŽENO", cloud: 0.88, rain: 0.02, fog: 0.0038, ambient: 0.90, sun: 0.68 },
-  { key: "rain", label: "DÉŠŤ", cloud: 1, rain: 0.92, fog: 0.0068, ambient: 0.72, sun: 0.34 },
-  { key: "mist", label: "MLHA", cloud: 0.72, rain: 0.04, fog: 0.012, ambient: 0.78, sun: 0.42 }
+  { key: "clear", label: "JASNO", cloud: 0.05, rain: 0, fog: 0.0016, ambient: 1.12, sun: 1.55, wind: 0.45 },
+  { key: "overcast", label: "ZATAŽENO", cloud: 0.88, rain: 0.02, fog: 0.0038, ambient: 0.90, sun: 0.68, wind: 0.62 },
+  { key: "rain", label: "DÉŠŤ", cloud: 1, rain: 0.92, fog: 0.0068, ambient: 0.72, sun: 0.34, wind: 1.1 },
+  { key: "mist", label: "MLHA", cloud: 0.72, rain: 0.04, fog: 0.012, ambient: 0.78, sun: 0.42, wind: 0.25 }
 ]);
 
 const clamp01 = value => Math.max(0, Math.min(1, value));
@@ -51,7 +51,7 @@ export function sampleEnvironment(elapsedSeconds) {
   const previous = WEATHER[(weatherStep + WEATHER.length - 1) % WEATHER.length];
   const transition = weatherStep === 0 ? 1 : smoothstep((elapsed % WEATHER_HOLD_SECONDS) / WEATHER_BLEND_SECONDS);
   const weather = {};
-  for (const key of ["cloud", "rain", "fog", "ambient", "sun"]) {
+  for (const key of ["cloud", "rain", "fog", "ambient", "sun", "wind"]) {
     weather[key] = mix(previous[key], current[key], transition);
   }
 
@@ -75,7 +75,7 @@ export function sampleEnvironment(elapsedSeconds) {
     ambientIntensity: mix(0.16, weather.ambient, daylight),
     sunIntensity: mix(0.07, weather.sun, Math.pow(daylight, 0.72)),
     skyBrightness: mix(0.20, 1 - weather.cloud * 0.28, daylight),
-    wind: current.key === "rain" ? 1.1 : current.key === "mist" ? 0.25 : 0.45
+    wind: weather.wind
   };
 }
 
