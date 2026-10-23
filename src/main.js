@@ -12,9 +12,11 @@ const loadingScreen = document.getElementById("loadingScreen");
 let firstSceneFrame = false;
 let panoramaResolved = false;
 let startupComplete = false;
+let highestLoadingProgress = 8;
 
 function setLoadingProgress(value, title, detail, phase = title) {
-  const progress = Math.max(0, Math.min(100, Math.round(value)));
+  const progress = Math.max(highestLoadingProgress, Math.min(100, Math.max(0, Math.round(value))));
+  highestLoadingProgress = progress;
   const titleNode = document.getElementById("loadingTitle");
   const detailNode = document.getElementById("loadingDetail");
   const bar = document.getElementById("loadingProgressBar");
