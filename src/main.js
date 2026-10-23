@@ -275,7 +275,7 @@ function updateSimulation(deltaSeconds, nowMs) {
     cloudNightTint + 0.045 - environment.precipitation * 0.07
   );
   cloudMaterial.opacity = 0.025 + environment.cloudiness * 0.38;
-  const cloudDrift = nowMs * 0.00025 * environment.wind;
+  const cloudDrift = Math.sin(nowMs * 0.000035) * 24 * environment.wind;
   for (const cloud of cloudLayers) {
     const phase = cloud.userData.phase;
     cloud.position.set(
