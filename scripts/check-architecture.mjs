@@ -40,6 +40,8 @@ for (const relativePath of required) {
 }
 
 const html = await readFile(path.join(root, "index.html"), "utf8");
+if (!html.includes('id="loadingScreen"') || !html.includes('id="loadingProgressBar"')) fail("a visible loading screen with progress must be present");
+if (!html.includes('id="startButton"')) fail("the centered menu must expose a Start action");
 if (!/href="\.\/styles\.css(?:\?v=\d+)?"/.test(html)) fail("index.html must load styles.css");
 if (!/src="\.\/src\/main\.js\?v=\d+"/.test(html)) fail("index.html must load src/main.js with a cache-busting version");
 if (!html.includes('type="importmap"') || !html.includes('"three": "./vendor/three.module.min.js"')) {
@@ -55,6 +57,7 @@ if (packageJson.dependencies?.three !== "0.169.0") fail("Three.js must be instal
 if (packageJson.devDependencies?.vite !== "6.4.5") fail("Vite must be installed as a local dev dependency at version 6.4.5");
 
 const mainSource = await readFile(path.join(root, "src/main.js"), "utf8");
+if (!mainSource.includes("function finishStartupWhenReady()") || !mainSource.includes("state.ready = true")) fail("Start must wait for the scene and required startup resources to be ready");
 if (/from\s+["']https?:\/\//i.test(mainSource)) fail("runtime modules must be bundled locally; remove CDN imports");
 if (!mainSource.includes("createMainBuildingWorld({ THREE, scene, state, ui })")) fail("gameplay must boot into the main-building outdoor map and interior interactions");
 if (!mainSource.includes("const SIMULATION_HZ = 60")) fail("game simulation must target 60 Hz");
@@ -73,6 +76,7 @@ if (/body\s*\{[^}]*image-rendering:\s*pixelated/s.test(baseStylesSource)) fail("
 if (!/canvas\s*\{[^}]*image-rendering:\s*pixelated/s.test(baseStylesSource)) fail("scene canvas must use nearest-neighbour pixel scaling");
 if (baseStylesSource.includes("#pixelDisplayCanvas") || cinematicStylesSource.includes("#pixelDisplayCanvas")) fail("obsolete effect presentation canvas styles remain");
 const inputSource = await readFile(path.join(root, "src/game/input.js"), "utf8");
+if (!inputSource.includes("state.started || !state.ready")) fail("the Start action must not run before the game is ready");
 if (!inputSource.includes('window.addEventListener("keydown", onKeyDown, { capture: true })')) fail("keyboard input must be handled during the capture phase");
 if (!inputSource.includes('} else clearSource("gamepad");')) fail("gamepad polling must not clear keyboard/touch movement input when no gamepad is connected");
 if (!inputSource.includes('ui.showToast("Ovladač odpojen.");\n    clearSource("gamepad");')) fail("disconnecting a gamepad must only clear gamepad movement");
