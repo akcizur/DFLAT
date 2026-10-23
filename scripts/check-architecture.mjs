@@ -65,6 +65,7 @@ if (/from\s+["']https?:\/\//i.test(mainSource)) fail("runtime modules must be bu
 if (!mainSource.includes("createMainBuildingWorld({ THREE, scene, state, ui, siteOnly: true })")) fail("the runtime must initialise the outdoor site without constructing buildings");
 if (mainSource.includes("GLTFLoader") || mainSource.includes("models/t06b-panelak-v2.glb")) fail("the runtime must not load any building model");
 if (!mainSource.includes("state.allBuildingsRemoved = true")) fail("the live scene must explicitly confirm the no-buildings mode");
+if (mainSource.includes("TextureLoader") || mainSource.includes("bg-scene-hq.png")) fail("the live background must not display a city panorama containing buildings");
 if (!mainSource.includes("const SIMULATION_HZ = 60")) fail("game simulation must target 60 Hz");
 if (!mainSource.includes("sampleEnvironment((nowMs - clockStart) / 1000)") || !mainSource.includes("applyEnvironment({ THREE, scene, hemisphere: globalHemisphere, sun: globalSun, panorama, environment })")) fail("day/night and weather must update the live scene");
 if (!mainSource.includes("const rainVisible = environment.precipitation > 0.025")) fail("rain must be enabled on the building-free outdoor site");
