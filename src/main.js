@@ -280,11 +280,8 @@ function updateSimulation(deltaSeconds, nowMs) {
 
   const playerX = controller.player.x;
   const playerZ = controller.player.z;
-  const outsideFootprint = playerX < -9.1 || playerX > 9.1 || playerZ > -15.9 || playerZ < -28.1;
-  const onOpenLoggia = [-3.6, 3.6].some(x =>
-    Math.abs(playerX - x) < 1.68 && playerZ < -26.65 && playerZ > -28.18
-  );
-  const rainVisible = environment.precipitation > 0.025 && (outsideFootprint || onOpenLoggia);
+  // With all structures removed, the entire walkable site is exposed to rain.
+  const rainVisible = environment.precipitation > 0.025;
   rainMesh.visible = rainVisible;
   rainMaterial.opacity = environment.precipitation * 0.52;
   rainMesh.position.set(playerX, controller.player.elevation, playerZ);
