@@ -110,7 +110,7 @@ box("Concrete entrance apron", (0, -BASEMENT_HEIGHT+0.035, FRONT_Z-2.2), (7.5, 0
 for floor in range(-1, FLOORS):
     base_y = -BASEMENT_HEIGHT if floor == -1 else floor * FLOOR_HEIGHT
     mat = stair_concrete if floor == -1 else panel
-    if floor <= 0:
+    if floor < 0:
         box(f"Floor {floor} | structural slab", (0, base_y + SLAB/2, 0),
             (WIDTH, SLAB, DEPTH), mat)
     else:
@@ -236,6 +236,16 @@ for floor in range(FLOORS):
             box("Loggia railing | vertical bar", (px, y+0.59, REAR_Z-1.48), (0.045, 0.90, 0.045), railing)
 
 # Central switch-back stair: two runs and an intermediate landing per storey.
+# Basement-to-ground stair connects the cellar storage level to the entrance floor.
+for step in range(12):
+    rise = (step+1)*(BASEMENT_HEIGHT/12)
+    x = -1.20+(step+0.5)*0.20
+    box("Cellar stair | tread", (x, -BASEMENT_HEIGHT+rise-0.085, -0.55),
+        (0.23, 0.17, 1.20), stair_concrete)
+for side in (-1, 1):
+    box("Cellar stair | handrail", (side*1.30, -1.30, -0.55),
+        (2.35, 0.055, 0.055), metal)
+
 for floor in range(FLOORS-1):
     y = floor*FLOOR_HEIGHT
     for step in range(8):
@@ -266,16 +276,30 @@ for floor in range(FLOORS):
             box(f"Flat {side} | {label} | level {floor} finish", (cx, y+0.035, cz),
                 (sx, 0.05, sz), mat)
         # Room dividers; door gaps are left around the central hall by segmented walls.
-        for x in (side*5.4,):
-            box("Apartment partition | module boundary", (x, y+1.25, 0.0),
-                (WALL, 2.5, DEPTH-0.3), cream)
+        # The outer and inner modules are joined by a door into the central hall.
+        hall_z0, hall_z1 = -1.72, 0.58
+        for z0, z1 in ((FRONT_Z+0.14, hall_z0), (hall_z1, REAR_Z-0.14)):
+            if z1 > z0:
+                box("Apartment partition | module boundary", (side*5.4, y+1.25, (z0+z1)/2),
+                    (WALL, 2.5, z1-z0), cream)
+        box("Apartment partition | boundary door lintel", (side*5.4, y+2.20, (hall_z0+hall_z1)/2),
+            (WALL, 0.60, hall_z1-hall_z0), cream)
+        box("Apartment hall | lino", (outer, y+0.035, -0.57), (3.42, 0.05, 2.25), lino)
+        # Cross walls include door openings aligned toward the hall side of the flat.
         for z in (-1.95, 0.80):
-            box("Apartment partition | cross wall", (inner, y+1.25, z),
-                (3.42, 2.5, WALL), cream)
-        # B7-style service core: simple cream/green bathroom and separate WC blocks.
-        box("Flat | B7 bathroom core", (inner, y+0.08, -0.42), (2.10, 0.10, 2.20), cream)
-        box("Flat | B7 bath enclosure", (inner+side*0.42, y+1.0, -0.65), (0.78, 1.0, 1.55), frame)
-        box("Flat | B7 WC enclosure", (inner-side*0.50, y+1.0, -0.65), (0.72, 1.0, 1.1), cream)
+            doorway_x = inner-side*1.12
+            for x0, x1 in sorted(((inner-1.71, doorway_x-0.48), (doorway_x+0.48, inner+1.71))):
+                if x1 > x0:
+                    box("Apartment partition | room cross wall", ((x0+x1)/2, y+1.25, z),
+                        (x1-x0, 2.5, WALL), cream)
+            box("Apartment partition | room door lintel", (doorway_x, y+2.20, z),
+                (0.96, 0.60, WALL), cream)
+        # B7-style service core: bath and WC occupy distinct, non-overlapping rooms.
+        box("Flat | B7 bathroom floor", (inner, y+0.08, -0.42), (2.05, 0.10, 2.05), cream)
+        box("Flat | bathtub", (inner+side*0.40, y+0.45, -0.65), (0.72, 0.18, 1.50), frame)
+        box("Flat | toilet pan", (inner-side*0.52, y+0.28, -0.28), (0.42, 0.42, 0.62), cream)
+        # Two separate apartment entry leaves face the communal central stair module.
+        box("Flat entrance | door leaf", (side*1.84, y+1.05, -0.57), (0.06, 2.10, 0.88), door)
 
 # End panels with restrained vertical seams and downpipes.
 for x in (-WIDTH/2, WIDTH/2):
