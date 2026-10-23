@@ -66,9 +66,13 @@ export function createPlayerController({ camera, colliders, interactables, state
     const inLowerFlight = x >= stair.lowX - 0.04 && x <= stair.highX + 0.04 &&
       z >= stair.firstZ - halfTread - 0.04 &&
       z <= stair.firstZ + halfTread + 0.04;
-    // Extend the uppermost tread's navigation envelope to the slab edge so the
-    // player capsule can step cleanly from the last tread onto the upper floor.
-    const upperFrontEdge = Math.max(stair.secondZ + halfTread, coreOpening.maxZ);
+    // Extend the uppermost tread envelope far enough to overlap the corridor's
+    // supported floor. The capsule solver uses a safety margin around the core;
+    // ending exactly at the slab edge otherwise traps the player at that boundary.
+    const upperFrontEdge = Math.max(
+      stair.secondZ + halfTread,
+      coreOpening.maxZ + player.radius + 0.12
+    );
     const inUpperFlight = x >= stair.lowX - 0.04 && x <= stair.highX + 0.04 &&
       z >= stair.secondZ - halfTread - 0.04 &&
       z <= upperFrontEdge + 0.04;
