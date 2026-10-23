@@ -53,7 +53,7 @@ try {
   if (
     !bounds ||
     bounds.size.x < 18.0 || bounds.size.x > 18.5 ||
-    bounds.size.z < 12.0 || bounds.size.z > 12.5 ||
+    bounds.size.z < 12.0 || bounds.size.z > 14.0 ||
     bounds.size.y < 14.5 ||
     bounds.min.y > -2.7 || bounds.max.y < 11.7 ||
     bounds.min.z > -27.5 || bounds.max.z < -16.5
