@@ -244,24 +244,23 @@ export function createMainBuildingWorld({ THREE, scene, state, ui, showBuilding 
     }
   }
 
+  // U-shaped two-flight stair: both flights run along Z, side by side.
+  // Each flight rises half a storey; a full-width mid-landing joins them at the far end.
   const stair = {
-    lowX: -1.35, highX: 0.45, firstZ: -25.3, secondZ: -21.8, steps: 8,
-    treadDepth: 1.16, treadOverlap: 0.025, landingWidth: 1.1
+    lowX: -0.72, highX: 0.72, firstZ: -25.45, secondZ: -21.95, steps: 8,
+    treadDepth: 0.46, treadOverlap: 0.025, landingWidth: 2.9
   };
-  const stepRun = (stair.highX - stair.lowX) / stair.steps;
-  const treadWidth = stepRun + stair.treadOverlap;
-  const landingDepth = Math.abs(stair.firstZ - stair.secondZ) + stair.treadDepth;
-  const landingCenterZ = (stair.firstZ + stair.secondZ) / 2;
+  const stepRun = Math.abs(stair.secondZ - stair.firstZ) / stair.steps;
+  const treadWidth = 1.12;
+  const landingDepth = 1.18;
+  const landingCenterZ = stair.secondZ + landingDepth / 2;
   const core = {
     minX: -1.8, maxX: 1.8,
-    minZ: landingCenterZ - landingDepth / 2,
-    maxZ: landingCenterZ + landingDepth / 2
+    minZ: stair.firstZ - landingDepth / 2,
+    maxZ: stair.secondZ + landingDepth / 2
   };
-  // The platform begins exactly at the end of the lower-flight tread and
-  // reaches the inner face of the concrete core wall without an unsupported gap.
-  const landingStartX = stair.highX + stair.treadOverlap / 2;
-  const landingWidth = core.maxX - wallT / 2 - landingStartX;
-  const landingCenterX = landingStartX + landingWidth / 2;
+  const landingWidth = core.maxX - wallT;
+  const landingCenterX = (core.minX + core.maxX) / 2;
   function navigationCore() { return core; }
 
   // Surroundings evoke a Czech normalisation-era estate, without competing with the hero building.
@@ -496,33 +495,40 @@ export function createMainBuildingWorld({ THREE, scene, state, ui, showBuilding 
   for (let floor = 0; floor < floors - 1; floor++) {
     const baseY = floor * floorHeight;
     for (let i = 0; i < stair.steps; i++) {
-      const xA = stair.lowX + (i + 0.5) * stepRun;
+      const t = (i + 0.5) / stair.steps;
+      const zA = stair.firstZ + (stair.secondZ - stair.firstZ) * t;
       const yA = baseY + (i + 1) * stepRise - 0.09;
-      box("Schodiště / dolní rameno / stupeň", xA, yA, stair.firstZ,
-        stepRun + stair.treadOverlap, 0.18, stair.treadDepth,
+      box("Schodiště / dolní rameno / stupeň", stair.lowX, yA, zA,
+        treadWidth, 0.18, stepRun + stair.treadOverlap,
         i % 2 ? materials.concrete : materials.facade);
-      const xB = stair.highX - (i + 0.5) * stepRun;
+      const zB = stair.secondZ - (stair.secondZ - stair.firstZ) * t;
       const yB = baseY + floorHeight / 2 + (i + 1) * stepRise - 0.09;
-      box("Schodiště / horní rameno / stupeň", xB, yB, stair.secondZ,
-        stepRun + stair.treadOverlap, 0.18, stair.treadDepth,
+      box("Schodiště / horní rameno / stupeň", stair.highX, yB, zB,
+        treadWidth, 0.18, stepRun + stair.treadOverlap,
         i % 2 ? materials.concrete : materials.facade);
     }
+    // The half-storey landing spans both flights at the turn, not the entire stairwell length.
     box("Schodiště / mezipodesta", landingCenterX,
       baseY + floorHeight / 2 - 0.07, landingCenterZ,
       landingWidth, 0.14, landingDepth, materials.concrete);
     for (const lane of [
-      { z: stair.firstZ, x1: stair.lowX, x2: stair.highX, y1: baseY + 0.88, y2: baseY + floorHeight / 2 + 0.88 },
-      { z: stair.secondZ, x1: stair.highX, x2: stair.lowX, y1: baseY + floorHeight / 2 + 0.88, y2: baseY + floorHeight + 0.88 }
+      { x: stair.lowX, z1: stair.firstZ, z2: stair.secondZ, y1: baseY + 0.88, y2: baseY + floorHeight / 2 + 0.88 },
+      { x: stair.highX, z1: stair.secondZ, z2: stair.firstZ, y1: baseY + floorHeight / 2 + 0.88, y2: baseY + floorHeight + 0.88 }
     ]) {
-      for (const offset of [-0.52, 0.52]) {
-        railBeam("Schodiště / šikmé kovové madlo", lane.x1, lane.y1, lane.z, lane.x2, lane.y2, lane.z, offset);
+      for (const offset of [-0.54, 0.54]) {
+        const midZ = (lane.z1 + lane.z2) / 2;
+        const midY = (lane.y1 + lane.y2) / 2;
+        const length = Math.hypot(lane.z2 - lane.z1, lane.y2 - lane.y1);
+        const rail = box("Schodiště / šikmé kovové madlo", lane.x + offset, midY, midZ,
+          0.045, length, 0.045, materials.oxidizedMetal);
+        rail.rotation.x = Math.atan2(lane.y2 - lane.y1, lane.z2 - lane.z1);
       }
       for (let i = 0; i <= stair.steps; i++) {
         const t = i / stair.steps;
-        const x = lane.x1 + (lane.x2 - lane.x1) * t;
+        const z = lane.z1 + (lane.z2 - lane.z1) * t;
         const y = lane.y1 + (lane.y2 - lane.y1) * t - 0.40;
-        for (const offset of [-0.52, 0.52]) {
-          box("Schodiště / svislá výplň zábradlí", x, y, lane.z + offset, 0.035, 0.80, 0.035, materials.oxidizedMetal);
+        for (const offset of [-0.54, 0.54]) {
+          box("Schodiště / svislá výplň zábradlí", lane.x + offset, y, z, 0.035, 0.80, 0.035, materials.oxidizedMetal);
         }
       }
     }
