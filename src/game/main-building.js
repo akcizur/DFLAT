@@ -628,6 +628,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
 
   const navigation = {
     floorHeight, floors, coreOpening: { ...core },
+    footprint: { minX: leftX, maxX: rightX, minZ: rearZ, maxZ: frontZ, frontZ, rearZ },
     stairs: {
       ...stair, stepRise, stepRun, landingDepth, landingCenterX: stair.highX + stair.landingWidth / 2, landingCenterZ
     }
