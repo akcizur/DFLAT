@@ -26,9 +26,9 @@ bun run preview
 
 - **Open map:** terrain, road, pedestrian paths and a blank sky. All buildings and the city panorama are disabled in the running scene.
 - **Stable ground surfaces:** ground height is offset from the terrain, and the design model's loggia slabs are cut out of adjoining floor slabs to prevent coplanar overlap and z-fighting.
-- **Day/night:** one in-game day lasts 240 seconds. Sky tint, hemisphere light, sunlight, fog and the HUD clock update continuously.
-- **Weather:** clear, overcast, rain and mist states blend across nine seconds; cloudiness, rain intensity, fog, lighting and wind are interpolated rather than snapping at state changes.
-- **Rain:** localised pixel-style raindrop lines become visible during rain and move with the player across the uncovered map.
+- **Day/night:** one in-game day lasts 240 seconds. The sun passes below the horizon at night; sky tint, hemisphere light, direct sunlight, fog and the HUD clock update continuously.
+- **Weather:** clear, overcast, rain and mist blend across nine seconds. A moving low-poly cloud layer changes opacity and tint with cloud cover, while fog, direct/ambient light, rain intensity and wind transition smoothly.
+- **Rain:** pixel-style raindrop lines appear during rain and move with the player across the completely uncovered map.
 - **Pixel-grid WebGL:** the scene renders into a compact canvas and scales with nearest-neighbour sampling. Antialiasing is disabled.
 - **Direct rendering:** no screen-wide CRT, VHS, PS1, blur or post-processing effects.
 - **Stable simulation:** movement updates target 60 Hz and rendering is capped at 60 FPS.
