@@ -109,9 +109,23 @@ box("Concrete entrance apron", (0, -BASEMENT_HEIGHT+0.035, FRONT_Z-2.2), (7.5, 0
 # Four levels over a cellar. The cellar is visible as a modelled foundation band.
 for floor in range(-1, FLOORS):
     base_y = -BASEMENT_HEIGHT if floor == -1 else floor * FLOOR_HEIGHT
-    height = BASEMENT_HEIGHT if floor == -1 else FLOOR_HEIGHT
-    box(f"Floor {floor} | structural slab", (0, base_y + SLAB/2, 0),
-        (WIDTH, SLAB, DEPTH), stair_concrete if floor == -1 else panel)
+    mat = stair_concrete if floor == -1 else panel
+    if floor <= 0:
+        box(f"Floor {floor} | structural slab", (0, base_y + SLAB/2, 0),
+            (WIDTH, SLAB, DEPTH), mat)
+    else:
+        # Keep the central stair opening truly open through the upper slabs.
+        core_left, core_right = -1.5, 1.5
+        core_front, core_rear = -1.4, 2.2
+        side_width = WIDTH/2-core_right
+        box(f"Floor {floor} | left slab wing", ((-WIDTH/2+core_left)/2, base_y+SLAB/2, 0),
+            (side_width, SLAB, DEPTH), mat)
+        box(f"Floor {floor} | right slab wing", ((core_right+WIDTH/2)/2, base_y+SLAB/2, 0),
+            (side_width, SLAB, DEPTH), mat)
+        box(f"Floor {floor} | slab before stair core", (0, base_y+SLAB/2, (FRONT_Z+core_front)/2),
+            (core_right-core_left, SLAB, core_front-FRONT_Z), mat)
+        box(f"Floor {floor} | slab after stair core", (0, base_y+SLAB/2, (core_rear+REAR_Z)/2),
+            (core_right-core_left, SLAB, REAR_Z-core_rear), mat)
 
 # Foundation plinth and cellar wall.
 box("Continuous cellar plinth | weather staining", (0, -BASEMENT_HEIGHT/2, FRONT_Z-0.03),
@@ -126,44 +140,56 @@ for x in (-WIDTH/2+0.14, WIDTH/2-0.14):
 # glass floating over a continuous solid wall.
 def facade_floor(floor, z, south=False):
     y0 = floor * FLOOR_HEIGHT
-    centers = [-7.2, -3.6, 3.6, 7.2]
-    for cx in centers:
+    openings = []
+    for cx in (-7.2, -3.6, 3.6, 7.2):
         is_loggia_door = south and abs(abs(cx)-3.6) < 0.01
-        opening_w = 1.55 if is_loggia_door else WINDOW_W
-        sill = 0.05 if is_loggia_door else WINDOW_SILL
-        opening_left = cx-opening_w/2
-        opening_right = cx+opening_w/2
-        pier_left = -WIDTH/2
-        for edge in [opening_left, opening_right]:
-            if edge > pier_left:
-                box(f"Facade pier | level {floor}", ((pier_left+edge)/2, y0+FLOOR_HEIGHT/2, z),
-                    (edge-pier_left, FLOOR_HEIGHT, WALL), panel if floor % 2 else concrete)
-            pier_left = edge
-        if pier_left < WIDTH/2:
-            box(f"Facade pier | level {floor}", ((pier_left+WIDTH/2)/2, y0+FLOOR_HEIGHT/2, z),
-                (WIDTH/2-pier_left, FLOOR_HEIGHT, WALL), panel)
+        openings.append({
+            "x": cx, "width": 1.55 if is_loggia_door else WINDOW_W,
+            "sill": 0.05 if is_loggia_door else WINDOW_SILL,
+            "head": WINDOW_HEAD, "kind": "loggia" if is_loggia_door else "window"
+        })
+    if not south and floor == 0:
+        openings.append({"x": 0.0, "width": 1.8, "sill": 0.0, "head": 2.28, "kind": "entrance"})
+    if not south and floor > 0:
+        openings.append({"x": 0.0, "width": 2.0, "sill": 0.30, "head": 2.45, "kind": "luxfer"})
+    openings.sort(key=lambda item: item["x"]-item["width"]/2)
+
+    cursor = -WIDTH/2
+    for opening in openings:
+        cx, opening_w = opening["x"], opening["width"]
+        left, right = cx-opening_w/2, cx+opening_w/2
+        sill, head = opening["sill"], opening["head"]
+        kind = opening["kind"]
+        if left > cursor:
+            box(f"Facade pier | level {floor}", ((cursor+left)/2, y0+FLOOR_HEIGHT/2, z),
+                (left-cursor, FLOOR_HEIGHT, WALL), panel if floor % 2 else concrete)
         if sill > 0:
             box("Window sill / spandrel", (cx, y0+sill/2, z),
                 (opening_w, sill, WALL), concrete)
-        box("Window lintel", (cx, y0+(WINDOW_HEAD+FLOOR_HEIGHT)/2, z),
-            (opening_w, FLOOR_HEIGHT-WINDOW_HEAD, WALL), panel)
-        glazing_height = WINDOW_HEAD-sill
-        glass_material = glass_warm if (floor*7 + int(abs(cx)*10)) % 9 == 0 else glass
-        if is_loggia_door:
-            # A low threshold, not a conventional sill, makes a walkable loggia door.
-            glazing_height = WINDOW_HEAD-sill
-        box("Window / glazed unit", (cx, y0+sill+glazing_height/2, z-0.025),
-            (opening_w-0.12, glazing_height-0.09, 0.055), glass_material)
-        for side in (-1, 1):
-            box("Window / vertical frame", (cx+side*(opening_w/2-0.035), y0+(sill+WINDOW_HEAD)/2, z-0.065),
-                (0.07, WINDOW_HEAD-sill, 0.08), frame)
-        box("Window / head frame", (cx, y0+WINDOW_HEAD-0.035, z-0.065),
-            (opening_w, 0.07, 0.08), frame)
-        if sill > 0:
-            box("Window / sill frame", (cx, y0+sill+0.035, z-0.065),
+        if head < FLOOR_HEIGHT:
+            box("Window lintel", (cx, y0+(head+FLOOR_HEIGHT)/2, z),
+                (opening_w, FLOOR_HEIGHT-head, WALL), panel)
+        glazing_height = head-sill
+        if kind != "entrance":
+            glass_material = lux if kind == "luxfer" else (
+                glass_warm if (floor*7 + int(abs(cx)*10)) % 9 == 0 else glass
+            )
+            box("Window / glazed unit", (cx, y0+sill+glazing_height/2, z-0.025),
+                (opening_w-0.12, glazing_height-0.09, 0.055), glass_material)
+            for side in (-1, 1):
+                box("Window / vertical frame", (cx+side*(opening_w/2-0.035), y0+(sill+head)/2, z-0.065),
+                    (0.07, glazing_height, 0.08), frame)
+            box("Window / head frame", (cx, y0+head-0.035, z-0.065),
                 (opening_w, 0.07, 0.08), frame)
-        box("Window / central mullion", (cx, y0+(sill+WINDOW_HEAD)/2, z-0.075),
-            (0.045, WINDOW_HEAD-sill-0.08, 0.035), metal)
+            if sill > 0:
+                box("Window / sill frame", (cx, y0+sill+0.035, z-0.065),
+                    (opening_w, 0.07, 0.08), frame)
+            box("Window / central mullion", (cx, y0+(sill+head)/2, z-0.075),
+                (0.045, glazing_height-0.08, 0.035), metal)
+        cursor = right
+    if cursor < WIDTH/2:
+        box(f"Facade pier | level {floor}", ((cursor+WIDTH/2)/2, y0+FLOOR_HEIGHT/2, z),
+            (WIDTH/2-cursor, FLOOR_HEIGHT, WALL), panel)
 
 for floor in range(FLOORS):
     facade_floor(floor, FRONT_Z, south=False)
@@ -181,10 +207,10 @@ for floor in range(1, FLOORS):
     for row in range(5):
         for col in range(5):
             box("Staircase | luxfer glass block",
-                ((col-2)*0.31, y-0.25+row*0.31, FRONT_Z-0.19),
-                (0.285, 0.285, 0.055), lux)
+                ((col-2)*0.34, y+0.45+row*0.34, FRONT_Z-0.19),
+                (0.305, 0.305, 0.055), lux)
     box("Staircase | opaque landing band", (0, y+0.15, FRONT_Z-0.17),
-        (3.6, 0.30, 0.07), panel)
+        (2.0, 0.30, 0.07), panel)
 
 # Ground entrance and the two flats' access doors, with an old intercom and nameplate.
 box("Main entrance | lintel", (0, 2.46, FRONT_Z-0.18), (1.8, 0.20, 0.16), dark_concrete)
@@ -201,8 +227,8 @@ for floor in range(FLOORS):
     y = floor*FLOOR_HEIGHT
     for cx in (-3.6, 3.6):
         box("Loggia | heavy concrete slab", (cx, y-0.025, REAR_Z-0.75), (2.55, 0.18, 1.55), panel, 0.015)
-        box("Loggia | side reveal left", (cx-1.22, y+0.90, REAR_Z-0.10), (0.10, 1.70, 1.3), concrete)
-        box("Loggia | side reveal right", (cx+1.22, y+0.90, REAR_Z-0.10), (0.10, 1.70, 1.3), concrete)
+        box("Loggia | side reveal left", (cx-1.22, y+0.90, REAR_Z-0.72), (0.10, 1.70, 1.35), concrete)
+        box("Loggia | side reveal right", (cx+1.22, y+0.90, REAR_Z-0.72), (0.10, 1.70, 1.35), concrete)
         box("Loggia railing | upper rail", (cx, y+1.03, REAR_Z-1.48), (2.42, 0.065, 0.065), railing)
         box("Loggia railing | lower rail", (cx, y+0.15, REAR_Z-1.48), (2.42, 0.05, 0.05), railing)
         for post in range(7):
