@@ -33,7 +33,7 @@ try {
     if (message.type() === "error") consoleErrors.push(message.text());
   });
 
-  await page.route("**/assets/bg-scene-hq.png", async route => {
+  await page.route("**/assets/bg-scene-hq*", async route => {
     await new Promise(resolve => setTimeout(resolve, 1200));
     await route.continue();
   });
