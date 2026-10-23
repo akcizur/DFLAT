@@ -176,7 +176,6 @@ export function createPlayerController({ camera, colliders, interactables, state
     const desiredMoving = state.started && !state.paused && bodySpeed > 0.06;
     const blend = 1 - Math.exp(-deltaTime * 18);
     const settle = 1 - Math.exp(-deltaTime * 5.5);
-    const runningAmount = isRunning && desiredMoving ? 1 : 0;
 
     walkBlend += ((desiredMoving ? 1 : 0) - walkBlend) *
       (1 - Math.exp(-deltaTime * 3.2));
