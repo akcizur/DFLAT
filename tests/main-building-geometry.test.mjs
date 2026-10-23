@@ -69,26 +69,26 @@ test("mesh collection and exports include transformed corners, world bounds, and
 });
 
 test("balcony openings are full-height passages with matching collision gaps", () => {
-  assert.match(source, /kind: isBalconyDoor \\? "balcony-door" : "window"/);
-  assert.match(source, /const openingBottom = isBalconyDoor \\? 0 : windowBottom/);
+  assert.match(source, /kind: isBalconyDoor \? "balcony-door" : "window"/);
+  assert.match(source, /const openingBottom = isBalconyDoor \? 0 : windowBottom/);
   assert.match(source, /Balkonové dveře \/ otevřené levé křídlo/);
   assert.match(source, /Balkonové dveře \/ otevřené pravé křídlo/);
-  assert.match(source, /const frontPassages = \\[/);
-  assert.match(source, /const slabY = floorY - 0\\.08/);
-  assert.match(source, /floorY \\+ 0\\.61/);
+  assert.match(source, /const frontPassages = \[/);
+  assert.match(source, /const slabY = floorY - 0\.08/);
+  assert.match(source, /floorY \+ 0\.61/);
 });
 
 test("elevator cabin meshes and landing doors follow the active floor", () => {
-  assert.match(source, /const liftCarMeshes = \\[\\]/);
+  assert.match(source, /const liftCarMeshes = \[\]/);
   assert.match(source, /liftDoorPanels\\.push\\(\\{ mesh: panel, floor, closedX, openX \\}\\)/);
-  assert.match(source, /state\\.onElevatorMoved = \\(floor\\) =>/);
-  assert.match(source, /mesh\\.position\\.y \\+= deltaY/);
-  assert.match(source, /entry\\.collider\\.active = entry\\.floor !== nextFloor/);
-  assert.match(source, /entry\\.collider\\.active = entry\\.floor === nextFloor/);
+  assert.match(source, /state\.onElevatorMoved = \(floor\) =>/);
+  assert.match(source, /mesh\.position\.y \+= deltaY/);
+  assert.match(source, /entry\.collider\.active = entry\.floor !== nextFloor/);
+  assert.match(source, /entry\.collider\.active = entry\.floor === nextFloor/);
 });
 
 test("the stairwell, upper treads, landing and lift threshold share exact depth datums", () => {
-  assert.match(source, /coreOpening = \\{ minX: -3\\.8, maxX: 3\\.8, minZ: -26\\.0, maxZ: -22\\.52 \\}/);
-  assert.match(source, /const lift = \\{ centerX: 2\\.2, rearZ: -25\\.0, frontZ: -22\\.52/);
-  assert.match(source, /Math\\.abs\\(stair\\.firstZ - stair\\.secondZ\\) \\+ 1\\.16/);
+  assert.match(source, /coreOpening = \{ minX: -3\.8, maxX: 3\.8, minZ: -26\.0, maxZ: -22\.52 \}/);
+  assert.match(source, /const lift = \{ centerX: 2\.2, rearZ: -25\.0, frontZ: -22\.52/);
+  assert.match(source, /Math\.abs\(stair\.firstZ - stair\.secondZ\) \+ 1\.16/);
 });
