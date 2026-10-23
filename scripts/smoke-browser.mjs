@@ -33,26 +33,34 @@ try {
     if (message.type() === "error") consoleErrors.push(message.text());
   });
 
-  await page.goto("http://127.0.0.1:4173/?smoke=1", { waitUntil: "domcontentloaded", timeout: 30000 });
-  await page.waitForSelector("#loadingScreen", { state: "visible", timeout: 10000 });
-
-  const initialStartup = await page.evaluate(() => {
-    const start = document.querySelector("#startButton");
-    const loading = document.querySelector("#loadingScreen");
-    const menu = document.querySelector("#startScreen .nexus-monitor");
-    const panel = document.querySelector("#loadingScreen .loading-panel");
-    const centre = element => {
-      const rect = element.getBoundingClientRect();
-      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-    };
-    return {
-      startDisabled: Boolean(start?.disabled),
-      loadingVisible: Boolean(loading && !loading.hidden),
-      menuCentre: menu ? centre(menu) : null,
-      loaderCentre: panel ? centre(panel) : null,
-      viewportCentre: { x: innerWidth / 2, y: innerHeight / 2 }
-    };
+  await page.addInitScript(() => {
+    let captured = false;
+    const observer = new MutationObserver(() => {
+      if (captured) return;
+      const start = document.querySelector("#startButton");
+      const loading = document.querySelector("#loadingScreen");
+      const menu = document.querySelector("#startScreen .nexus-monitor");
+      const panel = document.querySelector("#loadingScreen .loading-panel");
+      if (!start || !loading || !menu || !panel) return;
+      const centre = element => {
+        const rect = element.getBoundingClientRect();
+        return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      };
+      window.__DFLAT_INITIAL_STARTUP__ = {
+        startDisabled: Boolean(start.disabled),
+        loadingVisible: Boolean(!loading.hidden),
+        menuCentre: centre(menu),
+        loaderCentre: centre(panel),
+        viewportCentre: { x: innerWidth / 2, y: innerHeight / 2 }
+      };
+      captured = true;
+      observer.disconnect();
+    });
+    observer.observe(document, { childList: true, subtree: true });
   });
+  await page.goto("http://127.0.0.1:4173/?smoke=1", { waitUntil: "domcontentloaded", timeout: 30000 });
+
+  const initialStartup = await page.evaluate(() => window.__DFLAT_INITIAL_STARTUP__ || null);
   if (!initialStartup.startDisabled) throw new Error("Start must remain disabled while the world is loading.");
   if (!initialStartup.loadingVisible) throw new Error("The loading overlay must be visible during startup.");
   for (const key of ["menuCentre", "loaderCentre"]) {
