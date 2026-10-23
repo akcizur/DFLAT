@@ -840,8 +840,8 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
       rows.push([
         "anchor", anchor.id, anchor.name,
         anchor.position.x, anchor.position.y, anchor.position.z,
-        "", "", "", "", "", "", "", "", "", "", "", "", "",
-        "", anchor.provenance
+        ...Array(20).fill(""),
+        anchor.provenance
       ]);
     }
 
