@@ -80,7 +80,7 @@ test("balcony openings are full-height passages with matching collision gaps", (
 
 test("elevator cabin meshes and landing doors follow the active floor", () => {
   assert.match(source, /const liftCarMeshes = \[\]/);
-  assert.match(source, /liftDoorPanels\\.push\\(\\{ mesh: panel, floor, closedX, openX \\}\\)/);
+  assert.match(source, /liftDoorPanels\.push\(\{ mesh: panel, floor, closedX, openX, openScaleX \}\)/);
   assert.match(source, /state\.onElevatorMoved = \(floor\) =>/);
   assert.match(source, /mesh\.position\.y \+= deltaY/);
   assert.match(source, /entry\.collider\.active = entry\.floor !== nextFloor/);
