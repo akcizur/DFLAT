@@ -3,12 +3,19 @@ export function createPlayerController({ camera, colliders, interactables, state
   const FLOOR_HEIGHT = navigation?.floorHeight ?? 2.8;
   const FLOOR_COUNT = navigation?.floors ?? 8;
   const MAX_FLOOR = FLOOR_COUNT - 1;
-  const coreOpening = navigation?.coreOpening ?? { minX: -3.8, maxX: 3.8, minZ: -26.0, maxZ: -22.35 };
+  const coreOpening = navigation?.coreOpening ?? { minX: -4.0, maxX: 3.8, minZ: -26.0, maxZ: -22.35 };
   const stair = navigation?.stairs ?? {
     lowX: -3.2, highX: -0.8, firstZ: -25.1, secondZ: -23.1, steps: 8,
     stepRise: FLOOR_HEIGHT / 16, stepRun: 0.3, treadDepth: 1.16, treadOverlap: 0.025,
-    landingWidth: 1.28, landingDepth: 3.1,
-    landingCenterX: -0.16, landingCenterZ: -24.1
+    landingWidth: 1.8375, landingDepth: 3.16,
+    landingCenterX: 0.13125, landingCenterZ: -24.1,
+    floorLanding: { minX: -3.93, maxX: -3.2125, minZ: -26.0, maxZ: -22.35 }
+  };
+  const floorLanding = stair.floorLanding ?? {
+    minX: coreOpening.minX + 0.07,
+    maxX: stair.lowX - (stair.treadOverlap ?? 0.025) / 2,
+    minZ: coreOpening.minZ,
+    maxZ: coreOpening.maxZ
   };
   const MAX_STEP_HEIGHT = stair.stepRise + 0.045;
   const WALK_SPEED = 3.6;
@@ -42,7 +49,13 @@ export function createPlayerController({ camera, colliders, interactables, state
 
   function canMove(nx, nz) {
     const r = player.radius;
+    const bodyBottom = player.elevation + player.jumpHeight;
+    const bodyTop = bodyBottom + 1.68;
     for (const c of colliders) {
+      // Wall pieces on another storey must not become invisible full-height
+      // barriers. Untagged perimeter volumes still span the whole building.
+      if (Number.isFinite(c.minY) && Number.isFinite(c.maxY) &&
+        (bodyTop <= c.minY + 1e-6 || bodyBottom >= c.maxY - 1e-6)) continue;
       if (nx + r > c.minX && nx - r < c.maxX && nz + r > c.minZ && nz - r < c.maxZ) return false;
     }
     return true;
@@ -54,7 +67,7 @@ export function createPlayerController({ camera, colliders, interactables, state
       z > coreOpening.minZ - margin && z < coreOpening.maxZ + margin;
   }
 
-  function stairSurfaceCandidates(x, z) {
+  function stairSurfaceCandidates(x, z, fromElevation = player.elevation) {
     const candidates = [];
     const halfTread = stair.treadDepth / 2;
     const halfLanding = stair.landingDepth / 2;
@@ -72,8 +85,10 @@ export function createPlayerController({ camera, colliders, interactables, state
     const inUpperFlight = x >= stair.lowX - 0.04 && x <= stair.highX + 0.04 &&
       z >= stair.secondZ - halfTread - 0.04 &&
       z <= upperFrontEdge + 0.04;
+    const inFloorLanding = x >= floorLanding.minX - 0.04 && x <= floorLanding.maxX + 0.04 &&
+      z >= floorLanding.minZ - 0.04 && z <= floorLanding.maxZ + 0.04;
 
-    if (!inLanding && !inLowerFlight && !inUpperFlight) return candidates;
+    if (!inLanding && !inLowerFlight && !inUpperFlight && !inFloorLanding) return candidates;
 
     for (let baseFloor = 0; baseFloor < FLOOR_COUNT - 1; baseFloor++) {
       const baseY = baseFloor * FLOOR_HEIGHT;
@@ -92,11 +107,17 @@ export function createPlayerController({ camera, colliders, interactables, state
       }
       if (inLanding) candidates.push({ height: baseY + FLOOR_HEIGHT / 2, kind: "landing" });
     }
+    // The connector exists at floors 1 through the top occupied floor. Resolve
+    // its support against the player's current storey so the top landing works too.
+    if (inFloorLanding) {
+      const floorIndex = Math.max(1, Math.min(MAX_FLOOR, Math.round(fromElevation / FLOOR_HEIGHT)));
+      candidates.push({ height: floorIndex * FLOOR_HEIGHT, kind: "floor-landing" });
+    }
     return candidates;
   }
 
   function findSupportedHeight(x, z, fromElevation = player.elevation) {
-    const candidates = stairSurfaceCandidates(x, z)
+    const candidates = stairSurfaceCandidates(x, z, fromElevation)
       .map(surface => ({ ...surface, delta: Math.abs(surface.height - fromElevation) }))
       .filter(surface => surface.delta <= MAX_STEP_HEIGHT)
       .sort((a, b) => a.delta - b.delta);

@@ -26,8 +26,8 @@ test("the roof has a dedicated hatch rather than reusing the residential core op
   assert.ok(start >= 0 && end > start, "dedicated roof function and invocation must exist");
   const roofFunction = source.slice(start, end);
   assert.doesNotMatch(roofFunction, /coreOpening/);
-  assert.match(roofFunction, /minX: -1\.325, maxX: -0\.275/);
-  assert.match(roofFunction, /minZ: -24\.625, maxZ: -23\.575/);
+  assert.match(roofFunction, /minX: -3\.93, maxX: -2\.8875/);
+  assert.match(roofFunction, /minZ: -23\.625, maxZ: -22\.575/);
   assert.match(roofFunction, /Střecha \/ otevřený poklop/);
   assert.match(roofFunction, /Střecha \/ žebřík příčka/);
 });
@@ -37,9 +37,41 @@ test("stairs connect the eight occupied levels without a ninth roof flight", () 
   const end = source.indexOf("// Continuous lift shaft", start);
   assert.ok(start >= 0 && end > start);
   const stairFunction = source.slice(start, end);
-  assert.match(stairFunction, /for \(let floor = 0; floor < floors - 1; floor\+\+\)/);
-  assert.doesNotMatch(stairFunction, /for \(let floor = 0; floor < floors; floor\+\+\)/);
+  const flightGeometry = stairFunction.slice(0, stairFunction.indexOf("// A thin level platform"));
+  assert.match(flightGeometry, /for \(let floor = 0; floor < floors - 1; floor\+\+\)/);
+  assert.doesNotMatch(flightGeometry, /for \(let floor = 0; floor < floors; floor\+\+\)/);
   assert.equal(8 - 1, 7, "eight floor datums require seven inter-floor stair runs");
+});
+
+
+test("the stair core is enclosed by concrete walls with separate flight-end door openings", () => {
+  assert.match(source, /const stairWallThickness = 0\.14/);
+  assert.match(source, /const stairDoorHeight = 2\.12/);
+  assert.match(source, /const openingCenters = \[\]/);
+  assert.match(source, /Schodiště \/ stěna jádra/);
+  assert.match(source, /Schodiště \/ nadpraží otvoru/);
+  assert.match(source, /Schodiště \/ stěna jádra u výtahu/);
+  assert.match(source, /box\("Schodiště \/ podesta podlaží"/);
+});
+
+test("stair treads, landing and top-floor roof hatch share exact endpoints", () => {
+  assert.match(source, /const landingStartX = stair\.highX \+ stairTreadOverlap \/ 2/);
+  assert.match(source, /const landingWidth = liftLeft - landingStartX/);
+  assert.match(source, /const landingDepth = Math\.abs\(stair\.firstZ - stair\.secondZ\) \+ stairTreadDepth/);
+  assert.match(source, /const ladderZ = hatchZ/);
+  assert.match(source, /const ladderBottomY = \(floors - 1\) \* floorHeight/);
+});
+
+
+test("both stair flights have continuous outer walls and a separating wall without blocking the landing", () => {
+  assert.match(source, /Schodiště \/ zadní boční stěna/);
+  assert.match(source, /Schodiště \/ dělicí stěna mezi rameny/);
+  assert.match(source, /Schodiště \/ přední boční stěna/);
+  assert.match(source, /const stairOuterZ = stair\.firstZ - stairTreadDepth \/ 2 - stairWallThickness \/ 2/);
+  assert.match(source, /const stairDividerZ = \(stair\.firstZ \+ stair\.secondZ\) \/ 2/);
+  assert.match(source, /const stairFrontZ = stair\.secondZ \+ stairTreadDepth \/ 2 \+ stairWallThickness \/ 2/);
+  assert.match(source, /stairWallSpanX, stairWallHeight, stairWallThickness, concrete, \{ collider: true \}/);
+  assert.match(source, /const landingStartX = stair\.highX \+ stairTreadOverlap \/ 2/);
 });
 
 test("roof machinery bottoms align with the roof datum", () => {
