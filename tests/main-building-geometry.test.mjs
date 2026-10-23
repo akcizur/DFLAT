@@ -13,6 +13,22 @@ function makeWorld() {
   return { scene, state, world };
 }
 
+
+test("the browser can create a building-free scene with no residual colliders", () => {
+  const scene = new THREE.Scene();
+  const world = createMainBuildingWorld({
+    THREE, scene, state: { currentFloor: 0, emptyMap: true }, ui: { showToast() {} },
+    showBuilding: false
+  });
+  assert.equal(world.colliders.length, 0);
+  assert.equal(world.interactables.length, 0);
+  const names = world.meshes.map(mesh => mesh.name);
+  assert.ok(names.includes("Sídliště / travnatý pozemek"));
+  assert.ok(names.some(name => name.startsWith("Silnice /")));
+  assert.equal(names.some(name => /Fasáda|Lodžie|Suterén|Schodiště|Hlavní budova|Vchod \/|Okno \/|Střecha \/|Podlaha \/ přízemí/i.test(name)), false);
+  assert.deepEqual(world.getCoordinateData().anchors, []);
+});
+
 test("the runtime model is an 18 m five-module, four-storey section", () => {
   const { world } = makeWorld();
   const data = world.getCoordinateData();
