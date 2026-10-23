@@ -164,7 +164,7 @@ def facade_floor(floor, z, south=False):
         sill, head = opening["sill"], opening["head"]
         kind = opening["kind"]
         if left > cursor:
-            box(f"Facade pier | level {floor}", ((cursor+left)/2, y0+FLOOR_HEIGHT/2, z),
+            box(f"Facade pier {'rear' if south else 'front'} | level {floor}", ((cursor+left)/2, y0+FLOOR_HEIGHT/2, z),
                 (left-cursor, FLOOR_HEIGHT, WALL), panel if floor % 2 else concrete)
         if sill > 0:
             box("Window sill / spandrel", (cx, y0+sill/2, z),
@@ -191,7 +191,7 @@ def facade_floor(floor, z, south=False):
                 (0.045, glazing_height-0.08, 0.035), metal)
         cursor = right
     if cursor < WIDTH/2:
-        box(f"Facade pier | level {floor}", ((cursor+WIDTH/2)/2, y0+FLOOR_HEIGHT/2, z),
+        box(f"Facade pier {'rear' if south else 'front'} | level {floor}", ((cursor+WIDTH/2)/2, y0+FLOOR_HEIGHT/2, z),
             (WIDTH/2-cursor, FLOOR_HEIGHT, WALL), panel)
 
 for floor in range(FLOORS):
@@ -444,7 +444,7 @@ for index, obj in enumerate(mesh_objects):
         "corners": bounds_corners,
     })
 
-front_facade_objects = [obj for obj in object_records if obj["name"].startswith("Facade pier | level 0")]
+front_facade_objects = [obj for obj in object_records if obj["name"].startswith("Facade pier front | level 0")]
 assert front_facade_objects, "The ground-floor modular facade is missing."
 front_bounds = {
     "minX": min(obj["bounds"]["min"]["x"] for obj in front_facade_objects),
