@@ -62,6 +62,9 @@ try {
   if (!worldBeforeStart.names.some(name => name === "Sídliště / travnatý pozemek")) {
     throw new Error("The open-world terrain is missing.");
   }
+  if (!worldBeforeStart.names.some(name => name.startsWith("Environment / cloud bank"))) {
+    throw new Error("The dynamic low-poly cloud layer is missing.");
+  }
   if (!worldBeforeStart.environment?.timeLabel || !worldBeforeStart.environment?.weatherLabel) {
     throw new Error("The live day/night and weather environment has not initialised.");
   }
