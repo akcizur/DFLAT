@@ -1,114 +1,53 @@
-# DFLAT — Main Building
+# DFLAT — T06B Panelák V2
 
-A compact first-person, low-poly exploration scene built with Three.js, Vite and Bun. The active game starts outdoors on an intentionally sparse map: one eight-storey Czech/Slovak socialist-era apartment block, a road, sidewalks and a short entrance path. The building includes repeated floor slabs, a common corridor, apartment entry openings, switchback stairs and an elevator shaft with a visible ground-floor cabin.
-
-The building is generated from native Three.js box geometry at runtime, so the live game does not need GLB/GLTF/FBX assets. The separate Blender scripts in `tools/` remain editable architectural modelling tools and are not loaded by the browser game.
+A compact first-person exploration game built with Three.js, Vite and Bun. The active branch introduces a Blender-authored, four-storey T06B-inspired Czechoslovak panelák: a five-module section, 18 m wide and 12 m deep, with one cellar, eight flats, two recessed loggias per floor, a central switch-back stair and luxfer glazing. There is no lift.
 
 ## Run locally
 
-Install [Bun](https://bun.sh/) if needed, then run from the project root:
+Install [Bun](https://bun.sh/) and [Blender](https://www.blender.org/), then run:
 
 ```sh
 bun install
-bun run dev
-```
-
-For a production build and preview:
-
-```sh
+blender --background --python tools/generate_t06b_panelak_v2.py
 bun run check:syntax
+bun run test
 bun run check
 bun run build
 bun run preview
 ```
 
-## Map and rendering
+The Blender step produces the editable scene, the browser GLB and the measured architectural manifest. The browser uses that GLB when available; the older procedural building remains only as a fallback.
 
-- **Empty outdoor map:** open terrain, one main building, a single approach path and a road. No surrounding buildings, vehicles or furniture.
-- **Main building:** eight storeys with wall sections around actual window/entrance openings, repeated concrete façade bands, low-poly windows, balconies and roof parapet.
-- **Interior circulation:** upper slabs have a core void, switchback flights and landings repeat between levels, apartment entries open from the common corridor, and the lift shaft has doors on all eight floors.
-- **Vertical navigation:** use `E` near the stairs or elevator to move between storeys; the HUD displays the active floor.
-- **Pixel-grid WebGL:** the scene renders into a compact canvas and scales with nearest-neighbour sampling. Antialiasing is disabled.
-- **Direct rendering:** no screen-wide CRT, VHS, PS1, blur or post-processing effects.
-- **Stable simulation:** movement updates target 60 Hz and rendering is capped at 60 FPS.
-- **Input:** keyboard, mouse, touch and Gamepad API support remain enabled; fullscreen is available in the HUD.
+## Scene and controls
 
-## Runtime coordinate export
+- **Main building:** five 3.6 m structural modules (18.0 m total width), 12.0 m nominal shell depth, four above-ground storeys plus a 2.6 m cellar, eight flats and no lift.
+- **Recessed loggias:** two 3.2 × 1.25 m bays per storey, with real full-height facade openings, set-back glazed doors, concrete returns and old metal railings.
+- **Stairwell:** two switch-back flights of eight risers between storeys, a narrow intermediate landing and an open central slab void. Luxfer blocks light the stair facade.
+- **Period finish:** weathered břízolit-inspired render, faded precast concrete, old enamelled metal, dark glazing and restrained housing-estate site details.
+- **Environment:** the browser retains its road, terrain and approach path. Those preview-site meshes are excluded from the Blender building GLB to avoid duplicate floors or an oversized ground plane.
+- **Rendering:** direct WebGL rendering with a compact pixel-grid canvas. Antialiasing and screen-wide post-processing are disabled.
+- **Input:** WASD / arrow keys to move; mouse to look; Space to jump; E to interact with the stair label; Esc to pause. Touch controls and Gamepad API remain available.
 
-Every production build exports the coordinates of the actual Three.js scene, not a parallel handwritten model. The exporter measures geometry created by `src/game/main-building.js` and validates important dimensions, named points, collision openings, stairs and elevator travel.
+## Geometry and coordinate export
 
-Generated files:
+The generator measures evaluated Blender mesh vertices and writes:
 
-- `public/data/main-building-vertices.json`: complete object bounds and corners, named architectural points, world/local coordinate convention, interaction points and collision volumes.
-- `public/data/main-building-vertices.csv`: object, vertex/corner and semantic-anchor records suitable for spreadsheet or GIS-style inspection.
+- `public/models/t06b-panelak-v2.glb`: the building asset loaded by the browser.
+- `public/data/t06b-panelak-v2.json`: measured object bounds, corners, semantic anchors, counts and nominal room-footprint schedule.
+- `public/data/main-building-vertices.json` and `.csv`: normalized coordinate exports validated during the production build.
 
-Coordinates are in metres. The world origin is `(0, 0, 0)`; the building origin is `(0, 0, -22)`. The X axis crosses the front facade, Y is vertical, and Z is depth. The front facade is at `Z=-16`, rear facade at `Z=-28`. Building-local coordinates are converted with `x_local=x_world`, `y_local=y_world`, `z_local=z_world+22`.
+Coordinates in the Blender manifest use metres, with X across the facade, Y vertical in the authored/game coordinate system, and Z through the building depth. The nominal section is 18.0 × 12.0 m, with 2.8 m floor-to-floor spacing, four above-ground storeys and an 11.2 m roof datum. Entrance projections and roof details intentionally extend beyond the nominal structural footprint; validation measures the structural envelope separately from the projections.
 
-The current runtime design defines an 8-storey block, 28 m wide and 12 m deep, with a 2.8 m floor-to-floor pitch and nominal roof datum at `Y=22.4` m. These are implementation dimensions, not a survey of a named real building. Separate Blender generators remain independent of the browser scene.
+GitHub Actions installs Blender, regenerates the model and its coordinate manifest, runs syntax, design, collision and stair-navigation tests, builds the site, and checks the rendered WebGL scene in Chromium before deployment.
 
-To regenerate coordinate files directly:
+## Design status
 
-```sh
-bun install
-node tools/export-building-coordinates.mjs
-```
+The nominal room-footprint schedule totals approximately 65.4 m² per flat (excluding the separate 4.0 m² loggia). This is a **visualisation concept, not construction documentation or a certification of compliance with ČSN 73 4301**. A dimensioned architectural design and qualified review would still be required to verify clear room dimensions, structural panels, fire and acoustic separation, daylight, accessibility, roof drainage and the exact historical T06B variant.
 
-The files are produced automatically by `bun run build`.
+## Retained reference generators
 
-## GitHub Pages
+- `tools/generate_t06b_panelak_v2.py`: active five-module T06B-inspired model.
+- `tools/generate_socialist_block_17.py`: independent eight-storey socialist-era concept model.
+- `tools/VP_OS_Building_Architecture_v4.py`: separate VP-OS architectural study.
 
-The deployment workflow builds the static site into `dist/` and deploys to [akcizur.github.io/DFLAT](https://akcizur.github.io/DFLAT/). For the first deployment, select **GitHub Actions** under **Repository Settings → Pages → Build and deployment → Source**. The Vite base path is `/DFLAT/` in GitHub Actions and `/` during local development.
-
-## Controls
-
-- `W A S D` / arrow keys: move
-- Mouse: look around
-- `Esc`: pause or resume
-- Touch screens: on-screen movement/look controls
-- Gamepad: left stick to move, right stick to look
-
-The map is currently a free-roam environment. There is no objective beyond exploring the exterior and approaching the main building.
-
-## Active Blender-authored panelák: T06B V2
-
-The browser game uses the Blender-generated model `public/models/t06b-panelak-v2.glb` when that asset is present. The intended typology is a five-module section (`5 × 3.6 m = 18.0 m)), 12.0 m deep, with four above-ground storeys, one cellar, eight flats, recessed loggias, luxfer stair glazing and **no lift**. The procedural eight-storey building is retained only as a fallback for local sessions in which the GLB has not been generated.
-
-Generate the editable Blender project, the runtime GLB and its measured coordinate manifest:
-
-```sh
-blender --background --python tools/generate_t06b_panelak_v2.py
-bun run test
-bun run build
-```
-
-Outputs are `T06B_Panelak_V2.blend`, `public/models/t06b-panelak-v2.glb`, and `public/data/t06b-panelak-v2.json`. The build validates the measured geometry and writes `public/data/main-building-vertices.json` plus CSV coordinates. GitHub Actions installs Blender, generates the asset and tests the production build before deployment.
-
-The room footprint schedule totals approximately 65.4 m² by its nominal dimensions. This is a **visualisation concept, not construction documentation or a certification of compliance with ČSN 73 4301**. Room clear dimensions, acoustic/fire separation, structural panel layout, sunlight, accessibility and the precise T06B variant require a properly dimensioned architectural design and qualified review.
-
-### Retained independent Blender generators
-
-`tools/generate_socialist_block_17.py` creates an eight-storey concept model; `tools/VP_OS_Building_Architecture_v4.py` generates a separate VP-OS study. They are retained as reference tools and are not the active browser asset. The supplied legacy `SCENE.BUILDING.glb` remains a separate interchange file.
-
-## Project structure
-
-- `index.html`: game shell and start/pause menus.
-- `src/main.js`: Three.js renderer, lights, camera, fixed-step simulation and runtime bootstrap.
-- `src/game/main-building.js`: empty outdoor map and main building geometry.
-- `src/game/player.js`: first-person movement and collision handling.
-- `src/game/input.js`: keyboard, pointer lock, touch and gamepad.
-- `src/game/ui.js`: overlays, notifications and map label.
-- `src/game/world.js`: retained legacy apartment and empty-apartment generators, not used by the active runtime.
-- `src/game/materials.js`: procedural pixel textures and the material palette.
-- `vendor/three.module.min.js`: local Three.js r169 fallback for unbundled static hosting.
-- `tools/generate_t06b_panelak_v2.py`: active Blender model, GLB and measured coordinate-manifest generator.
-- `tools/export-building-coordinates.mjs`: geometry validation and JSON/CSV coordinate export.
-
-## Checks
-
-```sh
-bun run check:syntax
-bun run check
-bun run build
-```
-
-GitHub Actions runs Python/JavaScript syntax checks, geometry and navigation regression tests, Blender model generation, coordinate validation, a production build and a Chromium smoke test on pull requests. Successful validated builds from `main` are deployed to GitHub Pages.
+Only the T06B V2 GLB is intended as the active browser building on this branch.
