@@ -9,12 +9,12 @@ construction-ready or standards-certified architectural design.
 import bpy
 import math
 import os
-from mathutils import Vector
+from mathutils import Matrix, Vector
 
 MODULE = 3.6
 MODULE_COUNT = 5
 WIDTH = MODULE * MODULE_COUNT  # 18.0 m
-DEPTH = 11.4
+DEPTH = 12.0
 FLOORS = 4                    # 4 above-ground storeys; no lift
 FLOOR_HEIGHT = 2.8
 BASEMENT_HEIGHT = 2.6
@@ -25,6 +25,9 @@ WINDOW_SILL = 0.78
 WINDOW_HEAD = 2.18
 FRONT_Z = -DEPTH / 2
 REAR_Z = DEPTH / 2
+LOGGIA_WIDTH = 3.2
+LOGGIA_DEPTH = 1.25
+LOGGIA_BACK_Z = REAR_Z - LOGGIA_DEPTH
 MODULE_CENTRES = [-7.2, -3.6, 0.0, 3.6, 7.2]
 
 def material(name, color, roughness=0.85, metallic=0.0):
@@ -129,7 +132,8 @@ asphalt = material("Old asphalt", (0.12, 0.13, 0.12))
 
 # Ground and the restrained edge of a typical estate access road.
 box("Site | terrain", (0, -0.24, 0), (90, 0.25, 90), grass)
-box("Soviet-era estate access road", (0, -0.095, 2.7), (90, 0.04, 5.5), asphalt)
+box("Soviet-era estate access road", (0, -0.095, FRONT_Z-9.0), (90, 0.04, 5.5), asphalt)
+box("Concrete approach pavement", (0, -0.075, FRONT_Z-5.3), (5.2, 0.07, 6.2), panel)
 box("Concrete entrance apron", (0, -0.075, FRONT_Z-2.2), (7.5, 0.07, 4.2), panel)
 box("Entrance step | lower", (0, -0.015, FRONT_Z-0.95), (3.2, 0.18, 0.55), panel)
 box("Entrance step | upper", (0, 0.075, FRONT_Z-0.48), (2.8, 0.12, 0.42), panel)
@@ -144,9 +148,9 @@ for floor in range(-1, FLOORS):
     else:
         # Keep the central stair opening truly open through the upper slabs.
         core_left, core_right = -1.5, 1.5
-        core_front, core_rear = -1.4, 2.2
+        core_front, core_rear = -2.2, 2.2
         side_width = WIDTH/2-core_right
-        box(f"Floor {floor} | left slab wing", ((-WIDTH/2+core_left)/2, base_y+SLAB/2, 0),
+        box(f"Floor {floor} | left slab wing", ((-WIDTH/2+core_left)/2, base_y-SLAB/2, 0),
             (side_width, SLAB, DEPTH), mat)
         box(f"Floor {floor} | right slab wing", ((core_right+WIDTH/2)/2, base_y+SLAB/2, 0),
             (side_width, SLAB, DEPTH), mat)
@@ -172,8 +176,8 @@ def facade_floor(floor, z, south=False):
     for cx in (-7.2, -3.6, 3.6, 7.2):
         is_loggia_door = south and abs(abs(cx)-3.6) < 0.01
         openings.append({
-            "x": cx, "width": 1.55 if is_loggia_door else WINDOW_W,
-            "sill": 0.05 if is_loggia_door else WINDOW_SILL,
+            "x": cx, "width": LOGGIA_WIDTH if is_loggia_door else WINDOW_W,
+            "sill": 0.0 if is_loggia_door else WINDOW_SILL,
             "head": WINDOW_HEAD, "kind": "loggia" if is_loggia_door else "window"
         })
     if not south and floor == 0:
@@ -198,7 +202,7 @@ def facade_floor(floor, z, south=False):
             box("Window lintel", (cx, y0+(head+FLOOR_HEIGHT)/2, z),
                 (opening_w, FLOOR_HEIGHT-head, WALL), panel)
         glazing_height = head-sill
-        if kind != "entrance":
+        if kind not in ("entrance", "loggia", "luxfer"):
             glass_material = lux if kind == "luxfer" else (
                 glass_warm if (floor*7 + int(abs(cx)*10)) % 9 == 0 else glass
             )
@@ -241,9 +245,9 @@ for floor in range(1, FLOORS):
     for row in range(5):
         for col in range(5):
             box("Staircase | luxfer glass block",
-                ((col-2)*0.34, y+0.45+row*0.34, FRONT_Z-0.19),
+                ((col-2)*0.34, y+0.45+row*0.34, FRONT_Z-0.06),
                 (0.305, 0.305, 0.055), lux)
-    box("Staircase | opaque landing band", (0, y+0.15, FRONT_Z-0.17),
+    box("Staircase | opaque landing band", (0, y+0.15, FRONT_Z-0.06),
         (2.0, 0.30, 0.07), panel)
 
 # Ground entrance and the two flats' access doors, with an old intercom and nameplate.
@@ -260,42 +264,97 @@ box("Old intercom | metal plate", (1.02, 1.42, FRONT_Z-0.25), (0.20, 0.38, 0.045
 text_label("House number plate", "VCHOD 01", (-0.62, 2.94, FRONT_Z-0.24), 0.20, cream)
 text_label("Housing-estate authority plate", "SPRAVA DOMU / 1974", (-0.73, 1.88, FRONT_Z-0.20), 0.105, cream)
 
-# Four module-aligned recessed loggias, stacked in four repeated levels.
+# Four recessed loggias. The outer facade is open across each bay and the
+# full-height doorway is set back at LOGGIA_BACK_Z.
 for floor in range(FLOORS):
     y = floor*FLOOR_HEIGHT
+    loggia_z = (LOGGIA_BACK_Z + REAR_Z) / 2
     for cx in (-3.6, 3.6):
-        box("Loggia | heavy concrete slab", (cx, y-0.025, REAR_Z-0.75), (2.55, 0.18, 1.55), panel, 0.015)
-        box("Loggia | side reveal left", (cx-1.22, y+0.90, REAR_Z-0.72), (0.10, 1.70, 1.35), concrete)
-        box("Loggia | side reveal right", (cx+1.22, y+0.90, REAR_Z-0.72), (0.10, 1.70, 1.35), concrete)
-        box("Loggia railing | upper rail", (cx, y+1.03, REAR_Z-1.48), (2.42, 0.065, 0.065), railing)
-        box("Loggia railing | lower rail", (cx, y+0.15, REAR_Z-1.48), (2.42, 0.05, 0.05), railing)
-        for post in range(7):
-            px = cx+(post-3)*0.36
-            box("Loggia railing | vertical bar", (px, y+0.59, REAR_Z-1.48), (0.045, 0.90, 0.045), railing)
+        box("Loggia | heavy concrete slab",
+            (cx, y-SLAB/2, loggia_z), (LOGGIA_WIDTH, SLAB, LOGGIA_DEPTH), panel, 0.015)
+        for side in (-1, 1):
+            side_x = cx + side*(LOGGIA_WIDTH/2-WALL/2)
+            box("Loggia | full-height concrete side return",
+                (side_x, y+FLOOR_HEIGHT/2, loggia_z),
+                (WALL, FLOOR_HEIGHT, LOGGIA_DEPTH+WALL), concrete)
+        frame_width = 0.065
+        door_y = y + WINDOW_HEAD/2
+        pane_z = LOGGIA_BACK_Z - 0.035
+        # Two sliding leaves are offset to leave a clear central route.
+        for side in (-1, 1):
+            box("Loggia door | slid-open glazed panel",
+                (cx+side*1.00, door_y, pane_z),
+                (0.95, WINDOW_HEAD-frame_width*2, 0.045),
+                glass_warm if (floor + (1 if side > 0 else 0)) % 4 == 0 else glass)
+        for side in (-1, 1):
+            box("Loggia door | jamb",
+                (cx+side*(LOGGIA_WIDTH/2-frame_width/2), door_y, LOGGIA_BACK_Z-0.055),
+                (frame_width, WINDOW_HEAD, 0.08), frame)
+        box("Loggia door | head frame",
+            (cx, y+WINDOW_HEAD-frame_width/2, LOGGIA_BACK_Z-0.055),
+            (LOGGIA_WIDTH, frame_width, 0.08), frame)
+        box("Loggia door | threshold",
+            (cx, y+frame_width/2, LOGGIA_BACK_Z-0.055),
+            (LOGGIA_WIDTH, frame_width, 0.08), dark_concrete)
+        box("Loggia door | central mullion",
+            (cx, door_y, LOGGIA_BACK_Z-0.055),
+            (0.045, WINDOW_HEAD-frame_width*2, 0.055), metal)
+        rail_z = REAR_Z - 0.09
+        rail_width = LOGGIA_WIDTH - 0.20
+        box("Loggia railing | upper rail", (cx, y+1.03, rail_z),
+            (rail_width, 0.065, 0.065), railing)
+        box("Loggia railing | lower rail", (cx, y+0.15, rail_z),
+            (rail_width, 0.05, 0.05), railing)
+        for post in range(9):
+            px = cx + (post-4)*(rail_width/8)
+            box("Loggia railing | vertical bar", (px, y+0.57, rail_z),
+                (0.045, 0.90, 0.045), railing)
 
-# Central switch-back stair: two runs and an intermediate landing per storey.
-# Basement-to-ground stair connects the cellar storage level to the entrance floor.
-for step in range(12):
-    rise = (step+1)*(BASEMENT_HEIGHT/12)
-    x = -1.20+(step+0.5)*0.20
-    box("Cellar stair | tread", (x, -BASEMENT_HEIGHT+rise-0.085, -0.55),
-        (0.23, 0.17, 1.20), stair_concrete)
-for side in (-1, 1):
-    box("Cellar stair | handrail", (side*1.30, -1.30, -0.55),
-        (2.35, 0.055, 0.055), metal)
+# Central switch-back stair: both flights meet a narrow landing at their ends.
+# A pair of 8-riser flights connects each 2.8 m storey; the cellar uses 16 risers.
+STAIR_LOW_X = -1.5
+STAIR_HIGH_X = 0.9
+STAIR_STEP_RUN = (STAIR_HIGH_X-STAIR_LOW_X)/8
+STAIR_LOWER_Z = -0.8
+STAIR_UPPER_Z = 1.5
+STAIR_TREAD_DEPTH = 1.20
+STAIR_LANDING_WIDTH = 0.60
+STAIR_LANDING_DEPTH = 4.30
+STAIR_LANDING_Z = 0.0
+
+cellar_rise = BASEMENT_HEIGHT/16
+for step in range(8):
+    rise = (step+1)*cellar_rise
+    x1 = STAIR_LOW_X+(step+0.5)*STAIR_STEP_RUN
+    x2 = STAIR_HIGH_X-(step+0.5)*STAIR_STEP_RUN
+    box("Cellar stair | lower flight tread",
+        (x1, -BASEMENT_HEIGHT+rise-0.09, STAIR_LOWER_Z),
+        (STAIR_STEP_RUN, 0.18, STAIR_TREAD_DEPTH), stair_concrete)
+    box("Cellar stair | upper flight tread",
+        (x2, -BASEMENT_HEIGHT/2+rise-0.09, STAIR_UPPER_Z),
+        (STAIR_STEP_RUN, 0.18, STAIR_TREAD_DEPTH), stair_concrete)
+box("Cellar stair | half-floor landing",
+    (STAIR_HIGH_X+STAIR_LANDING_WIDTH/2, -BASEMENT_HEIGHT/2-0.08, STAIR_LANDING_Z),
+    (STAIR_LANDING_WIDTH, 0.16, STAIR_LANDING_DEPTH), stair_concrete)
 
 for floor in range(FLOORS-1):
     y = floor*FLOOR_HEIGHT
     for step in range(8):
         rise = (step+1)*(FLOOR_HEIGHT/16)
-        x1 = -1.22+(step+0.5)*0.305
-        x2 = 1.22-(step+0.5)*0.305
-        box("Stair | lower flight tread", (x1, y+rise-0.09, -0.55), (0.33, 0.18, 1.35), stair_concrete)
-        box("Stair | upper flight tread", (x2, y+FLOOR_HEIGHT/2+rise-0.09, 1.35), (0.33, 0.18, 1.35), stair_concrete)
-    box("Stair | half-floor landing", (0, y+FLOOR_HEIGHT/2-0.08, 0.40), (2.7, 0.16, 3.3), stair_concrete)
+        x1 = STAIR_LOW_X+(step+0.5)*STAIR_STEP_RUN
+        x2 = STAIR_HIGH_X-(step+0.5)*STAIR_STEP_RUN
+        box("Stair | lower flight tread", (x1, y+rise-0.09, STAIR_LOWER_Z),
+            (STAIR_STEP_RUN, 0.18, STAIR_TREAD_DEPTH), stair_concrete)
+        box("Stair | upper flight tread", (x2, y+FLOOR_HEIGHT/2+rise-0.09, STAIR_UPPER_Z),
+            (STAIR_STEP_RUN, 0.18, STAIR_TREAD_DEPTH), stair_concrete)
+    box("Stair | half-floor landing",
+        (STAIR_HIGH_X+STAIR_LANDING_WIDTH/2, y+FLOOR_HEIGHT/2-0.08, STAIR_LANDING_Z),
+        (STAIR_LANDING_WIDTH, 0.16, STAIR_LANDING_DEPTH), stair_concrete)
     for side in (-1, 1):
-        box("Stair | painted handrail", (side*1.30, y+1.20, -0.55), (2.55, 0.055, 0.055), metal)
-        box("Stair | upper handrail", (side*1.30, y+2.40, 1.35), (2.55, 0.055, 0.055), metal)
+        box("Stair | painted handrail", (side*1.30, y+1.20, STAIR_LOWER_Z),
+            (2.55, 0.055, 0.055), metal)
+        box("Stair | upper handrail", (side*1.30, y+2.40, STAIR_UPPER_Z),
+            (2.55, 0.055, 0.055), metal)
 
 # Interior apartment partitions are grouped as a legible cutaway; rooms are named.
 # Module centres in each flat: outer bedroom/kids room; inner kitchen/living room.
@@ -306,23 +365,23 @@ for floor in range(FLOORS):
         inner = side*3.6
         # Floor finishes are intentionally muted institutional lino.
         for cx, cz, sx, sz, label, mat in [
-            (outer, -3.75, 3.45, 3.0, "Children room", lino),
+            (outer, -4.35, 3.45, 3.0, "Children room", lino),
             (outer,  3.05, 3.45, 4.35, "Bedroom", lino),
-            (inner, -3.50, 3.45, 3.5, "Kitchen", lino),
-            (inner,  3.00, 3.45, 4.65, "Living room", lino),
+            (inner, -4.10, 3.45, 3.5, "Kitchen", lino),
+            (inner,  2.325, 3.45, 4.65, "Living room", lino),
         ]:
             box(f"Flat {side} | {label} | level {floor} finish", (cx, y+0.035, cz),
                 (sx, 0.05, sz), mat)
         # Room dividers; door gaps are left around the central hall by segmented walls.
         # The outer and inner modules are joined by a conventional 0.88 m doorway.
-        entry_z0, entry_z1 = -1.01, -0.13
+        entry_z0, entry_z1 = -1.74, -0.86
         for z0, z1 in ((FRONT_Z+0.14, entry_z0), (entry_z1, REAR_Z-0.14)):
             if z1 > z0:
                 box("Apartment partition | module boundary", (side*5.4, y+1.25, (z0+z1)/2),
                     (WALL, 2.5, z1-z0), cream)
         box("Apartment partition | boundary door lintel", (side*5.4, y+2.20, (entry_z0+entry_z1)/2),
             (WALL, 0.60, entry_z1-entry_z0), cream)
-        box("Apartment hall | lino", (outer, y+0.035, -0.57), (3.45, 0.05, 2.30), lino)
+        box("Apartment hall | lino", (outer, y+0.035, -1.30), (3.45, 0.05, 2.30), lino)
 
         # Close both walls facing the central stair, leaving only the apartment door.
         for z0, z1 in ((FRONT_Z+0.14, entry_z0), (entry_z1, REAR_Z-0.14)):
@@ -333,7 +392,7 @@ for floor in range(FLOORS):
             (WALL, 0.60, entry_z1-entry_z0), cream)
 
         # Cross walls have real gaps for room doors rather than sealed-off display boxes.
-        for z in (-1.95, 0.80):
+        for z in (-2.275, -0.075)
             doorway_x = inner-side*1.12
             for x0, x1 in sorted(((inner-1.725, doorway_x-0.48), (doorway_x+0.48, inner+1.725))):
                 if x1 > x0:
@@ -342,11 +401,24 @@ for floor in range(FLOORS):
             box("Apartment partition | room door lintel", (doorway_x, y+2.20, z),
                 (0.96, 0.60, WALL), cream)
 
+        # Outer modules also need room cross-walls around the central hall.
+        for z in (-2.775, -0.075):
+            doorway_x = outer
+            for x0, x1 in (
+                (outer-1.725, doorway_x-0.44),
+                (doorway_x+0.44, outer+1.725),
+            ):
+                if x1 > x0:
+                    box("Outer apartment | room cross wall",
+                        ((x0+x1)/2, y+1.25, z), (x1-x0, 2.5, WALL), cream)
+            box("Outer apartment | room door lintel",
+                (doorway_x, y+2.20, z), (0.88, 0.60, WALL), cream)
+
         # B7-style service zone. Bath and WC are separated by a full-height partition
         # with a standard narrow doorway; the toilet is no longer in the bathtub zone.
-        wc_z0, wc_z1 = -0.74, -0.10
-        box("Flat | B7 service-core floor", (inner, y+0.08, -0.42), (2.0, 0.10, 2.0), cream)
-        for z0, z1 in ((-1.42, wc_z0), (wc_z1, 0.58)):
+        wc_z0, wc_z1 = -1.525, -0.875
+        box("Flat | B7 service-core floor", (inner, y+0.08, -1.20), (2.0, 0.10, 2.0), cream)
+        for z0, z1 in ((-2.20, wc_z0), (wc_z1, -0.20))
             if z1 > z0:
                 box("Flat | bathroom-WC divider", (inner, y+1.05, (z0+z1)/2),
                     (WALL, 2.10, z1-z0), cream)
@@ -354,11 +426,11 @@ for floor in range(FLOORS):
             (WALL, 0.20, wc_z1-wc_z0), cream)
         bath_cx = inner+side*0.48
         wc_cx = inner-side*0.48
-        box("Flat | bathtub", (bath_cx, y+0.45, -0.65), (0.72, 0.18, 1.50), frame)
-        box("Flat | toilet pan", (wc_cx, y+0.28, -0.28), (0.42, 0.42, 0.62), cream)
+        box("Flat | bathtub", (bath_cx, y+0.45, -1.20), (0.72, 0.18, 1.50), frame)
+        box("Flat | toilet pan", (wc_cx, y+0.28, -1.20), (0.42, 0.42, 0.62), cream)
 
         # Two apartment entrance leaves face the communal central stair.
-        box("Flat entrance | door leaf", (side*1.84, y+1.05, -0.57), (0.06, 2.10, 0.88), door)
+        box("Flat entrance | open door leaf", (side*2.24, y+1.05, -1.30), (0.88, 2.10, 0.06), door)
 
 # End panels with restrained vertical seams and downpipes.
 for x in (-WIDTH/2, WIDTH/2):
@@ -375,16 +447,16 @@ for x in (-8.65, 8.65):
             (0.14, 0.075, 0.12), dark_concrete)
 
 # Flat roof, gravel-like membrane and a compact service vent, no modern rooftop plant.
-box("Roof | structural slab", (0, FLOORS*FLOOR_HEIGHT+0.06, 0),
-    (WIDTH+0.25, 0.18, DEPTH+0.25), dark_concrete)
+box("Roof | structural slab", (0, FLOORS*FLOOR_HEIGHT-SLAB/2, 0),
+    (WIDTH+0.25, SLAB, DEPTH+0.25), dark_concrete)
 box("Roof | gravel membrane", (0, FLOORS*FLOOR_HEIGHT+0.16, 0),
     (WIDTH, 0.06, DEPTH), panel)
-box("Roof | low parapet front", (0, FLOORS*FLOOR_HEIGHT+0.42, FRONT_Z-0.06),
+box("Roof | low parapet front", (0, FLOORS*FLOOR_HEIGHT+0.29, FRONT_Z-0.06),
     (WIDTH+0.30, 0.46, 0.22), concrete)
-box("Roof | low parapet rear", (0, FLOORS*FLOOR_HEIGHT+0.42, REAR_Z+0.06),
+box("Roof | low parapet rear", (0, FLOORS*FLOOR_HEIGHT+0.29, REAR_Z+0.06),
     (WIDTH+0.30, 0.46, 0.22), concrete)
 for x in (-5.4, 5.4):
-    box("Roof | ventilation shaft", (x, FLOORS*FLOOR_HEIGHT+0.55, 0),
+    box("Roof | ventilation shaft", (x, FLOORS*FLOOR_HEIGHT+0.435, 0),
         (0.9, 0.75, 0.9), dark_concrete)
 
 # Warm daylight and orthographic preview.
@@ -522,7 +594,7 @@ for floor in range(FLOORS):
         anchors.append({
             "id": f"loggia-f{floor}-{side}",
             "name": f"Lodžie patro {floor+1} {side}",
-            "position": {"x": x, "y": floor*FLOOR_HEIGHT, "z": REAR_Z-0.75},
+            "position": {"x": x, "y": floor*FLOOR_HEIGHT, "z": (LOGGIA_BACK_Z+REAR_Z)/2},
         })
 
 manifest = {
@@ -586,18 +658,52 @@ with open(source_manifest_path, "w", encoding="utf8") as manifest_file:
     json.dump(manifest, manifest_file, ensure_ascii=False, indent=2)
     manifest_file.write("\n")
 
-# Export a real interchange asset for the browser game. Export mesh objects only;
-# cameras and lights remain in the editable .blend file.
+# Convert the authored Y-up coordinates into Blender's native Z-up scene.
+# The glTF exporter applies its standard axis conversion, restoring the intended
+# Y-up layout in the browser asset.
+rotation = Matrix.Rotation(math.radians(90), 4, "X")
+for obj in list(scene.objects):
+    obj.matrix_world = rotation @ obj.matrix_world
+
+# The browser supplies its own map and approach path; export only the building.
+site_object_names = {
+    "Site | terrain",
+    "Soviet-era estate access road",
+    "Concrete approach pavement",
+    "Concrete entrance apron",
+}
+export_mesh_objects = [obj for obj in mesh_objects if obj.name not in site_object_names]
+
 assert MODULE_COUNT == 5 and abs(WIDTH-18.0) < 1e-6
 assert FLOORS == 4 and scene["apartments_per_floor"] == 2 and scene["lift"] is False
-assert len([obj for obj in scene.objects if obj.name == "Flat entrance | door leaf"]) == 8
+assert len([obj for obj in scene.objects if obj.name == "Flat entrance | open door leaf"]) == 8
+assert len([obj for obj in scene.objects if obj.name == "Loggia | heavy concrete slab"]) == FLOORS*2
+assert len([obj for obj in scene.objects if obj.name == "Loggia door | slid-open glazed panel"]) == FLOORS*4
 assert round(sum(room_schedule.values()), 1) == 65.4
 assert not any("Výtah" in obj.name or "Elevator" in obj.name for obj in scene.objects)
-assert mesh_objects, "No mesh geometry was generated."
+assert export_mesh_objects, "No runtime building mesh geometry was generated."
+
+depsgraph = bpy.context.evaluated_depsgraph_get()
+world_vertices = []
+for obj in export_mesh_objects:
+    evaluated = obj.evaluated_get(depsgraph)
+    evaluated_mesh = evaluated.to_mesh()
+    world_vertices.extend(evaluated.matrix_world @ vertex.co for vertex in evaluated_mesh.vertices)
+    evaluated.to_mesh_clear()
+asset_min_x = min(vertex.x for vertex in world_vertices)
+asset_max_x = max(vertex.x for vertex in world_vertices)
+asset_min_y = min(vertex.y for vertex in world_vertices)
+asset_max_y = max(vertex.y for vertex in world_vertices)
+asset_min_z = min(vertex.z for vertex in world_vertices)
+asset_max_z = max(vertex.z for vertex in world_vertices)
+assert 18.0 <= asset_max_x-asset_min_x <= 18.4, "Blender model width must be 18 m."
+assert 12.0 <= asset_max_y-asset_min_y <= 12.4, "Blender model depth must be about 12 m."
+assert asset_min_z < -2.7 and asset_max_z > FLOORS*FLOOR_HEIGHT+0.5, "Model height axis is not Z-up in Blender."
+
 bpy.ops.object.select_all(action="DESELECT")
-for obj in mesh_objects:
+for obj in export_mesh_objects:
     obj.select_set(True)
-bpy.context.view_layer.objects.active = mesh_objects[0]
+bpy.context.view_layer.objects.active = export_mesh_objects[0]
 bpy.ops.export_scene.gltf(filepath=glb_path, export_format="GLB", use_selection=True, export_apply=True)
 bpy.ops.wm.save_as_mainfile(filepath=blend_path)
 print(f"T06B V2 generated: {WIDTH:.1f} m x {DEPTH:.1f} m, {FLOORS} above-ground storeys, 8 flats, no lift.")
