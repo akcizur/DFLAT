@@ -65,6 +65,7 @@ if (/from\s+["']https?:\/\//i.test(mainSource)) fail("runtime modules must be bu
 if (!mainSource.includes("createMainBuildingWorld({ THREE, scene, state, ui, showBuilding: false })")) fail("gameplay must boot into a building-free open environment");
 if (!mainSource.includes("No city panorama")) fail("open-world sky must not display a hidden city skyline");
 if (!mainSource.includes("const rainVisible = environment.precipitation > 0.025")) fail("rain must transition visibly across the uncovered open map");
+if (!mainSource.includes("cloudMaterial.opacity = 0.025 + environment.cloudiness * 0.38")) fail("weather transitions must visibly alter cloud cover");
 if (!mainSource.includes("const SIMULATION_HZ = 60")) fail("game simulation must target 60 Hz");
 if (!mainSource.includes("const SCENE_RENDER_HZ = 60")) fail("scene rendering must target 60 FPS");
 if (!mainSource.includes("renderer.render(scene, camera)")) fail("scene must render directly without a compositor");
