@@ -898,3 +898,235 @@
   color: #1b211b;
   background: #c9d5a1;
 }
+
+
+/* Centered start flow: a true loading state, then one unambiguous START action. */
+#startScreen.nexus-menu {
+  z-index: 12;
+  padding: clamp(10px, 3vw, 28px);
+}
+#startScreen.nexus-menu .nexus-monitor {
+  width: min(880px, 96vw);
+  aspect-ratio: 1.5;
+  max-height: min(88vh, 720px);
+}
+#startScreen.nexus-menu .nexus-content {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(100px, .75fr) auto;
+  align-content: center;
+  justify-items: center;
+  align-items: center;
+  gap: 0;
+}
+#startScreen.nexus-menu .nexus-art {
+  width: 100%;
+  height: 100%;
+  align-content: center;
+  justify-items: center;
+  filter: drop-shadow(0 0 7px #ff9d0077);
+}
+#startScreen.nexus-menu .nexus-art svg {
+  width: min(230px, 28vw);
+  height: 100%;
+  max-height: 148px;
+}
+#startScreen.nexus-menu .nexus-art-caption {
+  margin-top: -6px;
+  font-size: 8px;
+}
+#startScreen.nexus-menu .nexus-menu {
+  width: min(100%, 370px);
+  text-align: center;
+  align-self: center;
+  padding-bottom: 2px;
+}
+#startScreen.nexus-menu .nexus-eyebrow {
+  margin-bottom: 8px;
+  font-size: 9px;
+}
+#startScreen.nexus-menu .nexus-menu h1 {
+  margin-bottom: 10px;
+  font-size: clamp(42px, 5vw, 62px);
+}
+#startScreen.nexus-menu .nexus-subtitle {
+  margin-bottom: 16px;
+}
+#startScreen.nexus-menu .nexus-command {
+  justify-content: space-between;
+  min-height: 48px;
+  text-align: left;
+}
+#startScreen.nexus-menu .nexus-menu-note {
+  margin-top: 10px;
+}
+#startScreen.nexus-menu .nexus-controls {
+  justify-content: center;
+  margin-top: 13px;
+}
+#startScreen.nexus-menu .nexus-footer {
+  align-items: center;
+}
+
+/* Loading is visible from the first document paint, behind the brief boot intro. */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 16;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  padding: 24px;
+  color: #d7c9a5;
+  background:
+    radial-gradient(ellipse at 50% 42%, rgba(68, 77, 63, .24), transparent 48%),
+    #121610;
+  font: 12px/1.7 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  text-align: center;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity .22s ease, visibility .22s step-end;
+}
+.loading-screen[hidden] {
+  display: none !important;
+}
+.loading-screen.loading-exit {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.loading-panel {
+  width: min(390px, 100%);
+  margin: auto;
+  padding: clamp(20px, 4vw, 34px);
+  border: 1px solid rgba(172, 184, 146, .36);
+  background: rgba(27, 32, 25, .92);
+  box-shadow: inset 1px 1px 0 rgba(223, 231, 199, .08), 0 20px 70px #0007;
+}
+.loading-mark {
+  margin: 0 0 12px;
+  color: #f0e5c6;
+  font-size: clamp(46px, 9vw, 68px);
+  line-height: .95;
+  font-weight: 900;
+  letter-spacing: -.09em;
+}
+.loading-mark span {
+  color: #b7c58a;
+  animation: loading-cursor 1s steps(1, end) infinite;
+}
+.loading-kicker {
+  margin-bottom: 26px;
+  color: #a6aa91;
+  font-size: 9px;
+  letter-spacing: .18em;
+}
+.loading-panel h2 {
+  margin: 0 0 7px;
+  color: #f0e5c6;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .13em;
+}
+.loading-panel p {
+  min-height: 2.8em;
+  margin: 0 0 24px;
+  color: #a6aa91;
+  font-size: 11px;
+}
+.loading-progress {
+  height: 7px;
+  overflow: hidden;
+  border: 1px solid #626b59;
+  background: #10140f;
+}
+.loading-progress span {
+  display: block;
+  width: 8%;
+  height: 100%;
+  background: #c9d5a1;
+  box-shadow: 0 0 10px rgba(201, 213, 161, .28);
+  transition: width .24s steps(5, end);
+}
+.loading-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 9px;
+  color: #a6aa91;
+  font-size: 9px;
+  letter-spacing: .08em;
+}
+@keyframes loading-cursor { 50% { opacity: .25; } }
+
+@media (max-width: 620px) {
+  #startScreen.nexus-menu .nexus-monitor {
+    width: 96vw;
+    aspect-ratio: auto;
+    height: min(94dvh, 780px);
+    max-height: none;
+  }
+  #startScreen.nexus-menu .nexus-content {
+    grid-template-rows: minmax(86px, .5fr) auto;
+    gap: 0;
+  }
+  #startScreen.nexus-menu .nexus-art svg {
+    width: min(130px, 34vw);
+    max-height: 95px;
+  }
+  #startScreen.nexus-menu .nexus-art-caption {
+    margin-top: -3px;
+    font-size: 7px;
+  }
+  #startScreen.nexus-menu .nexus-menu {
+    width: min(100%, 350px);
+    padding-bottom: 5px;
+  }
+  #startScreen.nexus-menu .nexus-menu h1 {
+    font-size: clamp(38px, 11vw, 52px);
+  }
+  #startScreen.nexus-menu .nexus-subtitle {
+    margin-bottom: 11px;
+    line-height: 1.6;
+  }
+  #startScreen.nexus-menu .nexus-command {
+    min-height: 44px;
+    padding: 10px 11px;
+  }
+  #startScreen.nexus-menu .nexus-controls {
+    margin-top: 9px;
+    gap: 5px 9px;
+    font-size: 8px;
+  }
+  #startScreen.nexus-menu .nexus-footer > span:nth-child(2) {
+    display: none;
+  }
+}
+@media (max-height: 560px) and (min-width: 621px) {
+  #startScreen.nexus-menu .nexus-monitor {
+    aspect-ratio: auto;
+    height: 94vh;
+  }
+  #startScreen.nexus-menu .nexus-content {
+    grid-template-rows: minmax(50px, .5fr) auto;
+  }
+  #startScreen.nexus-menu .nexus-art svg {
+    max-height: 76px;
+  }
+  #startScreen.nexus-menu .nexus-menu h1 {
+    font-size: 38px;
+  }
+  #startScreen.nexus-menu .nexus-controls {
+    margin-top: 7px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-screen, .loading-progress span {
+    transition: none !important;
+  }
+  .loading-mark span { animation: none !important; }
+}
+
+/* Let the boot flash finish quickly; the real loading state takes over if needed. */
+#bootScreen.boot-screen {
+  animation-duration: 1.55s;
+}
