@@ -69,7 +69,7 @@ try {
   }
   await page.waitForSelector("#screenCanvas", { timeout: 10000 });
   await page.waitForFunction(() => document.querySelector("#startButton")?.disabled === false, null, { timeout: 15000 });
-  await page.waitForSelector("#loadingScreen[hidden]", { timeout: 5000 });
+  await page.locator("#loadingScreen").waitFor({ state: "hidden", timeout: 5000 });
 
   const beforeStart = await page.evaluate(() => ({
     webgl: (() => {
