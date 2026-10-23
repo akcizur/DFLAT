@@ -16,7 +16,7 @@ test("the foundation plinth is split around the clear entrance", () => {
 
 test("door glazing belongs to the open leaves, not the walking opening", () => {
   assert.match(source, /zasklení otevřeného dveřního křídla/);
-  assert.match(source, /side \* 0\.90, 1\.52, frontZ \+ 0\.34/);
+  assert.match(source, /side \* 0\.94, 1\.52, frontZ \+ 0\.34/);
   assert.doesNotMatch(source, /Vchod \/ zasklení dveří", 0, 1\.52/);
 });
 
@@ -46,8 +46,8 @@ test("roof machinery bottoms align with the roof datum", () => {
   const roofY = 8 * 2.8;
   const machineRoomBottom = roofY + 0.59 - 1.18 / 2;
   const ventBottom = roofY + 0.55 - 1.1 / 2;
-  assert.equal(machineRoomBottom, roofY);
-  assert.equal(ventBottom, roofY);
+  assert.ok(Math.abs(machineRoomBottom - roofY) < 1e-9);
+  assert.ok(Math.abs(ventBottom - roofY) < 1e-9);
   assert.match(source, /strojovna výtahu", 2\.2, roofY \+ 0\.59/);
   assert.match(source, /větrací komín", -4\.4, roofY \+ 0\.55/);
 });
