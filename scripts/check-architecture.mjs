@@ -61,7 +61,8 @@ if (packageJson.devDependencies?.vite !== "6.4.5") fail("Vite must be installed 
 const mainSource = await readFile(path.join(root, "src/main.js"), "utf8");
 if (!mainSource.includes("function finishStartupWhenReady()") || !mainSource.includes("state.ready = true")) fail("the Start menu must wait for the first frame and required resources");
 if (/from\s+["']https?:\/\//i.test(mainSource)) fail("runtime modules must be bundled locally; remove CDN imports");
-if (!mainSource.includes("createMainBuildingWorld({ THREE, scene, state, ui })")) fail("gameplay must boot into the main-building outdoor map and interior interactions");
+if (!mainSource.includes("createMainBuildingWorld({ THREE, scene, state, ui })")) fail("the procedural fallback building must remain available");
+if (!mainSource.includes('import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js"') || !mainSource.includes("models/t06b-panelak-v2.glb")) fail("the active game must load the Blender-authored T06B V2 GLB when available");
 if (!mainSource.includes("const SIMULATION_HZ = 60")) fail("game simulation must target 60 Hz");
 if (!mainSource.includes("const SCENE_RENDER_HZ = 60")) fail("scene rendering must target 60 FPS");
 if (!mainSource.includes("renderer.render(scene, camera)")) fail("scene must render directly without a compositor");
@@ -86,13 +87,13 @@ if (!inputSource.includes("clearMovement();\n    state.started = true;")) fail("
 const playerSource = await readFile(path.join(root, "src/game/player.js"), "utf8");
 if (!playerSource.includes("z: 9.2")) fail("player must spawn outdoors facing the main building");
 const uiSource = await readFile(path.join(root, "src/game/ui.js"), "utf8");
-if (!uiSource.includes('"Hlavní budova. Prozkoumej podlaží, schodiště a výtah."')) fail("HUD must describe building floors, stairs and elevator");
+if (!uiSource.includes('"Panelák T06B. Prozkoumej čtyři podlaží, schodiště a lodžie."') || !uiSource.includes('" / 4"')) fail("HUD must describe the four-storey T06B building without a lift");
 if (!mainSource.includes('object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone())')) fail("mesh UV2 channels are required for baked light maps");
 
 const coordinateExporter = await readFile(path.join(root, "tools/export-building-coordinates.mjs"), "utf8");
-if (!coordinateExporter.includes("world.getCoordinateData()") || !coordinateExporter.includes("world.exportCoordinateCSV()")) fail("coordinate export must come from actual runtime geometry");
-if (!coordinateExporter.includes("main-building-vertices.json") || !coordinateExporter.includes("main-building-vertices.csv")) fail("coordinate export must generate JSON and CSV artefacts");
-if (!coordinateExporter.includes("balcony-door-f0-c2") || !coordinateExporter.includes("state.onElevatorMoved")) fail("coordinate export must validate balcony doors and elevator floor travel");
+if (!coordinateExporter.includes("t06b-panelak-v2.json") || !coordinateExporter.includes("t06b-panelak-v2.glb")) fail("coordinate export must be based on the Blender model that is loaded at runtime");
+if (!coordinateExporter.includes("facade pier front | level 0") || !coordinateExporter.includes("Slab piece") || !coordinateExporter.includes("loggia")) fail("coordinate export must validate the entrance, stairwell void and loggia openings");
+if (!coordinateExporter.includes("main-building-vertices.json") || !coordinateExporter.includes("main-building-vertices.csv")) fail("coordinate export must generate JSON and CSV coordinate artefacts");
 
 const outdoorSource = await readFile(path.join(root, "src/game/main-building.js"), "utf8");
 if (!outdoorSource.includes('Fasáda / prefabrikovaný betonový panel')) fail("main building facade panel geometry is missing");
