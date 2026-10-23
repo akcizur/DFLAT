@@ -69,23 +69,25 @@ The deployment workflow builds the static site into `dist/` and deploys to [akci
 
 The map is currently a free-roam environment. There is no objective beyond exploring the exterior and approaching the main building.
 
-## Optional Blender generators
+## Active Blender-authored panelák: T06B V2
 
-### Eight-storey concrete apartment block
+The browser game uses the Blender-generated model `public/models/t06b-panelak-v2.glb` when that asset is present. The intended typology is a five-module section (`5 × 3.6 m = 18.0 m)), 11.4 m deep, with four above-ground storeys, one cellar, eight flats, recessed loggias, luxfer stair glazing and **no lift**. The procedural eight-storey building is retained only as a fallback for local sessions in which the GLB has not been generated.
 
-```sh
-blender --background --python tools/generate_socialist_block_17.py
-```
-
-This standalone modelling tool writes `DFLAT_socialist_block_8.blend` to the current working directory unless `DFLAT_BLOCK_OUTPUT` points elsewhere. It generates a separate editable architectural model; it does not replace or load the browser scene.
-
-### VP-OS building architecture v4
+Generate the editable Blender project, the runtime GLB and its measured coordinate manifest:
 
 ```sh
-blender --background --python tools/VP_OS_Building_Architecture_v4.py
+blender --background --python tools/generate_t06b_panelak_v2.py
+bun run test
+bun run build
 ```
 
-This independent generator writes `tools/VP_OS_Building_Architecture_v4.blend` and a preview render under `tools/renders/`. The supplied `SCENE.BUILDING.glb` is also a separate interchange asset and is not connected to the runtime.
+Outputs are `T06B_Panelak_V2.blend`, `public/models/t06b-panelak-v2.glb`, and `public/data/t06b-panelak-v2.json`. The build validates the measured geometry and writes `public/data/main-building-vertices.json` plus CSV coordinates. GitHub Actions installs Blender, generates the asset and tests the production build before deployment.
+
+The room footprint schedule totals approximately 65.4 m² by its nominal dimensions. This is a **visualisation concept, not construction documentation or a certification of compliance with ČSN 73 4301**. Room clear dimensions, acoustic/fire separation, structural panel layout, sunlight, accessibility and the precise T06B variant require a properly dimensioned architectural design and qualified review.
+
+### Retained independent Blender generators
+
+`tools/generate_socialist_block_17.py` creates an eight-storey concept model; `tools/VP_OS_Building_Architecture_v4.py` generates a separate VP-OS study. They are retained as reference tools and are not the active browser asset. The supplied legacy `SCENE.BUILDING.glb` remains a separate interchange file.
 
 ## Project structure
 
@@ -98,7 +100,8 @@ This independent generator writes `tools/VP_OS_Building_Architecture_v4.blend` a
 - `src/game/world.js`: retained legacy apartment and empty-apartment generators, not used by the active runtime.
 - `src/game/materials.js`: procedural pixel textures and the material palette.
 - `vendor/three.module.min.js`: local Three.js r169 fallback for unbundled static hosting.
-- `tools/`: standalone Blender model generators.
+- `tools/generate_t06b_panelak_v2.py`: active Blender model, GLB and measured coordinate-manifest generator.
+- `tools/export-building-coordinates.mjs`: geometry validation and JSON/CSV coordinate export.
 
 ## Checks
 
@@ -108,4 +111,4 @@ bun run check
 bun run build
 ```
 
-GitHub Actions runs syntax and architecture checks plus a production build on pushes and pull requests, and deploys successful builds from `main`.
+GitHub Actions runs Python/JavaScript syntax checks, geometry and navigation regression tests, Blender model generation, coordinate validation, a production build and a Chromium smoke test on pull requests. Successful validated builds from `main` are deployed to GitHub Pages.
