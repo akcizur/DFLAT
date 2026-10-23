@@ -845,6 +845,10 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
       ]);
     }
 
+    const invalidRow = rows.findIndex(row => row.length !== header.length);
+    if (invalidRow !== -1) {
+      throw new Error(\`Coordinate CSV row \${invalidRow + 1} has \${rows[invalidRow].length} fields; expected \${header.length}.\`);
+    }
     return rows.map(row => row.map(csvField).join(",")).join("\r\n");
   }
 
