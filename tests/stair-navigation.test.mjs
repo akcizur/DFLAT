@@ -55,13 +55,13 @@ function walk(controller, code, frames, step = 1 / 60) {
 test("building shares its real stair and core coordinates with the controller", () => {
   assert.match(buildingSource, /navigation,/);
   assert.match(buildingSource, /stepRise,/);
-  assert.match(buildingSource, /landingCenterX: stair\.highX \+ 1\.28 \/ 2/);
+  assert.match(buildingSource, /const landingStartX = stair\.highX \+ stairTreadOverlap \/ 2/);
   assert.match(mainSource, /navigation: world\.navigation/);
   assert.match(playerSource, /player\.elevation \+ 1\.68/);
 });
 
 test("the intermediate landing meets the flight ends instead of overlapping several treads", () => {
-  assert.match(buildingSource, /mezipodesta", stair\.highX \+ landingWidth \/ 2/);
+  assert.match(buildingSource, /mezipodesta", landingCenterX/);
   assert.match(playerSource, /const landingMinX = stair\.landingCenterX - stair\.landingWidth \/ 2/);
 });
 
