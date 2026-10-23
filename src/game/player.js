@@ -68,12 +68,16 @@ export function createPlayerController({ camera, colliders, interactables, state
     const inLowerFlight = x >= stair.lowX - 0.04 && x <= stair.highX + 0.04 &&
       z >= stair.firstZ - halfTread - 0.04 &&
       z <= stair.firstZ + halfTread + 0.04;
-    // Extend the uppermost tread's navigation envelope to the slab edge so the
-    // player capsule can step cleanly from the last tread onto the upper floor.
-    const upperFrontEdge = Math.max(stair.secondZ + halfTread, coreOpening.maxZ);
+    // Extend the uppermost tread only to the nearest edge of the open core.
+    // Which edge is nearest depends on the chosen building coordinate convention.
+    const upperFlightMinZ = stair.secondZ - halfTread;
+    const upperFlightMaxZ = stair.secondZ + halfTread;
+    const nearestCoreEdge = [coreOpening.minZ, coreOpening.maxZ].reduce((nearest, edge) =>
+      Math.abs(edge - stair.secondZ) < Math.abs(nearest - stair.secondZ) ? edge : nearest
+    );
     const inUpperFlight = x >= stair.lowX - 0.04 && x <= stair.highX + 0.04 &&
-      z >= stair.secondZ - halfTread - 0.04 &&
-      z <= upperFrontEdge + 0.04;
+      z >= Math.min(upperFlightMinZ, nearestCoreEdge) - 0.04 &&
+      z <= Math.max(upperFlightMaxZ, nearestCoreEdge) + 0.04;
 
     if (!inLanding && !inLowerFlight && !inUpperFlight) return candidates;
 
