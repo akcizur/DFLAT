@@ -8,10 +8,62 @@ const mount = document.getElementById("game");
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x858b8e);
 
+const loadingScreen = document.getElementById("loadingScreen");
+let firstSceneFrame = false;
+let panoramaResolved = false;
+let startupComplete = false;
+let highestLoadingProgress = 8;
+
+function setLoadingProgress(value, title, detail, phase = title) {
+  const progress = Math.max(highestLoadingProgress, Math.min(100, Math.max(0, Math.round(value))));
+  highestLoadingProgress = progress;
+  const titleNode = document.getElementById("loadingTitle");
+  const detailNode = document.getElementById("loadingDetail");
+  const bar = document.getElementById("loadingProgressBar");
+  const progressNode = document.getElementById("loadingProgress");
+  const percentNode = document.getElementById("loadingPercent");
+  const phaseNode = document.getElementById("loadingPhase");
+  if (titleNode) titleNode.textContent = title;
+  if (detailNode) detailNode.textContent = detail;
+  if (bar) bar.style.width = progress + "%";
+  if (progressNode) progressNode.setAttribute("aria-valuenow", String(progress));
+  if (percentNode) percentNode.textContent = String(progress).padStart(2, "0") + "%";
+  if (phaseNode) phaseNode.textContent = phase;
+}
+
+function finishStartupWhenReady() {
+  if (startupComplete || !firstSceneFrame || !panoramaResolved) return;
+  startupComplete = true;
+  state.ready = true;
+  setLoadingProgress(100, "SVĚT JE PŘIPRAVEN", "Vstup do hlavní budovy.", "READY");
+  if (!loadingScreen) return;
+  window.setTimeout(() => {
+    loadingScreen.classList.add("loading-exit");
+    window.setTimeout(() => {
+      loadingScreen.hidden = true;
+      loadingScreen.setAttribute("aria-hidden", "true");
+      document.getElementById("startButton")?.focus({ preventScroll: true });
+    }, 240);
+  }, 180);
+}
+
+setLoadingProgress(12, "ZAPÍNÁM ENGINE", "Inicializuji 3D vykreslování.", "INITIALIZING");
+
 const panorama = { mesh: null };
+const panoramaFallbackTimer = window.setTimeout(() => {
+  if (panoramaResolved) return;
+  panoramaResolved = true;
+  setLoadingProgress(78, "DOKONČUJI SVĚT", "Pozadí se načítá na pozadí.", "FALLBACK");
+  finishStartupWhenReady();
+}, 5500);
 new THREE.TextureLoader().load(
   new URL("../assets/bg-scene-hq.png", import.meta.url).href,
   texture => {
+    window.clearTimeout(panoramaFallbackTimer);
+    if (!panoramaResolved) {
+      panoramaResolved = true;
+      setLoadingProgress(72, "NAČÍTÁM OKOLÍ", "Dokončuji panoramatické pozadí.", "ASSETS");
+    }
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
@@ -23,9 +75,16 @@ new THREE.TextureLoader().load(
     panorama.mesh.name = "Outdoor city panorama";
     panorama.mesh.renderOrder = -1000;
     scene.add(panorama.mesh);
+    finishStartupWhenReady();
   },
   undefined,
-  error => console.error("The Flat: assets/bg-scene-hq.png sky background failed to load.", error)
+  error => {
+    window.clearTimeout(panoramaFallbackTimer);
+    panoramaResolved = true;
+    console.error("The Flat: assets/bg-scene-hq.png sky background failed to load.", error);
+    setLoadingProgress(78, "SVĚT PŘIPRAVEN", "Používám záložní pozadí.", "FALLBACK");
+    finishStartupWhenReady();
+  }
 );
 scene.fog = new THREE.FogExp2(0x858b8e, 0.0022);
 
@@ -55,6 +114,7 @@ renderer.shadowMap.autoUpdate = true;
 renderer.domElement.id = "screenCanvas";
 renderer.domElement.tabIndex = 0;
 mount.appendChild(renderer.domElement);
+setLoadingProgress(34, "VYKRESLOVAČ PŘIPRAVEN", "Připravuji terén a hlavní budovu.", "RENDERER");
 
 function resize() {
   const displayWidth = Math.max(1, innerWidth);
@@ -80,10 +140,12 @@ resize();
 
 const state = {
   hasKeys: false, doorOpen: false, finished: false, started: false,
-  paused: false, balconyDoorOpen: false, emptyMap: true, mainBuildingScene: true, currentFloor: 0
+  paused: false, balconyDoorOpen: false, emptyMap: true, mainBuildingScene: true, currentFloor: 0,
+  ready: false
 };
 const ui = createUI();
 const world = createMainBuildingWorld({ THREE, scene, state, ui });
+setLoadingProgress(59, "STAVÍM HLAVNÍ BUDOVU", "Podlaží, balkony, schodiště a výtah.", "GEOMETRY");
 
 // The outdoor map has no interior mission, furniture, or scripted interactables.
 
@@ -117,6 +179,7 @@ if (new URLSearchParams(location.search).get("smoke") === "1") {
   });
 }
 bindInput({ renderer, state, controller, ui });
+setLoadingProgress(84, "KONTROLUJI SCÉNU", "Ověřuji vstupní body a připravuji první snímek.", "VALIDATION");
 
 const clockStart = performance.now();
 const SIMULATION_HZ = 60;
@@ -195,6 +258,11 @@ function animate(now) {
   }
   if (now >= nextSceneRenderAt) {
     renderer.render(scene, camera);
+    if (!firstSceneFrame) {
+      firstSceneFrame = true;
+      setLoadingProgress(92, "PRVNÍ SNÍMEK HOTOV", "Dokončuji poslední kontroly.", "FIRST FRAME");
+      finishStartupWhenReady();
+    }
     nextSceneRenderAt = now + SCENE_RENDER_INTERVAL_MS;
   }
 }
