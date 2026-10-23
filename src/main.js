@@ -39,7 +39,7 @@ globalSun.position.set(-7, 12, 6);
 globalSun.castShadow = false;
 scene.add(globalSun);
 
-const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.08, 70);
+const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.08, 320);
 camera.rotation.order = "YXZ";
 const LOW_POWER = matchMedia("(pointer:coarse)").matches;
 const renderer = new THREE.WebGLRenderer({
@@ -80,10 +80,10 @@ resize();
 
 const state = {
   hasKeys: false, doorOpen: false, finished: false, started: false,
-  paused: false, balconyDoorOpen: false, emptyMap: true, mainBuildingScene: true
+  paused: false, balconyDoorOpen: false, emptyMap: true, mainBuildingScene: true, currentFloor: 0
 };
 const ui = createUI();
-const world = createMainBuildingWorld({ THREE, scene });
+const world = createMainBuildingWorld({ THREE, scene, state, ui });
 
 // The outdoor map has no interior mission, furniture, or scripted interactables.
 
@@ -102,6 +102,9 @@ scene.traverse(object => {
 const controller = createPlayerController({
   camera, colliders: world.colliders, interactables: world.interactables, state, ui
 });
+state.changeFloor = (floor, method = "Výtah") => {
+  controller.goToFloor(floor, method);
+};
 if (new URLSearchParams(location.search).get("smoke") === "1") {
   Object.defineProperty(window, "__DFLAT_SMOKE__", {
     configurable: true,
