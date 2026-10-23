@@ -126,9 +126,13 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     for (let i = 0; i < windowXs.length; i++) {
       const wx = windowXs[i];
       if (floor === 0 && Math.abs(wx) < 2) continue;
+      const isBalconyDoor = Math.abs(Math.abs(wx) - 4.9) < 0.001;
+      const openingBottom = isBalconyDoor ? 0.04 : windowBottom;
       openings.push({
-        kind: "window", x0: wx - windowWidth / 2, x1: wx + windowWidth / 2,
-        y0: floorY + windowBottom, y1: floorY + windowTop, x: wx, column: i
+        kind: isBalconyDoor ? "balcony-door" : "window",
+        x0: wx - windowWidth / 2, x1: wx + windowWidth / 2,
+        y0: floorY + openingBottom, y1: floorY + windowTop,
+        x: wx, column: i, openingBottom
       });
     }
     if (floor === 0) {
@@ -170,24 +174,35 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
       frontZ + 0.025, width, 0.07, 0.055, concreteDark);
 
     for (const opening of openings) {
-      if (opening.kind !== "window") continue;
-      const wy = floorY + (windowBottom + windowTop) / 2;
+      const isBalconyDoor = opening.kind === "balcony-door";
+      const openingBottom = opening.openingBottom ?? windowBottom;
+      const openingHeight = windowTop - openingBottom;
+      const wy = floorY + (openingBottom + windowTop) / 2;
       const pane = ((floor * 7 + opening.column * 3) % 13 === 0) ? glassWarm : glassDark;
       const paneZ = frontZ + 0.035;
-      box("Okno / tmavé zapuštěné sklo", opening.x, wy, paneZ,
-        windowWidth - 0.14, (windowTop - windowBottom) - 0.14, 0.04, pane);
+      box(isBalconyDoor ? "Balkonové dveře / zasklení" : "Okno / tmavé zapuštěné sklo",
+        opening.x, wy, paneZ, windowWidth - 0.14, openingHeight - 0.14, 0.04, pane);
       const frameZ = frontZ + 0.075;
       const frameW = 0.075;
-      box("Okno / levý rám", opening.x - windowWidth / 2 + frameW / 2, wy,
-        frameZ, frameW, windowTop - windowBottom, 0.07, facadePanel);
-      box("Okno / pravý rám", opening.x + windowWidth / 2 - frameW / 2, wy,
-        frameZ, frameW, windowTop - windowBottom, 0.07, facadePanel);
-      box("Okno / horní rám", opening.x, floorY + windowTop - 0.035,
+      const leftFrameName = isBalconyDoor ? "Balkonové dveře / levý rám" : "Okno / levý rám";
+      const rightFrameName = isBalconyDoor ? "Balkonové dveře / pravý rám" : "Okno / pravý rám";
+      const topFrameName = isBalconyDoor ? "Balkonové dveře / horní rám" : "Okno / horní rám";
+      const bottomFrameName = isBalconyDoor ? "Balkonové dveře / spodní rám" : "Okno / spodní rám";
+      box(leftFrameName, opening.x - windowWidth / 2 + frameW / 2, wy,
+        frameZ, frameW, openingHeight, 0.07, facadePanel);
+      box(rightFrameName, opening.x + windowWidth / 2 - frameW / 2, wy,
+        frameZ, frameW, openingHeight, 0.07, facadePanel);
+      box(topFrameName, opening.x, floorY + windowTop - 0.035,
         frameZ, windowWidth, 0.07, 0.07, facadePanel);
-      box("Okno / spodní rám", opening.x, floorY + windowBottom + 0.035,
+      box(bottomFrameName, opening.x, floorY + openingBottom + 0.035,
         frameZ, windowWidth, 0.07, 0.07, facadePanel);
-      box("Okno / středová příčka", opening.x, wy, frameZ + 0.012,
-        windowWidth - 0.14, 0.045, 0.045, concreteDark);
+      if (isBalconyDoor) {
+        box("Balkonové dveře / střední svislá příčka", opening.x, wy,
+          frameZ + 0.012, 0.045, openingHeight - 0.14, 0.045, concreteDark);
+      } else {
+        box("Okno / středová příčka", opening.x, wy, frameZ + 0.012,
+          windowWidth - 0.14, 0.045, 0.045, concreteDark);
+      }
     }
   }
 
@@ -197,7 +212,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
   for (let floor = 0; floor < floors; floor++) {
     const floorY = floor * floorHeight;
     for (const x of [-4.9, 4.9]) {
-      const slabY = floorY + 0.17;
+      const slabY = floorY - 0.08;
       const balconyZ = frontZ + 0.78;
       box("Balkon / betonová deska", x, slabY, balconyZ, 2.48, 0.16, 1.55, facadePanel);
       box("Balkon / horní madlo", x, floorY + 1.25, frontZ + 1.54, 2.38, 0.065, 0.065, railMaterial);
@@ -207,7 +222,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
           frontZ + 1.54, 0.045, 0.88, 0.045, railMaterial);
       }
       for (const side of [-1, 1]) {
-        box("Balkon / bočnice", x + side * 1.19, floorY + 0.55,
+        box("Balkon / bočnice", x + side * 1.19, floorY + 0.38,
           frontZ + 0.79, 0.08, 0.76, 1.40, concreteDark);
       }
     }
@@ -242,7 +257,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
 
   // Roof edge and a restrained service core finish the silhouette without adding nearby buildings.
   const roofY = height;
-  box("Hlavní budova / střešní atika přední", bx, roofY + 0.40, frontZ - 0.05,
+  box("Hlavní budova / střešní atika přední", bx, roofY + 0.34, frontZ - 0.05,
     width + 0.42, 0.68, 0.24, facadePanel);
   box("Hlavní budova / střešní atika zadní", bx, roofY + 0.40, rearZ + 0.05,
     width + 0.42, 0.68, 0.24, facadePanel);
@@ -291,10 +306,33 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
   colliders.push(
     { minX: leftX, maxX: leftX + wallT, minZ: rearZ, maxZ: frontZ },
     { minX: rightX - wallT, maxX: rightX, minZ: rearZ, maxZ: frontZ },
-    { minX: leftX, maxX: rightX, minZ: rearZ - wallT / 2, maxZ: rearZ + wallT / 2 },
-    { minX: leftX, maxX: -1.08, minZ: frontZ - wallT / 2, maxZ: frontZ + wallT / 2 },
-    { minX: 1.08, maxX: rightX, minZ: frontZ - wallT / 2, maxZ: frontZ + wallT / 2 }
+    { minX: leftX, maxX: rightX, minZ: rearZ - wallT / 2, maxZ: rearZ + wallT / 2 }
   );
+
+  // Leave the entrance and both balcony doorways traversable in the 2D collision model.
+  const frontPassages = [
+    { minX: -1.08, maxX: 1.08 },
+    ...[-4.9, 4.9].map(x => ({
+      minX: x - windowWidth / 2,
+      maxX: x + windowWidth / 2
+    }))
+  ].sort((a, b) => a.minX - b.minX);
+  let frontCursor = leftX;
+  for (const passage of frontPassages) {
+    if (passage.minX > frontCursor) {
+      colliders.push({
+        minX: frontCursor, maxX: passage.minX,
+        minZ: frontZ - wallT / 2, maxZ: frontZ + wallT / 2
+      });
+    }
+    frontCursor = Math.max(frontCursor, passage.maxX);
+  }
+  if (frontCursor < rightX) {
+    colliders.push({
+      minX: frontCursor, maxX: rightX,
+      minZ: frontZ - wallT / 2, maxZ: frontZ + wallT / 2
+    });
+  }
 
   // Switchback stair: two real flights and a shared intermediate landing per storey.
   const stair = { lowX: -3.2, highX: -0.8, firstZ: -25.1, secondZ: -23.1, steps: 8 };
@@ -318,13 +356,13 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
       const riseA = baseY + (i + 1) * stepRise;
       const xA = stair.lowX + (i + 0.5) * stepRun;
       box("Schodiště / dolní rameno / stupeň", xA, riseA - 0.09, stair.firstZ,
-        stepRun + 0.025, 0.18, 1.16, (i % 2) ? concrete : facadePanel);
+        stepRun, 0.18, 1.16, (i % 2) ? concrete : facadePanel);
       const riseB = baseY + floorHeight / 2 + (i + 1) * stepRise;
       const xB = stair.highX - (i + 0.5) * stepRun;
       box("Schodiště / horní rameno / stupeň", xB, riseB - 0.09, stair.secondZ,
         stepRun + 0.025, 0.18, 1.16, (i % 2) ? concrete : facadePanel);
     }
-    box("Schodiště / mezipodesta", stair.highX, baseY + floorHeight / 2 - 0.07,
+    box("Schodiště / mezipodesta", stair.highX + 0.64, baseY + floorHeight / 2 - 0.07,
       (stair.firstZ + stair.secondZ) / 2, 1.28, 0.14,
       Math.abs(stair.firstZ - stair.secondZ) + 1.1, facadePanel);
     for (const lane of [
@@ -374,7 +412,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
 
     const doorsOpen = floor === 0;
     const panelW = doorsOpen ? 0.34 : doorWidth / 2;
-    const panelOffset = doorsOpen ? 0.59 : doorWidth / 4;
+    const panelOffset = doorsOpen ? (doorWidth / 2 + panelW / 2) : doorWidth / 4;
     for (const side of [-1, 1]) {
       box(doorsOpen ? "Výtah / otevřené dveře" : "Výtah / dveře patra",
         lift.centerX + side * panelOffset, floorY + 1.08, lift.frontZ + 0.11,
