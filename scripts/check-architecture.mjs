@@ -58,8 +58,8 @@ if (!html.includes('id="loadingScreen"') || !html.includes('id="loadingProgressB
 if (!html.includes('id="startButton" disabled aria-disabled="true"')) fail("Start must be disabled until the loading flow completes");
 if (!mainSource.includes("function finishStartupWhenReady()") || !mainSource.includes("state.ready = true")) fail("Start must wait for the panorama and first rendered scene frame");
 if (!mainSource.includes("firstSceneFrame") || !mainSource.includes("panoramaResolved")) fail("loading completion must wait for real startup milestones");
-const inputSource = await readFile(path.join(root, "src/game/input.js"), "utf8");
-if (!inputSource.includes("if (state.started || !state.ready) return;")) fail("keyboard and gamepad Start activation must be blocked until ready");
+const startupInputSource = await readFile(path.join(root, "src/game/input.js"), "utf8");
+if (!startupInputSource.includes("if (state.started || !state.ready) return;")) fail("keyboard and gamepad Start activation must be blocked until ready");
 const startupStylesSource = await readFile(path.join(root, "styles-cinematic.css"), "utf8");
 if (!startupStylesSource.includes("place-items: center") || !startupStylesSource.includes(".loading-panel")) fail("the start menu and loading panel must be centred");
 if (!startupStylesSource.includes("z-index: 30")) fail("loading overlay must cover the menu until startup completes");
