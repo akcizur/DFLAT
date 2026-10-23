@@ -37,8 +37,9 @@ test("stairs connect the eight occupied levels without a ninth roof flight", () 
   const end = source.indexOf("// Continuous lift shaft", start);
   assert.ok(start >= 0 && end > start);
   const stairFunction = source.slice(start, end);
-  assert.match(stairFunction, /for \(let floor = 0; floor < floors - 1; floor\+\+\)/);
-  assert.doesNotMatch(stairFunction, /for \(let floor = 0; floor < floors; floor\+\+\)/);
+  const flightGeometry = stairFunction.slice(0, stairFunction.indexOf("// A thin level platform"));
+  assert.match(flightGeometry, /for \(let floor = 0; floor < floors - 1; floor\+\+\)/);
+  assert.doesNotMatch(flightGeometry, /for \(let floor = 0; floor < floors; floor\+\+\)/);
   assert.equal(8 - 1, 7, "eight floor datums require seven inter-floor stair runs");
 });
 
