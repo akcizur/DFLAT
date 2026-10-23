@@ -54,6 +54,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     if (options.collider) {
       colliders.push({
         minX: x - sx / 2, maxX: x + sx / 2,
+        minY: y - sy / 2, maxY: y + sy / 2,
         minZ: z - sz / 2, maxZ: z + sz / 2
       });
     }
@@ -548,7 +549,12 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
   // the player anywhere outside a doorway.
   for (let floor = 0; floor < floors; floor++) {
     const floorY = floor * floorHeight;
-    const openings = [stair.firstZ, stair.secondZ]
+    const openingCenters = [];
+    // At ground level only the lower-flight toe exists; at the top floor only
+    // the upper-flight arrival exists. Intermediate floors have both openings.
+    if (floor < floors - 1) openingCenters.push(stair.firstZ);
+    if (floor > 0) openingCenters.push(stair.secondZ);
+    const openings = openingCenters
       .map(center => ({ center, start: center - stairDoorWidth / 2, end: center + stairDoorWidth / 2 }))
       .sort((a, b) => a.start - b.start);
     let cursorZ = coreOpening.minZ;
