@@ -84,17 +84,23 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
         piece[1] - piece[0], height, wallT, material, { collider: true, floor });
     }
     if (door && door.height < height) {
+      // A lintel is above head height and must not become a floor-plane blocker.
       box(name + " / nadpraží", door.center, bottom + door.height + (height - door.height) / 2,
-        z, door.width, height - door.height, wallT, material, { collider: true, floor });
+        z, door.width, height - door.height, wallT, material);
     }
   }
 
   function wallZ(name, x, z0, z1, bottom, height, floor, material = materials.plaster, door = null) {
-    const doorStart = door ? door.center - door.width / 2 : Infinity;
-    const doorEnd = door ? door.center + door.width / 2 : -Infinity;
+    const doors = (Array.isArray(door) ? door : (door ? [door] : [])).slice().sort((a, b) => a.center - b.center);
     const pieces = [];
-    if (!door || doorStart > z0 + 0.01) pieces.push([z0, door ? Math.min(z1, doorStart) : z1]);
-    if (door && doorEnd < z1 - 0.01) pieces.push([Math.max(z0, doorEnd), z1]);
+    let cursor = z0;
+    for (const opening of doors) {
+      const start = opening.center - opening.width / 2;
+      const end = opening.center + opening.width / 2;
+      if (start > cursor + 0.01) pieces.push([cursor, Math.min(z1, start)]);
+      cursor = Math.max(cursor, end);
+    }
+    if (cursor < z1 - 0.01) pieces.push([Math.max(z0, cursor), z1]);
     for (const piece of pieces) {
       if (piece[1] - piece[0] < 0.04) continue;
       box(name, x, bottom + height / 2, (piece[0] + piece[1]) / 2,
@@ -102,7 +108,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     }
     if (door && door.height < height) {
       box(name + " / nadpraží", x, bottom + door.height + (height - door.height) / 2,
-        door.center, wallT, height - door.height, door.width, material, { collider: true, floor });
+        door.center, wallT, height - door.height, door.width, material);
     }
   }
 
@@ -174,10 +180,11 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
         continue;
       }
       const paneMat = ((floor * 5 + Math.round((w.x + 9) * 2)) % 7 < 2) ? materials.warmGlass : materials.glass;
-      const paneZ = facadeZ + (front ? 0.055 : -0.055);
+      const openingZ = w.kind === "loggia-door" ? rearZ + 1.72 : facadeZ;
+      const paneZ = openingZ + (front ? 0.055 : -0.055);
       box(w.kind === "loggia-door" ? "Lodžie / prosklené dveře" : "Okno / tmavé zapuštěné sklo",
         w.x, cy, paneZ, w.width - 0.12, h - 0.12, 0.045, paneMat);
-      const frameZ = facadeZ + (front ? 0.092 : -0.092);
+      const frameZ = openingZ + (front ? 0.092 : -0.092);
       const frame = 0.065;
       box("Okno / levý rám", w.x - w.width / 2 + frame / 2, cy, frameZ, frame, h, 0.065, materials.windowFrame);
       box("Okno / pravý rám", w.x + w.width / 2 - frame / 2, cy, frameZ, frame, h, 0.065, materials.windowFrame);
@@ -234,8 +241,6 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
 
   // Foundation plinth and shallow basement level (1 PP). The cellar remains below grade.
   box("Suterén / základový sokl", 0, -0.68, buildingZ, width + 0.34, 1.36, depth + 0.34, materials.darkConcrete);
-  box("Hlavní budova / nosná zadní stěna", 0, buildingHeight / 2, rearZ + wallT / 2,
-    width, buildingHeight, wallT, materials.concrete);
   box("Hlavní budova / levý štít", leftX + wallT / 2, buildingHeight / 2, buildingZ,
     wallT, buildingHeight, depth, materials.concrete);
   box("Hlavní budova / pravý štít", rightX - wallT / 2, buildingHeight / 2, buildingZ,
@@ -264,7 +269,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
       const innerZ = rearZ + 1.72;
       box("Lodžie / betonová podlaha", x, fy - 0.075, (outerZ + innerZ) / 2, 2.55, 0.15, 1.72, materials.facade);
       for (const side of [-1, 1]) {
-        box("Lodžie / boční návratový panel", x + side * 1.24, fy + 1.30, rearZ + 0.91,
+        box("Lodžie / boční návratový panel", x + side * 1.55, fy + 1.30, rearZ + 0.91,
           0.10, 2.60, 1.72, materials.darkConcrete);
       }
       box("Lodžie / zábradlí horní madlo", x, fy + 1.02, rearZ + 0.15, 2.42, 0.055, 0.055, materials.oxidizedMetal);
@@ -305,8 +310,8 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
       }
     }
     const rearPartitions = [
-      { z: roomBands.outerFrontEnd + roomBands.hallDepth, spans: [[-8.85, -5.55, -7.2], [5.55, 8.85, 7.2]] },
-      { z: roomBands.middleFrontEnd + roomBands.bathDepth, spans: [[-5.25, -1.95, -3.6], [1.95, 5.25, 3.6]] }
+      { z: roomBands.outerFrontEnd - roomBands.hallDepth, spans: [[-8.85, -5.55, -7.2], [5.55, 8.85, 7.2]] },
+      { z: roomBands.middleFrontEnd - roomBands.bathDepth, spans: [[-5.25, -1.95, -3.6], [1.95, 5.25, 3.6]] }
     ];
     for (const row of rearPartitions) {
       for (const [x0, x1, center] of row.spans) {
@@ -317,7 +322,10 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     // Module-separation doorways link the two room bays in each flat.
     for (const x of [-5.4, 5.4]) {
       wallZ("Byt / příčná dělící stěna", x, rearZ + 0.18, frontZ - 0.18, fy, 2.58, floor,
-        materials.plaster, { center: buildingZ - 1.55, width: 0.92, height: 2.05 });
+        materials.plaster, [
+          { center: buildingZ + 1.15, width: 0.92, height: 2.05 },
+          { center: buildingZ - 1.55, width: 0.92, height: 2.05 }
+        ]);
     }
     // Enclosed stairwell: each floor landing has a door to both apartments.
     for (const x of [-1.8, 1.8]) {
@@ -471,18 +479,16 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     addCollider(leftX + wallT / 2, wallT, buildingZ, depth, floor);
     addCollider(rightX - wallT / 2, wallT, buildingZ, depth, floor);
     if (floor > 0) {
-      // Rear wall gets two gaps into the recessed loggias.
-      const gaps = [-3.6, 3.6].map(x => ({ start: x - 0.74, end: x + 0.74 })).sort((a, b) => a.start - b.start);
-      let cursor = leftX;
-      for (const gap of gaps) {
-        if (gap.start > cursor) addCollider((cursor + gap.start) / 2, gap.start - cursor, rearZ, wallT, floor);
-        cursor = gap.end;
-      }
-      if (cursor < rightX) addCollider((cursor + rightX) / 2, rightX - cursor, rearZ, wallT, floor);
-    } else {
-      // On the ground floor, the loggia bays are not walk-through paths.
-      addCollider(0, width, rearZ, wallT, floor);
+      // Rear wall gets two passages into the recessed loggias on every occupied floor.
+    const gaps = [-3.6, 3.6].map(x => ({ start: x - 0.74, end: x + 0.74 })).sort((a, b) => a.start - b.start);
+    let cursor = leftX;
+    for (const gap of gaps) {
+      if (gap.start > cursor) addCollider((cursor + gap.start) / 2, gap.start - cursor, rearZ, wallT, floor);
+      cursor = gap.end;
     }
+    if (cursor < rightX) addCollider((cursor + rightX) / 2, rightX - cursor, rearZ, wallT, floor);
+    // The old-fashioned metal guardrail is a real boundary for the player capsule.
+    for (const x of [-3.6, 3.6]) addCollider(x, 2.42, rearZ + 0.15, 0.08, floor);
     // The front facade opening is traversable only at the main entrance on the ground floor.
     if (floor === 0) {
       addCollider((leftX - 0.88) / 2, -0.88 - leftX, frontZ, wallT, floor);
