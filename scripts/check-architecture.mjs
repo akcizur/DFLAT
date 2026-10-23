@@ -79,7 +79,7 @@ if (!inputSource.includes("clearMovement();\n    state.started = true;")) fail("
 const playerSource = await readFile(path.join(root, "src/game/player.js"), "utf8");
 if (!playerSource.includes("z: 9.2")) fail("player must spawn outdoors facing the main building");
 const uiSource = await readFile(path.join(root, "src/game/ui.js"), "utf8");
-if (!uiSource.includes('"Volná mapa. Před tebou stojí hlavní budova."')) fail("default objective must describe the empty outdoor map");
+if (!uiSource.includes('"Hlavní budova. Prozkoumej podlaží, schodiště a výtah."')) fail("HUD must describe building floors, stairs and elevator");
 if (!mainSource.includes('object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone())')) fail("mesh UV2 channels are required for baked light maps");
 
 const outdoorSource = await readFile(path.join(root, "src/game/main-building.js"), "utf8");
