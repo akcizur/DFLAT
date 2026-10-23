@@ -84,7 +84,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
   const frontWallZ = frontZ - wallT / 2;
 
   // Floors are real slabs. Upper storeys keep a central void for the stairs and lift.
-  const coreOpening = { minX: -3.8, maxX: 3.8, minZ: -26.0, maxZ: -22.35 };
+  const coreOpening = { minX: -4.0, maxX: 3.8, minZ: -26.0, maxZ: -22.35 };
   function makeFloorSlab(floor) {
     const y = floor * floorHeight - 0.08;
     const material = concrete;
@@ -118,8 +118,10 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     // A dedicated maintenance hatch sits above the top stair landing.
     // Unlike residential floors, the roof does not repeat the large stair/lift core void.
     const roofHatch = {
-      minX: -1.325, maxX: -0.275,
-      minZ: -24.625, maxZ: -23.575
+      // Center the hatch above the top flight arrival, not above the
+      // intermediate landing. The latter is half a storey below the roof.
+      minX: -3.925, maxX: -2.875,
+      minZ: -23.625, maxZ: -22.575
     };
     const hatchWidth = roofHatch.maxX - roofHatch.minX;
     const hatchDepth = roofHatch.maxZ - roofHatch.minZ;
@@ -443,10 +445,36 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     { minX: doorWidth / 2, maxX: rightX, minZ: frontZ - wallT / 2, maxZ: frontZ + wallT / 2 }
   );
 
-  // Switchback stair: two real flights and a shared intermediate landing per storey.
+  // Place the stair landing against the elevator shaft so there is no unsupported gap.
+  const lift = { centerX: 2.2, rearZ: -25.0, frontZ: -22.52, width: 2.3, wall: 0.12 };
+  const liftLeft = lift.centerX - lift.width / 2;
+  const liftRight = lift.centerX + lift.width / 2;
+  const liftDepth = lift.frontZ - lift.rearZ;
+
+  // Switchback stair: two flights, a half-storey landing and a floor-level
+  // connector between the two flight ends on every occupied upper storey.
   const stair = { lowX: -3.2, highX: -0.8, firstZ: -25.1, secondZ: -23.1, steps: 8 };
+  const stairTreadDepth = 1.16;
+  const stairTreadOverlap = 0.025;
+  const stairWallThickness = 0.14;
+  const stairWallHeight = floorHeight - 0.16;
+  const stairDoorHeight = 2.12;
+  const stairDoorWidth = stairTreadDepth;
+  const stairStepRun = (stair.highX - stair.lowX) / stair.steps;
+  const stairTreadWidth = stairStepRun + stairTreadOverlap;
+  const landingStartX = stair.highX + stairTreadOverlap / 2;
+  const landingWidth = liftLeft - landingStartX;
+  const landingCenterX = landingStartX + landingWidth / 2;
+  const landingCenterZ = (stair.firstZ + stair.secondZ) / 2;
+  const landingDepth = Math.abs(stair.firstZ - stair.secondZ) + stairTreadDepth;
+  const floorLanding = {
+    minX: coreOpening.minX + stairWallThickness / 2,
+    maxX: stair.lowX - stairTreadOverlap / 2,
+    minZ: coreOpening.minZ,
+    maxZ: coreOpening.maxZ
+  };
   const stepRise = (floorHeight / 2) / stair.steps;
-  const stepRun = (stair.highX - stair.lowX) / stair.steps;
+  const stepRun = stairStepRun;
   function beam(name, x1, y1, z1, x2, y2, z2, thickness, material) {
     const dx = x2 - x1, dy = y2 - y1, dz = z2 - z1;
     const length = Math.hypot(dx, dy, dz);
@@ -466,45 +494,109 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
       const riseA = baseY + (i + 1) * stepRise;
       const xA = stair.lowX + (i + 0.5) * stepRun;
       box("Schodiště / dolní rameno / stupeň", xA, riseA - 0.09, stair.firstZ,
-        stepRun + 0.025, 0.18, 1.16, (i % 2) ? concrete : facadePanel);
+        stairTreadWidth, stepRise + 0.005, stairTreadDepth, (i % 2) ? concrete : facadePanel);
       const riseB = baseY + floorHeight / 2 + (i + 1) * stepRise;
       const xB = stair.highX - (i + 0.5) * stepRun;
       box("Schodiště / horní rameno / stupeň", xB, riseB - 0.09, stair.secondZ,
-        stepRun + 0.025, 0.18, 1.16, (i % 2) ? concrete : facadePanel);
+        stairTreadWidth, stepRise + 0.005, stairTreadDepth, (i % 2) ? concrete : facadePanel);
     }
-    const landingWidth = 1.28;
-    const landingDepth = Math.abs(stair.firstZ - stair.secondZ) + 1.1;
-    // The landing begins at the flight endpoint and extends to its right.
-    // This avoids intersecting the last several treads of either stair flight.
-    box("Schodiště / mezipodesta", stair.highX + landingWidth / 2,
+    // The lower flight's final tread ends exactly where the landing begins.
+    // The other edge meets the elevator shaft wall; the depth matches both treads.
+    box("Schodiště / mezipodesta", landingCenterX,
       baseY + floorHeight / 2 - 0.07,
-      (stair.firstZ + stair.secondZ) / 2, landingWidth, 0.14,
+      landingCenterZ, landingWidth, 0.14,
       landingDepth, facadePanel);
     for (const lane of [
-      { z: stair.firstZ, x1: stair.lowX, x2: stair.highX, y1: baseY + 0.88, y2: baseY + floorHeight / 2 + 0.88 },
-      { z: stair.secondZ, x1: stair.highX, x2: stair.lowX, y1: baseY + floorHeight / 2 + 0.88, y2: baseY + floorHeight + 0.88 }
+      { z: stair.firstZ, x1: stair.lowX, x2: stair.highX,
+        y1: baseY + 0.95, y2: baseY + floorHeight / 2 + 0.95, surfaceY: baseY },
+      { z: stair.secondZ, x1: stair.highX, x2: stair.lowX,
+        y1: baseY + floorHeight / 2 + 0.95, y2: baseY + floorHeight + 0.95, surfaceY: baseY + floorHeight / 2 }
     ]) {
       for (const side of [-1, 1]) {
-        beam("Schodiště / šikmé madlo", lane.x1, lane.y1, lane.z + side * 0.61,
-          lane.x2, lane.y2, lane.z + side * 0.61, 0.065, railMaterial);
+        const railZ = lane.z + side * 0.61;
+        beam("Schodiště / šikmé madlo", lane.x1, lane.y1, railZ,
+          lane.x2, lane.y2, railZ, 0.065, railMaterial);
+        // Vertical balusters connect the sloped handrail to the actual stair nosings.
+        for (let post = 0; post <= stair.steps; post++) {
+          const t = post / stair.steps;
+          const x = lane.x1 + (lane.x2 - lane.x1) * t;
+          const surfaceY = lane.surfaceY + t * (floorHeight / 2);
+          box("Schodiště / svislý sloupek zábradlí", x, surfaceY + 0.46, railZ,
+            0.045, 0.92, 0.045, railMaterial);
+        }
       }
     }
   }
 
+  // A thin level platform connects the two flight ends on each main floor.
+  // It fills the otherwise empty strip between the stair core and the left wing,
+  // and joins the rear apartment slab to the front lobby at the exact floor datum.
+  const floorLandingWidth = floorLanding.maxX - floorLanding.minX;
+  const floorLandingDepth = floorLanding.maxZ - floorLanding.minZ;
+  const floorLandingCenterX = (floorLanding.minX + floorLanding.maxX) / 2;
+  const floorLandingCenterZ = (floorLanding.minZ + floorLanding.maxZ) / 2;
+  for (let floor = 1; floor < floors; floor++) {
+    const floorY = floor * floorHeight;
+    box("Schodiště / podesta podlaží", floorLandingCenterX, floorY - 0.08,
+      floorLandingCenterZ, floorLandingWidth, 0.16, floorLandingDepth, concrete);
+  }
+
+  // Concrete stair enclosure on the west side. Doorways align with both flight
+  // ends on every floor; each opening has a lintel, and wall collisions stop
+  // the player anywhere outside a doorway.
+  for (let floor = 0; floor < floors; floor++) {
+    const floorY = floor * floorHeight;
+    const openings = [stair.firstZ, stair.secondZ]
+      .map(center => ({ center, start: center - stairDoorWidth / 2, end: center + stairDoorWidth / 2 }))
+      .sort((a, b) => a.start - b.start);
+    let cursorZ = coreOpening.minZ;
+    for (const opening of openings) {
+      if (opening.start - cursorZ > 0.02) {
+        box("Schodiště / stěna jádra", coreOpening.minX, floorY + stairWallHeight / 2,
+          (cursorZ + opening.start) / 2, stairWallThickness, stairWallHeight,
+          opening.start - cursorZ, concrete, { collider: true });
+      }
+      const lintelHeight = stairWallHeight - stairDoorHeight;
+      if (lintelHeight > 0.02) {
+        box("Schodiště / nadpraží otvoru", coreOpening.minX,
+          floorY + stairDoorHeight + lintelHeight / 2, opening.center,
+          stairWallThickness, lintelHeight, stairDoorWidth, concrete);
+      }
+      cursorZ = opening.end;
+    }
+    if (coreOpening.maxZ - cursorZ > 0.02) {
+      box("Schodiště / stěna jádra", coreOpening.minX, floorY + stairWallHeight / 2,
+        (cursorZ + coreOpening.maxZ) / 2, stairWallThickness, stairWallHeight,
+        coreOpening.maxZ - cursorZ, concrete, { collider: true });
+    }
+  }
+
+  // Extend the elevator's left wall to both boundaries of the stair opening.
+  // The shaft wall itself provides the full-height east wall of the stairwell.
+  const liftWallCenterX = liftLeft + lift.wall / 2;
+  const stairWallDepthRear = lift.rearZ - coreOpening.minZ;
+  const stairWallDepthFront = coreOpening.maxZ - lift.frontZ;
+  if (stairWallDepthRear > 0.02) {
+    box("Schodiště / stěna jádra u výtahu / zadní", liftWallCenterX, height / 2,
+      (coreOpening.minZ + lift.rearZ) / 2, lift.wall, height,
+      stairWallDepthRear, concreteDark, { collider: true });
+  }
+  if (stairWallDepthFront > 0.02) {
+    box("Schodiště / stěna jádra u výtahu / přední", liftWallCenterX, height / 2,
+      (lift.frontZ + coreOpening.maxZ) / 2, lift.wall, height,
+      stairWallDepthFront, concreteDark, { collider: true });
+  }
+
   // Continuous lift shaft with a visible car at ground level and landing doors on all floors.
-  const lift = { centerX: 2.2, rearZ: -25.0, frontZ: -22.52, width: 2.3, wall: 0.12 };
-  const liftLeft = lift.centerX - lift.width / 2;
-  const liftRight = lift.centerX + lift.width / 2;
-  const liftDepth = lift.frontZ - lift.rearZ;
   const shaftDark = new THREE.MeshStandardMaterial({
     color: 0x292f31, roughness: 0.95, flatShading: true
   });
   box("Výtah / levá šachta", liftLeft + lift.wall / 2, height / 2,
-    (lift.rearZ + lift.frontZ) / 2, lift.wall, height, liftDepth, concreteDark);
+    (lift.rearZ + lift.frontZ) / 2, lift.wall, height, liftDepth, concreteDark, { collider: true });
   box("Výtah / pravá šachta", liftRight - lift.wall / 2, height / 2,
-    (lift.rearZ + lift.frontZ) / 2, lift.wall, height, liftDepth, concreteDark);
+    (lift.rearZ + lift.frontZ) / 2, lift.wall, height, liftDepth, concreteDark, { collider: true });
   box("Výtah / zadní šachta", lift.centerX, height / 2, lift.rearZ + lift.wall / 2,
-    lift.width, height, lift.wall, shaftDark);
+    lift.width, height, lift.wall, shaftDark, { collider: true });
   for (let floor = 0; floor < floors; floor++) {
     const floorY = floor * floorHeight;
     const doorWidth = 1.42;
@@ -522,7 +614,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     ]) {
       const span = x < lift.centerX ? openingLeft - liftLeft : liftRight - openingRight;
       box("Výtah / stěna čela šachty", x, floorY + 1.4, lift.frontZ,
-        span, 2.8, lift.wall, concrete);
+        span, 2.8, lift.wall, concrete, { collider: true });
     }
 
     const doorsOpen = floor === 0;
@@ -779,10 +871,13 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
       stepRun,
       treadDepth: 1.16,
       treadOverlap: 0.025,
-      landingWidth: 1.28,
-      landingDepth: Math.abs(stair.firstZ - stair.secondZ) + 1.1,
-      landingCenterX: stair.highX + 1.28 / 2,
-      landingCenterZ: (stair.firstZ + stair.secondZ) / 2
+      treadDepth: stairTreadDepth,
+      treadOverlap: stairTreadOverlap,
+      landingWidth,
+      landingDepth,
+      landingCenterX,
+      landingCenterZ,
+      floorLanding: { ...floorLanding }
     }
   };
 
