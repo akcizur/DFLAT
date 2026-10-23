@@ -3,7 +3,16 @@ export function createPlayerController({ camera, colliders, interactables, state
   // Spawn outdoors, facing the main building. Floor changes are handled by the stair/lift core.
   const FLOOR_HEIGHT = 2.8;
   const MAX_FLOOR = 7;
-  const player = { x: 0, z: 9.2, floor: 0, yaw: Math.PI * 0.02, pitch: -0.04, speed: 2.65, radius: 0.29 };
+  const WALK_SPEED = 3.6;
+  const RUN_MULTIPLIER = 1.8;
+  const JUMP_SPEED = 5.4;
+  const GRAVITY = 18.5;
+  const movementCodes = ["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
+  const player = {
+    x: 0, z: 9.2, floor: 0, yaw: Math.PI * 0.02, pitch: -0.04,
+    speed: WALK_SPEED, radius: 0.29, jumpHeight: 0
+  };
+  let jumpVelocity = 0;
   camera.position.set(player.x, 1.68, player.z);
   camera.rotation.order = "YXZ";
   let walkTime = 0;
@@ -54,16 +63,16 @@ export function createPlayerController({ camera, colliders, interactables, state
 
   function syncCamera(deltaTime = 1 / 60) {
     // Eased first-person follow plus restrained head bob while actually moving.
+    const movementInput = movementCodes.some(code => keysDown[code]);
     const desiredMoving = state.started && !state.paused &&
-      (Math.abs(player.x - cameraX) + Math.abs(player.z - cameraZ) > 0.0005 ||
-       Object.values(keysDown).some(Boolean));
+      (Math.abs(player.x - cameraX) + Math.abs(player.z - cameraZ) > 0.0005 || movementInput);
     const blend = 1 - Math.exp(-deltaTime * 18);
     walkBlend += ((desiredMoving ? 1 : 0) - walkBlend) * (1 - Math.exp(-deltaTime * 3.2));
     if (desiredMoving) walkTime += deltaTime * 7.2;
     const bob = Math.sin(walkTime) * 0.012 * walkBlend;
     const sway = Math.sin(walkTime * 0.42) * 0.004 * walkBlend;
     const targetX = player.x + Math.cos(player.yaw) * sway;
-    const targetY = player.floor * FLOOR_HEIGHT + 1.68 + bob;
+    const targetY = player.floor * FLOOR_HEIGHT + 1.68 + player.jumpHeight + bob;
     const targetZ = player.z - Math.sin(player.yaw) * sway;
     cameraX += (targetX - cameraX) * blend;
     cameraY += (targetY - cameraY) * blend;
@@ -91,18 +100,38 @@ export function createPlayerController({ camera, colliders, interactables, state
 
       const length = Math.hypot(forward, strafe);
       if (length > 0) { forward /= length; strafe /= length; }
-      const dx = (-Math.sin(player.yaw) * forward + Math.cos(player.yaw) * strafe) * player.speed * deltaTime;
-      const dz = (-Math.cos(player.yaw) * forward - Math.sin(player.yaw) * strafe) * player.speed * deltaTime;
+      const isRunning = Boolean(keysDown.ShiftLeft || keysDown.ShiftRight);
+      const moveSpeed = player.speed * (isRunning ? RUN_MULTIPLIER : 1);
+      const dx = (-Math.sin(player.yaw) * forward + Math.cos(player.yaw) * strafe) * moveSpeed * deltaTime;
+      const dz = (-Math.cos(player.yaw) * forward - Math.sin(player.yaw) * strafe) * moveSpeed * deltaTime;
       movePlayer(dx, dz);
+
+      // Lightweight vertical physics for a short, responsive jump. The floor stays authoritative.
+      if (player.jumpHeight > 0 || jumpVelocity > 0) {
+        jumpVelocity -= GRAVITY * deltaTime;
+        player.jumpHeight += jumpVelocity * deltaTime;
+        if (player.jumpHeight <= 0) {
+          player.jumpHeight = 0;
+          jumpVelocity = 0;
+        }
+      }
     }
 
     syncCamera(deltaTime);
     return nearestInteractable();
   }
 
+  function jump() {
+    if (!state.started || state.paused || player.jumpHeight > 0 || jumpVelocity > 0) return false;
+    jumpVelocity = JUMP_SPEED;
+    return true;
+  }
+
   function goToFloor(floor, method = "Výtah") {
     const nextFloor = Math.max(0, Math.min(MAX_FLOOR, Math.round(floor)));
     player.floor = nextFloor;
+    player.jumpHeight = 0;
+    jumpVelocity = 0;
     player.x = method === "Schodiště" ? -1.8 : 2.2;
     player.z = -21.35;
     state.currentFloor = nextFloor;
@@ -113,5 +142,8 @@ export function createPlayerController({ camera, colliders, interactables, state
     ui.showToast(method + ": " + (nextFloor + 1) + ". patro");
   }
 
-  return { player, keysDown, doInteract, update, syncCamera, goToFloor };
+  return {
+    player, keysDown, doInteract, update, syncCamera, goToFloor, jump,
+    get isGrounded() { return player.jumpHeight === 0 && jumpVelocity <= 0; }
+  };
 }
