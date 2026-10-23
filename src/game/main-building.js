@@ -63,7 +63,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
   box("Mapa / hlavní silnice", 0, 0.012, 2.7, 220, 0.035, 8.2, asphalt);
   box("Mapa / chodník u silnice", 0, 0.025, -2.05, 220, 0.05, 1.55, pavement);
   box("Mapa / přístupová cesta", 0, 0.018, -8, 6.0, 0.036, 10.0, pavement);
-  box("Mapa / vstupní plošina", 0, 0.035, -14.8, 7.0, 0.07, 3.4, facadePanel);
+  box("Mapa / vstupní plošina", 0, 0.035, -14.75, 7.0, 0.07, 3.5, facadePanel);
 
   for (let x = -102; x <= 102; x += 12) {
     box("Silnice / přerušovaná čára", x, 0.034, 2.7, 4.4, 0.012, 0.12, roadMark, {
@@ -82,7 +82,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
   const frontWallZ = frontZ - wallT / 2;
 
   // Floors are real slabs. Upper storeys keep a central void for the stairs and lift.
-  const coreOpening = { minX: -3.8, maxX: 3.8, minZ: -26.0, maxZ: -22.35 };
+  const coreOpening = { minX: -3.8, maxX: 3.8, minZ: -26.0, maxZ: -22.52 };
   function makeFloorSlab(floor) {
     const y = floor * floorHeight - 0.08;
     const material = floor === floors ? facadePanel : concrete;
@@ -180,8 +180,18 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
       const wy = floorY + (openingBottom + windowTop) / 2;
       const pane = ((floor * 7 + opening.column * 3) % 13 === 0) ? glassWarm : glassDark;
       const paneZ = frontZ + 0.035;
-      box(isBalconyDoor ? "Balkonové dveře / zasklení" : "Okno / tmavé zapuštěné sklo",
-        opening.x, wy, paneZ, windowWidth - 0.14, openingHeight - 0.14, 0.04, pane);
+      if (isBalconyDoor) {
+        const leafX = windowWidth / 2 - 0.08;
+        box("Balkonové dveře / otevřené levé křídlo",
+          opening.x - leafX, wy, frontZ + 0.30,
+          0.04, openingHeight - 0.14, 0.56, pane);
+        box("Balkonové dveře / otevřené pravé křídlo",
+          opening.x + leafX, wy, frontZ + 0.30,
+          0.04, openingHeight - 0.14, 0.56, pane);
+      } else {
+        box("Okno / tmavé zapuštěné sklo", opening.x, wy, paneZ,
+          windowWidth - 0.14, openingHeight - 0.14, 0.04, pane);
+      }
       const frameZ = frontZ + 0.075;
       const frameW = 0.075;
       const leftFrameName = isBalconyDoor ? "Balkonové dveře / levý rám" : "Okno / levý rám";
@@ -196,10 +206,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
         frameZ, windowWidth, 0.07, 0.07, facadePanel);
       box(bottomFrameName, opening.x, floorY + openingBottom + 0.035,
         frameZ, windowWidth, 0.07, 0.07, facadePanel);
-      if (isBalconyDoor) {
-        box("Balkonové dveře / střední svislá příčka", opening.x, wy,
-          frameZ + 0.012, 0.045, openingHeight - 0.14, 0.045, concreteDark);
-      } else {
+      if (!isBalconyDoor) {
         box("Okno / středová příčka", opening.x, wy, frameZ + 0.012,
           windowWidth - 0.14, 0.045, 0.045, concreteDark);
       }
@@ -240,8 +247,10 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     0.055, 2.34, 0.78, doorMaterial);
   box("Vchod / otevřené pravé dveřní křídlo", 0.90, 1.20, frontZ + 0.34,
     0.055, 2.34, 0.78, doorMaterial);
-  box("Vchod / zasklení dveří", 0, 1.52, frontZ + 0.13,
-    0.94, 1.08, 0.025, glassDark);
+  box("Vchod / sklo levého otevřeného křídla", -0.90, 1.52, frontZ + 0.34,
+    0.025, 1.08, 0.50, glassDark);
+  box("Vchod / sklo pravého otevřeného křídla", 0.90, 1.52, frontZ + 0.34,
+    0.025, 1.08, 0.50, glassDark);
   box("Vchod / madlo", 0.70, 1.12, frontZ + 0.16,
     0.035, 0.43, 0.035, facadePanel);
   box("Vchod / přístřešek", 0, 2.92, frontZ + 0.78,
@@ -265,9 +274,9 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     0.24, 0.68, depth - 0.1, facadePanel);
   box("Hlavní budova / střešní atika pravá", rightX - 0.05, roofY + 0.40, bz,
     0.24, 0.68, depth - 0.1, facadePanel);
-  box("Hlavní budova / strojovna výtahu", 2.2, roofY + 0.89, bz - 1.1,
+  box("Hlavní budova / strojovna výtahu", 2.2, roofY + 0.59, bz - 1.1,
     4.2, 1.18, 3.8, concreteDark);
-  box("Hlavní budova / větrací komín", -4.4, roofY + 0.85, bz - 2.0,
+  box("Hlavní budova / větrací komín", -4.4, roofY + 0.55, bz - 2.0,
     1.0, 1.1, 1.0, concreteDark);
 
   // Shared corridor partitions and open apartment doorways repeat on each residential floor.
@@ -295,8 +304,8 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
         box("Byt / otevřené dveřní ostění", wallX, floorY + 1.08, z,
           0.20, 2.16, 0.10, facadePanel);
       }
-      box("Byt / nadpraží", wallX, floorY + 2.25, apartmentDoorZ,
-        0.18, 0.10, apartmentDoorWidth, concreteDark);
+      box("Byt / nadpraží", wallX, floorY + (floorHeight + 2.16) / 2, apartmentDoorZ,
+        0.14, floorHeight - 2.16, apartmentDoorWidth, concrete);
       box("Byt / orientační štítek", wallX + (wallX < 0 ? 0.1 : -0.1),
         floorY + 1.75, apartmentDoorZ, 0.035, 0.24, 0.42, railMaterial);
     }
@@ -364,7 +373,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     }
     box("Schodiště / mezipodesta", stair.highX + 0.64, baseY + floorHeight / 2 - 0.07,
       (stair.firstZ + stair.secondZ) / 2, 1.28, 0.14,
-      Math.abs(stair.firstZ - stair.secondZ) + 1.1, facadePanel);
+      Math.abs(stair.firstZ - stair.secondZ) + 1.16, facadePanel);
     for (const lane of [
       { z: stair.firstZ, x1: stair.lowX, x2: stair.highX, y1: baseY + 0.88, y2: baseY + floorHeight / 2 + 0.88 },
       { z: stair.secondZ, x1: stair.highX, x2: stair.lowX, y1: baseY + floorHeight / 2 + 0.88, y2: baseY + floorHeight + 0.88 }
@@ -395,8 +404,8 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     const doorWidth = 1.42;
     const openingLeft = lift.centerX - doorWidth / 2;
     const openingRight = lift.centerX + doorWidth / 2;
-    box("Výtah / nadpraží otvoru", lift.centerX, floorY + 2.43, lift.frontZ,
-      doorWidth, 0.74, 0.10, concreteDark);
+    box("Výtah / nadpraží otvoru", lift.centerX, floorY + 2.465, lift.frontZ,
+      doorWidth, 0.67, 0.10, concreteDark);
     for (const x of [openingLeft, openingRight]) {
       box("Výtah / ostění", x, floorY + 1.08, lift.frontZ + 0.04,
         0.10, 2.16, 0.12, facadePanel);
