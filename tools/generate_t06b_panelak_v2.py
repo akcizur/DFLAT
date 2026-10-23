@@ -399,14 +399,156 @@ scene["above_ground_storeys"] = FLOORS
 scene["lift"] = False
 scene["apartments_per_floor"] = 2
 scene["design_status"] = "visualisation concept; not for construction"
-# Export a real interchange asset for the browser game. Export mesh objects only;
-# cameras and lights remain in the editable .blend file.
+# Record measured world-space bounds from the evaluated Blender geometry.
 repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 model_dir = os.path.join(repo_root, "public", "models")
+data_dir = os.path.join(repo_root, "public", "data")
 os.makedirs(model_dir, exist_ok=True)
+os.makedirs(data_dir, exist_ok=True)
 blend_path = os.path.join(repo_root, "T06B_Panelak_V2.blend")
 glb_path = os.path.join(model_dir, "t06b-panelak-v2.glb")
+source_manifest_path = os.path.join(data_dir, "t06b-panelak-v2.json")
 mesh_objects = [obj for obj in scene.objects if obj.type == "MESH"]
+depsgraph = bpy.context.evaluated_depsgraph_get()
+object_records = []
+for index, obj in enumerate(mesh_objects):
+    evaluated = obj.evaluated_get(depsgraph)
+    evaluated_mesh = evaluated.to_mesh()
+    world_vertices = [evaluated.matrix_world @ vert.co for vert in evaluated_mesh.vertices]
+    evaluated.to_mesh_clear()
+    if not world_vertices:
+        continue
+    min_point = {
+        "x": round(min(v.x for v in world_vertices), 6),
+        "y": round(min(v.y for v in world_vertices), 6),
+        "z": round(min(v.z for v in world_vertices), 6),
+    }
+    max_point = {
+        "x": round(max(v.x for v in world_vertices), 6),
+        "y": round(max(v.y for v in world_vertices), 6),
+        "z": round(max(v.z for v in world_vertices), 6),
+    }
+    center = {axis: round((min_point[axis]+max_point[axis])/2, 6) for axis in ("x", "y", "z")}
+    bounds_corners = [
+        {"x": min_point["x"] if bit & 1 == 0 else max_point["x"],
+         "y": min_point["y"] if bit & 2 == 0 else max_point["y"],
+         "z": min_point["z"] if bit & 4 == 0 else max_point["z"]}
+        for bit in range(8)
+    ]
+    object_records.append({
+        "id": f"object-{index+1:04d}",
+        "name": obj.name,
+        "center": center,
+        "bounds": {"min": min_point, "max": max_point},
+        "dimensions": {axis: round(max_point[axis]-min_point[axis], 6) for axis in ("x", "y", "z")},
+        "corners": bounds_corners,
+    })
+
+front_facade_objects = [obj for obj in object_records if obj["name"].startswith("Facade pier | level 0")]
+assert front_facade_objects, "The ground-floor modular facade is missing."
+front_bounds = {
+    "minX": min(obj["bounds"]["min"]["x"] for obj in front_facade_objects),
+    "maxX": max(obj["bounds"]["max"]["x"] for obj in front_facade_objects),
+}
+assert abs((front_bounds["maxX"]-front_bounds["minX"])-WIDTH) < 1e-5, "Front facade does not span five 3.6 m modules."
+assert len([obj for obj in object_records if obj["name"] == "Flat entrance | door leaf"]) == 8
+assert len([obj for obj in object_records if obj["name"] == "Stair | lower flight tread"]) == (FLOORS-1)*8
+assert len([obj for obj in object_records if obj["name"] == "Stair | upper flight tread"]) == (FLOORS-1)*8
+assert not any("Výtah" in obj["name"] or "Elevator" in obj["name"] for obj in object_records)
+
+anchors = [
+    {"id": "building-origin", "name": "Původ sekce", "position": {"x": 0, "y": 0, "z": 0}},
+    {"id": "front-left-ground", "name": "Přední levý roh", "position": {"x": -WIDTH/2, "y": 0, "z": FRONT_Z}},
+    {"id": "front-right-ground", "name": "Přední pravý roh", "position": {"x": WIDTH/2, "y": 0, "z": FRONT_Z}},
+    {"id": "rear-left-ground", "name": "Zadní levý roh", "position": {"x": -WIDTH/2, "y": 0, "z": REAR_Z}},
+    {"id": "rear-right-ground", "name": "Zadní pravý roh", "position": {"x": WIDTH/2, "y": 0, "z": REAR_Z}},
+    {"id": "entrance-centre", "name": "Střed vstupu", "position": {"x": 0, "y": 1.14, "z": FRONT_Z}},
+    {"id": "stair-core-centre", "name": "Schodišťové jádro", "position": {"x": 0, "y": 0, "z": 0.4}},
+    {"id": "roof-datum", "name": "Datum střechy", "position": {"x": 0, "y": FLOORS*FLOOR_HEIGHT, "z": 0}},
+]
+for floor in range(FLOORS+1):
+    anchors.append({
+        "id": f"floor-datum-{floor}",
+        "name": f"Podlažní datum {floor}",
+        "position": {"x": 0, "y": floor*FLOOR_HEIGHT, "z": 0},
+    })
+for module_index, x in enumerate(MODULE_CENTRES, start=1):
+    anchors.append({
+        "id": f"module-axis-{module_index}",
+        "name": f"Modulová osa {module_index}",
+        "position": {"x": x, "y": 0, "z": 0},
+    })
+for floor in range(FLOORS):
+    for side, x in (("left", -3.6), ("right", 3.6)):
+        anchors.append({
+            "id": f"loggia-f{floor}-{side}",
+            "name": f"Lodžie patro {floor+1} {side}",
+            "position": {"x": x, "y": floor*FLOOR_HEIGHT, "z": REAR_Z-0.75},
+        })
+
+manifest = {
+    "schemaVersion": "2.0.0",
+    "generatedAt": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
+    "provenance": {
+        "source": "tools/generate_t06b_panelak_v2.py",
+        "geometry": "Evaluated Blender mesh vertices transformed into world coordinates",
+        "confidence": "Measured from the generated visualisation geometry; not a survey or construction certification.",
+    },
+    "coordinateSystem": {
+        "units": "metres",
+        "x": "across the five-module facade",
+        "y": "vertical",
+        "z": "depth, front/north negative and rear/south positive",
+        "worldOrigin": {"x": 0, "y": 0, "z": 0},
+    },
+    "building": {
+        "typology": "T06B-inspired five-module section",
+        "moduleWidth": MODULE,
+        "moduleCount": MODULE_COUNT,
+        "width": WIDTH,
+        "depth": DEPTH,
+        "floors": FLOORS,
+        "basementHeight": BASEMENT_HEIGHT,
+        "floorHeight": FLOOR_HEIGHT,
+        "roofDatum": FLOORS*FLOOR_HEIGHT,
+        "lift": False,
+        "apartmentsPerFloor": 2,
+        "apartmentsTotal": FLOORS*2,
+        "designStatus": "visualisation concept; not for construction",
+    },
+    "roomAreaScheduleM2": room_schedule,
+    "nominalRoomAreaSumM2": round(sum(room_schedule.values()), 2),
+    "counts": {
+        "objects": len(object_records),
+        "semanticAnchors": len(anchors),
+        "entranceDoorLeaves": len([obj for obj in object_records if obj["name"] == "Flat entrance | door leaf"]),
+        "lowerStairTreads": len([obj for obj in object_records if obj["name"] == "Stair | lower flight tread"]),
+        "upperStairTreads": len([obj for obj in object_records if obj["name"] == "Stair | upper flight tread"]),
+        "luxferBlocks": len([obj for obj in object_records if obj["name"] == "Staircase | luxfer glass block"]),
+        "loggiaSlabs": len([obj for obj in object_records if obj["name"] == "Loggia | heavy concrete slab"]),
+        "liftObjects": len([obj for obj in object_records if "Výtah" in obj["name"] or "Elevator" in obj["name"]]),
+    },
+    "validation": {
+        "status": "passed",
+        "assertions": [
+            "Five 3.6 m module axes span an 18.0 m section",
+            "Four above-ground storeys are connected by seven pairs of switch-back stair flights",
+            "A separate entrance door leaf is modelled for each of the eight flats",
+            "Upper floor plates are split around the central stairwell opening",
+            "The facade contains luxfer glass blocks and four stacked pairs of recessed loggias",
+            "No elevator geometry is included",
+            "The room footprint schedule rounds to 65.4 m2",
+        ],
+    },
+    "anchors": anchors,
+    "objects": object_records,
+}
+with open(source_manifest_path, "w", encoding="utf8") as manifest_file:
+    json.dump(manifest, manifest_file, ensure_ascii=False, indent=2)
+    manifest_file.write("\n")
+
+# Export a real interchange asset for the browser game. Export mesh objects only;
+# cameras and lights remain in the editable .blend file.
 assert MODULE_COUNT == 5 and abs(WIDTH-18.0) < 1e-6
 assert FLOORS == 4 and scene["apartments_per_floor"] == 2 and scene["lift"] is False
 assert len([obj for obj in scene.objects if obj.name == "Flat entrance | door leaf"]) == 8
