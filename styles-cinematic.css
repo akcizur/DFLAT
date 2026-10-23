@@ -1125,3 +1125,8 @@
   }
   .loading-mark span { animation: none !important; }
 }
+
+/* Let the boot flash finish quickly; the real loading state takes over if needed. */
+#bootScreen.boot-screen {
+  animation-duration: 1.55s;
+}
