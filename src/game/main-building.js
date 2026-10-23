@@ -2,7 +2,7 @@ import { PANELAK_LAYOUT } from "./panelak-config.js";
 
 // Runtime model of a four-storey T06B-inspired section: five 3.6 m modules,
 // two mirrored flats per level, recessed loggias and a central switchback stair.
-export function createMainBuildingWorld({ THREE, scene, state, ui }) {
+export function createMainBuildingWorld({ THREE, scene, state, ui, showBuilding = true }) {
   const colliders = [];
   const interactables = [];
   const meshesToAnimate = [];
@@ -213,10 +213,26 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     const rightWidth = rightX - core.maxX;
     const frontDepth = frontZ - core.maxZ;
     const rearDepth = core.minZ - rearZ;
-    box("Stropní panel / levý trakt", (leftX + core.minX) / 2, y, buildingZ, leftWidth, 0.16, depth, materials.floor);
-    box("Stropní panel / pravý trakt", (core.maxX + rightX) / 2, y, buildingZ, rightWidth, 0.16, depth, materials.floor);
-    box("Stropní panel / přední podesta", 0, y, (frontZ + core.maxZ) / 2, core.maxX - core.minX, 0.16, frontDepth, materials.floor);
-    box("Stropní panel / zadní trakt", 0, y, (core.minZ + rearZ) / 2, core.maxX - core.minX, 0.16, rearDepth, materials.floor);
+    // Main occupied area starts behind the recessed loggias. Full-depth wing
+    // slabs would overlap the separately modelled loggia floors and flicker.
+    const interiorRearZ = rearZ + 1.72;
+    const interiorDepth = frontZ - interiorRearZ;
+    box("Stropní panel / levý trakt", (leftX + core.minX) / 2, y,
+      (frontZ + interiorRearZ) / 2, leftWidth, 0.16, interiorDepth, materials.floor);
+    box("Stropní panel / pravý trakt", (core.maxX + rightX) / 2, y,
+      (frontZ + interiorRearZ) / 2, rightWidth, 0.16, interiorDepth, materials.floor);
+    box("Stropní panel / přední podesta", 0, y, (frontZ + core.maxZ) / 2,
+      core.maxX - core.minX, 0.16, frontDepth, materials.floor);
+    box("Stropní panel / zadní trakt", 0, y, (core.minZ + interiorRearZ) / 2,
+      core.maxX - core.minX, 0.16, Math.max(0.1, core.minZ - interiorRearZ), materials.floor);
+
+    // Close the rear transverse slab only outside loggia bays and the stair core.
+    const sideBands = [[leftX, -4.875], [-2.325, core.minX], [core.maxX, 2.325], [4.875, rightX]];
+    for (const [x0, x1] of sideBands) {
+      if (x1 - x0 <= 0.05) continue;
+      box("Stropní panel / zadní pás mimo lodžie", (x0 + x1) / 2, y,
+        (rearZ + interiorRearZ) / 2, x1 - x0, 0.16, interiorRearZ - rearZ, materials.floor);
+    }
   }
 
   const stair = {
@@ -239,6 +255,33 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
   box("Sídliště / přístupový chodník", 0, 0.018, -8, 3.8, 0.036, 10, materials.pavement);
   box("Sídliště / vstupní plošina", 0, 0.035, -14.95, 5.4, 0.07, 2.6, materials.pavement);
   for (let x = -102; x <= 102; x += 12) box("Silnice / přerušovaná čára", x, 0.034, 2.7, 4.4, 0.012, 0.12, materials.marking);
+
+  // The live game can deliberately run as an open, building-free environment.
+  // The architectural model remains available to the coordinate exporter and tests.
+  if (!showBuilding) {
+    return {
+      colliders, interactables, meshesToAnimate, doorAnimations, meshes,
+      navigation: {
+        floorHeight, floors: 1,
+        footprint: { minX: -120, maxX: 120, minZ: -142, maxZ: 98, rearZ: -142, frontZ: 98 },
+        coreOpening: { minX: 10000, maxX: 10001, minZ: 10000, maxZ: 10001 },
+        stairs: {
+          lowX: 10000, highX: 10001, firstZ: 10000, secondZ: 10002, steps: 8,
+          stepRise: 0.175, stepRun: 0.3, treadDepth: 1.16, treadOverlap: 0.025,
+          landingWidth: 1.28, landingDepth: 3.16,
+          landingCenterX: 10001.64, landingCenterZ: 10001
+        }
+      },
+      getCoordinateData: () => ({
+        schemaVersion: "2.0", units: "metres",
+        coordinateSystem: { x: "east-west", y: "up", z: "north-south" },
+        building: { system: "empty outdoor map", width: 0, depth: 0, floors: 0, height: 0 },
+        counts: { objects: meshes.length, logicalCorners: 0, semanticAnchors: 0 },
+        objects: [], anchors: []
+      }),
+      exportCoordinateCSV: () => "record_type,id,name,x,y,z"
+    };
+  }
 
   // Foundation plinth and shallow basement level (1 PP). The cellar remains below grade.
   const plinthY = -0.66;
