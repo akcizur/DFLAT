@@ -411,9 +411,14 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
       box("Schodiště / horní rameno / stupeň", xB, riseB - 0.09, stair.secondZ,
         stepRun + 0.025, 0.18, 1.16, (i % 2) ? concrete : facadePanel);
     }
-    box("Schodiště / mezipodesta", stair.highX, baseY + floorHeight / 2 - 0.07,
-      (stair.firstZ + stair.secondZ) / 2, 1.28, 0.14,
-      Math.abs(stair.firstZ - stair.secondZ) + 1.1, facadePanel);
+    const landingWidth = 1.28;
+    const landingDepth = Math.abs(stair.firstZ - stair.secondZ) + 1.1;
+    // The landing begins at the flight endpoint and extends to its right.
+    // This avoids intersecting the last several treads of either stair flight.
+    box("Schodiště / mezipodesta", stair.highX + landingWidth / 2,
+      baseY + floorHeight / 2 - 0.07,
+      (stair.firstZ + stair.secondZ) / 2, landingWidth, 0.14,
+      landingDepth, facadePanel);
     for (const lane of [
       { z: stair.firstZ, x1: stair.lowX, x2: stair.highX, y1: baseY + 0.88, y2: baseY + floorHeight / 2 + 0.88 },
       { z: stair.secondZ, x1: stair.highX, x2: stair.lowX, y1: baseY + floorHeight / 2 + 0.88, y2: baseY + floorHeight + 0.88 }
@@ -495,10 +500,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     id: "stairs", name: "Schodiště", description: "Schodiště pokračuje do dalších podlaží.",
     x: -1.8, z: -21.45, range: 2.5, used: false,
     action: () => {
-      const current = state?.currentFloor || 0;
-      const next = current >= floors - 1 ? current - 1 : current + 1;
-      if (typeof state?.changeFloor === "function") state.changeFloor(next, "Schodiště");
-      else ui?.showToast?.("Schodiště / hlavní budova");
+      ui?.showToast?.("Schodiště: projdi skutečné stupně pomocí WASD. Výška se mění při chůzi.");
     }
   });
 
@@ -706,5 +708,24 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     return rows.map(row => row.map(csvField).join(",")).join("\r\n");
   }
 
-  return { colliders, interactables, meshesToAnimate, doorAnimations, meshes, getCoordinateData, exportCoordinateCSV };
+  const navigation = {
+    floorHeight,
+    floors,
+    coreOpening: { ...coreOpening },
+    stairs: {
+      ...stair,
+      stepRise,
+      stepRun,
+      treadDepth: 1.16,
+      landingWidth: 1.28,
+      landingDepth: Math.abs(stair.firstZ - stair.secondZ) + 1.1,
+      landingCenterX: stair.highX + 1.28 / 2,
+      landingCenterZ: (stair.firstZ + stair.secondZ) / 2
+    }
+  };
+
+  return {
+    colliders, interactables, meshesToAnimate, doorAnimations, meshes,
+    navigation, getCoordinateData, exportCoordinateCSV
+  };
 }
