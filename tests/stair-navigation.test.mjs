@@ -126,16 +126,27 @@ test("the runtime stairwell has actual enclosing walls and clear openings at bot
   const balusters = world.meshes.filter(mesh => mesh.name === "Schodiště / svislý sloupek zábradlí");
   assert.ok(walls.length >= live.floors * 3, "stairwell needs continuous wall segments on each storey");
   assert.equal(liftSideWalls.length, 2, "lift shaft side must close the stairwell at the rear and front edges");
-  assert.equal(lintels.length, live.floors * 2, "each floor needs two properly headed door openings");
+  assert.equal(lintels.length, (live.floors - 1) * 2, "seven storey changes need fourteen headed doorway openings");
   assert.ok(balusters.length >= (live.floors - 1) * (stair.steps + 1) * 4);
-  for (const z of [stair.firstZ, stair.secondZ]) {
+  const passages = [
+    ...Array.from({ length: live.floors - 1 }, (_, floor) => ({ z: stair.firstZ, floor })),
+    ...Array.from({ length: live.floors - 1 }, (_, i) => ({ z: stair.secondZ, floor: i + 1 }))
+  ];
+  for (const { z, floor } of passages) {
+    const openingBottom = floor * live.floorHeight;
+    const openingTop = openingBottom + 2.12;
     const coveredByWall = walls.some(wall => {
       if (Math.abs(wall.position.x - live.coreOpening.minX) > 1e-6) return false;
+      const wallHeight = wall.geometry.parameters.height;
+      const wallBottom = wall.position.y - wallHeight / 2;
+      const wallTop = wall.position.y + wallHeight / 2;
+      if (wallTop <= openingBottom + 1e-5 || wallBottom >= openingTop - 1e-5) return false;
       const halfDepth = wall.geometry.parameters.depth / 2;
       return wall.position.z - halfDepth < z + stair.treadDepth / 2 - 1e-5 &&
         wall.position.z + halfDepth > z - stair.treadDepth / 2 + 1e-5;
     });
-    assert.equal(coveredByWall, false, "a stairwell wall must not overlap the clear passage at z=" + z);
+    assert.equal(coveredByWall, false,
+      "a stairwell wall must not overlap the floor-level passage at floor=" + floor + ", z=" + z);
   }
 });
 
