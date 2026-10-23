@@ -60,9 +60,9 @@ if (!mainSource.includes("function finishStartupWhenReady()") || !mainSource.inc
 if (!mainSource.includes("firstSceneFrame") || !mainSource.includes("panoramaResolved")) fail("loading completion must wait for real startup milestones");
 const inputSource = await readFile(path.join(root, "src/game/input.js"), "utf8");
 if (!inputSource.includes("if (state.started || !state.ready) return;")) fail("keyboard and gamepad Start activation must be blocked until ready");
-const cinematicStylesSource = await readFile(path.join(root, "styles-cinematic.css"), "utf8");
-if (!cinematicStylesSource.includes("place-items: center") || !cinematicStylesSource.includes(".loading-panel")) fail("the start menu and loading panel must be centred");
-if (!cinematicStylesSource.includes("z-index: 30")) fail("loading overlay must cover the menu until startup completes");
+const startupStylesSource = await readFile(path.join(root, "styles-cinematic.css"), "utf8");
+if (!startupStylesSource.includes("place-items: center") || !startupStylesSource.includes(".loading-panel")) fail("the start menu and loading panel must be centred");
+if (!startupStylesSource.includes("z-index: 30")) fail("loading overlay must cover the menu until startup completes");
 if (/from\s+["']https?:\/\//i.test(mainSource)) fail("runtime modules must be bundled locally; remove CDN imports");
 if (!mainSource.includes("createMainBuildingWorld({ THREE, scene, state, ui })")) fail("gameplay must boot into the main-building outdoor map and interior interactions");
 if (!mainSource.includes("const SIMULATION_HZ = 60")) fail("game simulation must target 60 Hz");
