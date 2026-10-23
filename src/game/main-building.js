@@ -528,15 +528,22 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     }
 
     const panelW = doorWidth / 2;
-    const closedOffset = doorWidth / 4;
-    const openOffset = doorWidth / 2 + panelW / 2;
+    const openPanelWidth = Math.max(0.2, Math.min(
+      0.34,
+      liftOpeningLeft - (liftLeft + lift.wall),
+      (liftRight - lift.wall) - liftOpeningRight
+    ));
+    const openScaleX = openPanelWidth / panelW;
+    const closedOffset = panelW / 2;
+    const openOffset = doorWidth / 2 + openPanelWidth / 2;
     for (const side of [-1, 1]) {
       const closedX = lift.centerX + side * closedOffset;
       const openX = lift.centerX + side * openOffset;
       const panel = box(floor === 0 ? "Výtah / otevřené dveře" : "Výtah / dveře patra",
         floor === 0 ? openX : closedX, floorY + 1.08, lift.frontZ + 0.11,
         panelW, 2.10, 0.065, doorMaterial);
-      liftDoorPanels.push({ mesh: panel, floor, closedX, openX });
+      if (floor === 0) panel.scale.x = openScaleX;
+      liftDoorPanels.push({ mesh: panel, floor, closedX, openX, openScaleX });
     }
     box("Výtah / číselný panel", liftRight + 0.16, floorY + 1.42, lift.frontZ + 0.08,
       0.10, 0.35, 0.08, railMaterial);
@@ -585,8 +592,10 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     liftCarFloor = nextFloor;
 
     for (const panel of liftDoorPanels) {
-      panel.mesh.position.x = panel.floor === nextFloor ? panel.openX : panel.closedX;
-      panel.mesh.name = panel.floor === nextFloor ? "Výtah / otevřené dveře" : "Výtah / dveře patra";
+      const isServedFloor = panel.floor === nextFloor;
+      panel.mesh.position.x = isServedFloor ? panel.openX : panel.closedX;
+      panel.mesh.scale.x = isServedFloor ? panel.openScaleX : 1;
+      panel.mesh.name = isServedFloor ? "Výtah / otevřené dveře" : "Výtah / dveře patra";
     }
     for (const entry of liftDoorColliders) entry.collider.active = entry.floor !== nextFloor;
     for (const entry of liftCabinColliders) entry.collider.active = entry.floor === nextFloor;
