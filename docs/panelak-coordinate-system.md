@@ -72,3 +72,12 @@ bun run check
 bun run test
 bun run build
 ```
+
+
+## Physical stair navigation
+
+The runtime exposes the actual stair parameters through `world.navigation`, and passes this object into the first-person controller. The stair treads use a 0.30 m run, 0.175 m rise, and 1.16 m tread depth. The intermediate landing starts at the end of each flight rather than intersecting several step boxes.
+
+The player controller determines the supporting tread from the world-space X/Z position and snaps the foot datum to that tread's top. The camera follows `player.elevation`, so the view rises and falls as the player walks each flight. The controller accepts only step-height changes, uses the real landing to reverse direction, and rejects movement into an unsupported upper-storey stairwell void. Floor HUD state changes when the player reaches a floor datum; the stair interaction no longer teleports the player.
+
+The lift retains its existing floor-change interaction. Physical stair travel is independent of that interaction and does not require pressing E.

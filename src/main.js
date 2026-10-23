@@ -100,7 +100,8 @@ scene.traverse(object => {
 });
 
 const controller = createPlayerController({
-  camera, colliders: world.colliders, interactables: world.interactables, state, ui
+  camera, colliders: world.colliders, interactables: world.interactables,
+  navigation: world.navigation, state, ui
 });
 state.changeFloor = (floor, method = "Výtah") => {
   controller.goToFloor(floor, method);

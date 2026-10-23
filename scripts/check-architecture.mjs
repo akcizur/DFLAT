@@ -92,7 +92,7 @@ if (!outdoorSource.includes('id: "elevator"') || !outdoorSource.includes('id: "s
 if (!outdoorSource.includes('Mapa / terén')) fail("empty outdoor terrain is missing");
 if (!outdoorSource.includes('coreOpening')) fail("upper floor slabs must reserve a stair/elevator core opening");
 if (!mainSource.includes('0.08, 320')) fail("camera far plane must include the outdoor panorama sphere");
-if (!playerSource.includes('player.floor * FLOOR_HEIGHT')) fail("camera height must follow the current storey");
+if (!playerSource.includes('player.elevation + 1.68')) fail("camera height must follow the actual foot elevation, including stair traversal");
 
 const worldSource = await readFile(path.join(root, "src/game/world.js"), "utf8");
 if (!worldSource.includes("export function createEmptyApartment")) fail("playable empty-apartment map shell is required");
