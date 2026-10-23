@@ -46,19 +46,9 @@ try {
     debugText: document.querySelector("#boot-debug")?.textContent || ""
   }));
   const startupState = await page.evaluate(() => window.__DFLAT_SMOKE__?.gameState());
-  if (!startupState?.t06bModelActive || startupState.floorCount !== 4) {
-    throw new Error("The browser did not activate the four-storey Blender-authored T06B model: " + JSON.stringify(startupState));
-  }
-  const bounds = startupState.modelBounds;
-  if (
-    !bounds ||
-    bounds.size.x < 18.0 || bounds.size.x > 18.5 ||
-    bounds.size.z < 12.0 || bounds.size.z > 14.0 ||
-    bounds.size.y < 14.5 ||
-    bounds.min.y > -2.7 || bounds.max.y < 11.7 ||
-    bounds.min.z > -27.5 || bounds.max.z < -16.5
-  ) {
-    throw new Error("The loaded GLB is not upright and aligned to the 18 x 12 m outdoor site: " + JSON.stringify(bounds));
+  if (!startupState?.allBuildingsRemoved || startupState.t06bModelActive ||
+      startupState.buildingMeshCount !== 0 || startupState.floorCount !== 1) {
+    throw new Error("The runtime should contain an empty site with no building meshes: " + JSON.stringify(startupState));
   }
   if (!beforeStart.webgl) throw new Error("WebGL context could not be created.");
   if (beforeStart.debugText.trim()) throw new Error("Boot diagnostics reported an error: " + beforeStart.debugText);
