@@ -76,3 +76,17 @@ test("balcony bays have full-height glazed doors and readable service details", 
   assert.ok(source.includes("Dešťový svod / svislé potrubí"));
   assert.ok(source.includes("Dešťový svod / objímka"));
 });
+
+
+test("the stairwell has real enclosure walls, flight side walls, and concrete soffits", () => {
+  assert.match(source, /Schodiště \/ západní obvodová stěna/);
+  assert.match(source, /Schodiště \/ dělicí stěna u výtahu/);
+  assert.match(source, /Schodiště \/ zadní uzavírací stěna/);
+  assert.match(source, /Schodiště \/ čelní stěna k chodbě/);
+  assert.match(source, /Schodiště \/ boční stěna dolního ramene/);
+  assert.match(source, /Schodiště \/ boční stěna horního ramene/);
+  assert.match(source, /Schodiště \/ dolní rameno \/ podhled/);
+  assert.match(source, /Schodiště \/ horní rameno \/ podhled/);
+  assert.match(source, /doorwayMaxX: coreOpening\.minX \+ 1\.05/);
+  assert.match(source, /flightWallOffset = 1\.16 \/ 2 \+ stairWallThickness \/ 2 \+ 0\.04/);
+});
