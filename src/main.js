@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { createMaterials } from "./game/materials.js";
 import { createMainBuildingWorld } from "./game/main-building.js";
 import { createPlayerController } from "./game/player.js";
 import { createUI } from "./game/ui.js";
@@ -84,7 +83,6 @@ const state = {
   paused: false, balconyDoorOpen: false, emptyMap: true, mainBuildingScene: true
 };
 const ui = createUI();
-const { M, mat } = createMaterials(THREE);
 const world = createMainBuildingWorld({ THREE, scene });
 
 // The outdoor map has no interior mission, furniture, or scripted interactables.
