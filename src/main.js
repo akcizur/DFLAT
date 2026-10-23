@@ -209,7 +209,25 @@ if (new URLSearchParams(location.search).get("smoke") === "1") {
     value: {
       playerPosition: () => ({ x: controller.player.x, z: controller.player.z, elevation: controller.player.elevation, floor: controller.player.floor }),
       keysDown: () => ({ ...controller.keysDown }),
-      gameState: () => ({ started: state.started, paused: state.paused, ready: state.ready, t06bModelActive: state.t06bModelActive, currentFloor: state.currentFloor, floorCount: world.navigation?.floors ?? 8, modelBounds: state.t06bRuntimeBounds ? (() => { const b = state.t06bRuntimeBounds; return { min: { x: b.min.x, y: b.min.y, z: b.min.z }, max: { x: b.max.x, y: b.max.y, z: b.max.z }, size: { x: b.max.x-b.min.x, y: b.max.y-b.min.y, z: b.max.z-b.min.z } }; })() : null })
+      gameState: () => {
+        let buildingMeshCount = 0;
+        scene.traverse(object => {
+          if (object.isMesh &&
+              !object.name.startsWith("Mapa /") &&
+              !object.name.startsWith("Silnice /") &&
+              object.name !== "Outdoor city panorama" &&
+              object.name !== "Environment / rainfall") buildingMeshCount++;
+        });
+        return {
+          started: state.started, paused: state.paused, ready: state.ready,
+          t06bModelActive: state.t06bModelActive,
+          allBuildingsRemoved: state.allBuildingsRemoved,
+          buildingMeshCount,
+          currentFloor: state.currentFloor,
+          floorCount: world.navigation?.floors ?? 1,
+          modelBounds: null
+        };
+      }
     }
   });
 }
