@@ -38,7 +38,7 @@ function finishStartupWhenReady() {
   if (startupComplete || !firstSceneFrame || !panoramaResolved) return;
   startupComplete = true;
   state.ready = true;
-  setLoadingProgress(100, "SVĚT JE PŘIPRAVEN", "Vstup do hlavní budovy.", "READY");
+  setLoadingProgress(100, "SVĚT JE PŘIPRAVEN", "Prozkoumej otevřenou krajinu.", "READY");
   if (!loadingScreen) return;
   const remainingVisibleMs = Math.max(
     0,
@@ -88,7 +88,7 @@ renderer.shadowMap.autoUpdate = true;
 renderer.domElement.id = "screenCanvas";
 renderer.domElement.tabIndex = 0;
 mount.appendChild(renderer.domElement);
-setLoadingProgress(34, "VYKRESLOVAČ PŘIPRAVEN", "Připravuji terén a hlavní budovu.", "RENDERER");
+setLoadingProgress(34, "VYKRESLOVAČ PŘIPRAVEN", "Připravuji terén a počasí.", "RENDERER");
 
 function resize() {
   const displayWidth = Math.max(1, innerWidth);
