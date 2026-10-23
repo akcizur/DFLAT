@@ -209,9 +209,16 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     for (let i = 0; i < windowXs.length; i++) {
       const wx = windowXs[i];
       if (floor === 0 && Math.abs(wx) < 2) continue;
+      // The two loggia bays need full-height sliding doors, not ordinary windows.
+      const balconyDoor = Math.abs(Math.abs(wx) - 4.9) < 0.01;
+      const openingWidth = balconyDoor ? 1.56 : windowWidth;
+      const openingBottom = balconyDoor ? 0.08 : windowBottom;
+      const openingTop = balconyDoor ? 2.48 : windowTop;
       openings.push({
-        kind: "window", x0: wx - windowWidth / 2, x1: wx + windowWidth / 2,
-        y0: floorY + windowBottom, y1: floorY + windowTop, x: wx, column: i
+        kind: balconyDoor ? "balcony-door" : "window",
+        x0: wx - openingWidth / 2, x1: wx + openingWidth / 2,
+        y0: floorY + openingBottom, y1: floorY + openingTop,
+        x: wx, column: i, openingWidth, openingBottom, openingTop
       });
     }
     if (floor === 0) {
@@ -255,7 +262,9 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     for (const opening of openings) {
       if (opening.kind !== "window") continue;
       const wy = floorY + (windowBottom + windowTop) / 2;
-      const pane = ((floor * 7 + opening.column * 3) % 13 === 0) ? glassWarm : glassDark;
+      // A slightly livelier occupancy pattern gives the façade scattered warmer rooms.
+      const litWindow = ((floor * 11 + opening.column * 5) % 7) < 2;
+      const pane = litWindow ? glassWarm : glassDark;
       const paneZ = frontZ + 0.035;
       box("Okno / tmavé zapuštěné sklo", opening.x, wy, paneZ,
         windowWidth - 0.14, (windowTop - windowBottom) - 0.14, 0.04, pane);
@@ -271,6 +280,36 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
         frameZ, windowWidth, 0.07, 0.07, facadePanel);
       box("Okno / středová příčka", opening.x, wy, frameZ + 0.012,
         windowWidth - 0.14, 0.045, 0.045, concreteDark);
+    }
+
+    // Full-height glazed doors sit inside each balcony opening, with visible tracks and frames.
+    for (const opening of openings) {
+      if (opening.kind !== "balcony-door") continue;
+      const doorWidth = opening.x1 - opening.x0;
+      const doorHeight = opening.y1 - opening.y0;
+      const doorCenterY = (opening.y0 + opening.y1) / 2;
+      const frameZ = frontZ + 0.075;
+      const paneZ = frontZ + 0.035;
+      const frame = 0.065;
+      const paneWidth = (doorWidth - frame * 3) / 2;
+      for (const side of [-1, 1]) {
+        box("Balkonové dveře / zasklené posuvné křídlo",
+          opening.x + side * (paneWidth + frame) / 2, doorCenterY,
+          paneZ, paneWidth, doorHeight - frame * 2, 0.04,
+          (floor + (opening.column === 2 ? 0 : 1)) % 4 === 0 ? glassWarm : glassDark);
+      }
+      box("Balkonové dveře / levý rám", opening.x0 + frame / 2, doorCenterY,
+        frameZ, frame, doorHeight, 0.07, facadePanel);
+      box("Balkonové dveře / pravý rám", opening.x1 - frame / 2, doorCenterY,
+        frameZ, frame, doorHeight, 0.07, facadePanel);
+      box("Balkonové dveře / horní rám", opening.x, opening.y1 - frame / 2,
+        frameZ, doorWidth, frame, 0.07, facadePanel);
+      box("Balkonové dveře / spodní práh", opening.x, opening.y0 + frame / 2,
+        frameZ, doorWidth, frame, 0.07, concreteDark);
+      box("Balkonové dveře / střední profil", opening.x, doorCenterY,
+        frameZ + 0.014, frame, doorHeight - frame * 2, 0.045, concreteDark);
+      box("Balkonové dveře / vodicí lišta", opening.x, opening.y0 + 0.13,
+        frameZ + 0.016, doorWidth - 0.10, 0.035, 0.045, concreteDark);
     }
   }
 
@@ -292,7 +331,29 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
       for (const side of [-1, 1]) {
         box("Balkon / bočnice", x + side * 1.19, floorY + 0.55,
           frontZ + 0.79, 0.08, 0.76, 1.40, concreteDark);
+        box("Balkon / konzola pod deskou", x + side * 0.91, floorY + 0.055,
+          frontZ + 0.63, 0.16, 0.20, 0.42, concreteDark);
       }
+      // Small alternating planters break up the repeated concrete bays without cluttering them.
+      const planterX = x + (floor % 2 === 0 ? -0.66 : 0.66);
+      box("Balkon / truhlík", planterX, floorY + 0.43, frontZ + 1.10,
+        0.78, 0.30, 0.34, concreteDark);
+      for (let leaf = -1; leaf <= 1; leaf++) {
+        const leafHeight = 0.22 + ((floor + leaf + (x > 0 ? 1 : 0)) % 2) * 0.09;
+        box("Balkon / nízká zeleň v truhlíku",
+          planterX + leaf * 0.21, floorY + 0.58 + leafHeight / 2,
+          frontZ + 1.10, 0.13, leafHeight, 0.18, grass);
+      }
+    }
+  }
+
+  // Slender downpipes and clamps add a readable service detail at both façade edges.
+  for (const x of [leftX + 0.34, rightX - 0.34]) {
+    box("Dešťový svod / svislé potrubí", x, height / 2, frontZ + 0.13,
+      0.105, height - 0.18, 0.105, railMaterial);
+    for (let floor = 0; floor < floors; floor++) {
+      box("Dešťový svod / objímka", x, floor * floorHeight + 0.30,
+        frontZ + 0.19, 0.15, 0.075, 0.13, concreteDark);
     }
   }
 
