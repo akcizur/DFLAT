@@ -106,7 +106,7 @@ export function applyEnvironment({ THREE, scene, hemisphere, sun, panorama, envi
   sun.color.copy(c.sun);
   sun.intensity = environment.sunIntensity;
   sun.position.set(-Math.cos(environment.solarAngle) * 18,
-    Math.max(0.3, Math.sin(environment.solarAngle)) * 20, 8);
+    Math.sin(environment.solarAngle) * 20, 8);
 
   const skyMaterial = panorama?.mesh?.material;
   if (skyMaterial?.color) {
