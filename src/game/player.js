@@ -25,8 +25,17 @@ export function createPlayerController({ camera, colliders, interactables, state
   camera.position.set(player.x, player.elevation + 1.68, player.z);
   camera.rotation.order = "YXZ";
   let walkTime = 0;
+  let breathTime = 0;
   let cameraYaw = player.yaw, cameraPitch = player.pitch;
   let walkBlend = 0;
+  let bodySpeed = 0;
+  let forwardIntent = 0;
+  let strafeIntent = 0;
+  let isRunning = false;
+  let bodyLean = 0;
+  let bodyRoll = 0;
+  let stairPitch = 0;
+  let stairPitchTarget = 0;
   let cameraX = player.x, cameraY = 1.68, cameraZ = player.z;
 
   const keysDown = Object.create(null);
@@ -162,34 +171,60 @@ export function createPlayerController({ camera, colliders, interactables, state
   }
 
   function syncCamera(deltaTime = 1 / 60) {
-    // Eased first-person follow plus restrained head bob while actually moving.
-    const movementInput = movementCodes.some(code => keysDown[code]);
-    const desiredMoving = state.started && !state.paused &&
-      (Math.abs(player.x - cameraX) + Math.abs(player.z - cameraZ) > 0.0005 || movementInput);
+    // A quiet idle breath, grounded footstep cadence, and small body lean make
+    // the first-person stance feel inhabited without adding a nauseating camera shake.
+    const desiredMoving = state.started && !state.paused && bodySpeed > 0.06;
     const blend = 1 - Math.exp(-deltaTime * 18);
-    walkBlend += ((desiredMoving ? 1 : 0) - walkBlend) * (1 - Math.exp(-deltaTime * 3.2));
-    if (desiredMoving) walkTime += deltaTime * 7.2;
-    const bob = Math.sin(walkTime) * 0.012 * walkBlend;
-    const sway = Math.sin(walkTime * 0.42) * 0.004 * walkBlend;
+    const settle = 1 - Math.exp(-deltaTime * 5.5);
+    const runningAmount = isRunning && desiredMoving ? 1 : 0;
+
+    walkBlend += ((desiredMoving ? 1 : 0) - walkBlend) *
+      (1 - Math.exp(-deltaTime * 3.2));
+    breathTime += deltaTime;
+    if (desiredMoving) walkTime += deltaTime * (isRunning ? 10.4 : 7.2);
+
+    const targetLean = desiredMoving
+      ? (forwardIntent > 0 ? (isRunning ? 0.052 : 0.022) : forwardIntent < 0 ? -0.012 : 0)
+      : 0;
+    const targetRoll = desiredMoving ? -strafeIntent * (isRunning ? 0.042 : 0.026) : 0;
+    bodyLean += (targetLean - bodyLean) * settle;
+    bodyRoll += (targetRoll - bodyRoll) * settle;
+    stairPitch += (stairPitchTarget - stairPitch) * (1 - Math.exp(-deltaTime * 4.5));
+
+    // Slow breathing remains visible when idle. Steps are firmer when running,
+    // while the camera follows real foot elevation rather than snapping by floor.
+    const breathing = Math.sin(breathTime * 1.35) * 0.008;
+    const bobAmplitude = isRunning ? 0.017 : 0.010;
+    const bob = Math.sin(walkTime * 1.65) * bobAmplitude * walkBlend;
+    const sway = Math.sin(walkTime * 0.5) * 0.0035 * walkBlend;
     const targetX = player.x + Math.cos(player.yaw) * sway;
-    const targetY = player.elevation + 1.68 + player.jumpHeight + bob;
+    const targetY = player.elevation + 1.68 + player.jumpHeight + breathing + bob;
     const targetZ = player.z - Math.sin(player.yaw) * sway;
     cameraX += (targetX - cameraX) * blend;
     cameraY += (targetY - cameraY) * blend;
     cameraZ += (targetZ - cameraZ) * blend;
     camera.position.set(cameraX, cameraY, cameraZ);
+
     camera.rotation.order = "YXZ";
-    const lookBlend = 1;
     let yawDelta = player.yaw - cameraYaw;
     yawDelta = Math.atan2(Math.sin(yawDelta), Math.cos(yawDelta));
-    cameraYaw += yawDelta * lookBlend;
-    cameraPitch += (player.pitch - cameraPitch) * lookBlend;
+    cameraYaw += yawDelta;
+    cameraPitch += (player.pitch - cameraPitch);
     camera.rotation.y = cameraYaw;
-    camera.rotation.x = cameraPitch;
-    camera.rotation.z = 0;
+    camera.rotation.x = Math.max(-1.35, Math.min(1.35, cameraPitch + bodyLean * 0.60 + stairPitch));
+    camera.rotation.z = bodyRoll;
   }
 
   function update(deltaTime) {
+    const previousX = player.x;
+    const previousZ = player.z;
+    const previousElevation = player.elevation;
+    forwardIntent = 0;
+    strafeIntent = 0;
+    isRunning = false;
+    bodySpeed = 0;
+    stairPitchTarget = 0;
+
     if (state.started && !state.paused) {
       let forward = 0;
       let strafe = 0;
@@ -200,11 +235,20 @@ export function createPlayerController({ camera, colliders, interactables, state
 
       const length = Math.hypot(forward, strafe);
       if (length > 0) { forward /= length; strafe /= length; }
-      const isRunning = Boolean(keysDown.ShiftLeft || keysDown.ShiftRight);
+      forwardIntent = forward;
+      strafeIntent = strafe;
+      isRunning = Boolean(keysDown.ShiftLeft || keysDown.ShiftRight);
       const moveSpeed = player.speed * (isRunning ? RUN_MULTIPLIER : 1);
       const dx = (-Math.sin(player.yaw) * forward + Math.cos(player.yaw) * strafe) * moveSpeed * deltaTime;
       const dz = (-Math.cos(player.yaw) * forward - Math.sin(player.yaw) * strafe) * moveSpeed * deltaTime;
       movePlayer(dx, dz);
+      bodySpeed = deltaTime > 0
+        ? Math.hypot(player.x - previousX, player.z - previousZ) / deltaTime
+        : 0;
+      const elevationDelta = player.elevation - previousElevation;
+      stairPitchTarget = player.onStairs && Math.abs(elevationDelta) > 0.001
+        ? (elevationDelta > 0 ? -0.018 : 0.014)
+        : 0;
 
       // Lightweight vertical physics for a short, responsive jump. The floor stays authoritative.
       if (player.jumpHeight > 0 || jumpVelocity > 0) {
@@ -236,6 +280,13 @@ export function createPlayerController({ camera, colliders, interactables, state
     jumpVelocity = 0;
     player.x = method === "Schodiště" ? -1.8 : 2.2;
     player.z = -21.35;
+    bodySpeed = 0;
+    forwardIntent = 0;
+    strafeIntent = 0;
+    bodyLean = 0;
+    bodyRoll = 0;
+    stairPitch = 0;
+    stairPitchTarget = 0;
     state.currentFloor = nextFloor;
     cameraX = player.x;
     cameraZ = player.z;
