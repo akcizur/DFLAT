@@ -1,10 +1,8 @@
-// Keep the BIOS intro from trapping input if its CSS animation is delayed.
+// The BIOS splash is only a short intro. It never starts the game by itself.
+// Clicking skips the intro and reveals the real loading state or the ready menu.
 const bootScreen = document.getElementById("bootScreen");
 if (bootScreen) {
-  const dismissBoot = (startGame) => {
-    bootScreen.remove();
-    if (startGame) document.getElementById("startButton")?.click();
-  };
-  bootScreen.addEventListener("pointerdown", () => dismissBoot(true), { once: true });
-  window.setTimeout(() => dismissBoot(false), 2700);
+  const dismissBoot = () => bootScreen.remove();
+  bootScreen.addEventListener("pointerdown", dismissBoot, { once: true });
+  window.setTimeout(dismissBoot, 1650);
 }
