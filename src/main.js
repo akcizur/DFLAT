@@ -195,6 +195,42 @@ rainMesh.frustumCulled = false;
 rainMesh.renderOrder = 2;
 rainMesh.visible = false;
 scene.add(rainMesh);
+
+// Low-poly cloud banks make overcast, rain and mist visible in the sky itself.
+// The cloud field follows the player, so the open map never reaches a skybox edge.
+const cloudGeometry = new THREE.SphereGeometry(1, 7, 4);
+const cloudMaterial = new THREE.MeshBasicMaterial({
+  color: 0xc4c8c8, transparent: true, opacity: 0, depthWrite: false,
+  fog: false, toneMapped: false
+});
+const cloudLayers = [];
+const cloudPuffs = [
+  { x: 0, y: 0, z: 0, size: 3.2 },
+  { x: 2.2, y: 0.25, z: 0.1, size: 2.4 },
+  { x: -2.0, y: 0.1, z: 0.2, size: 2.5 },
+  { x: 0.8, y: 0.72, z: 0.25, size: 1.8 },
+  { x: -0.6, y: 0.54, z: -0.25, size: 1.65 }
+];
+for (let i = 0; i < 14; i++) {
+  const cloud = new THREE.Group();
+  cloud.name = "Environment / cloud bank " + String(i + 1).padStart(2, "0");
+  cloud.userData.offsetX = (weatherRandom() - 0.5) * 170;
+  cloud.userData.offsetZ = (weatherRandom() - 0.5) * 170;
+  cloud.userData.baseY = 15 + weatherRandom() * 10;
+  cloud.userData.phase = weatherRandom() * Math.PI * 2;
+  for (const puff of cloudPuffs) {
+    const mesh = new THREE.Mesh(cloudGeometry, cloudMaterial);
+    mesh.name = "Environment / cloud puff";
+    mesh.position.set(puff.x, puff.y, puff.z);
+    mesh.scale.set(puff.size, puff.size * 0.38, puff.size * 0.72);
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    cloud.add(mesh);
+  }
+  scene.add(cloud);
+  cloudLayers.push(cloud);
+}
+
 const SIMULATION_HZ = 60;
 const SIMULATION_STEP_MS = 1000 / SIMULATION_HZ;
 const SCENE_RENDER_HZ = 60;
@@ -231,6 +267,24 @@ function updateSimulation(deltaSeconds, nowMs) {
   rainMesh.visible = rainVisible;
   rainMaterial.opacity = environment.precipitation * 0.52;
   rainMesh.position.set(playerX, controller.player.elevation, playerZ);
+
+  const cloudNightTint = 0.18 + environment.daylight * 0.62;
+  cloudMaterial.color.setRGB(
+    cloudNightTint - environment.precipitation * 0.06,
+    cloudNightTint + 0.015 - environment.precipitation * 0.08,
+    cloudNightTint + 0.045 - environment.precipitation * 0.07
+  );
+  cloudMaterial.opacity = 0.025 + environment.cloudiness * 0.38;
+  const cloudDrift = nowMs * 0.00025 * environment.wind;
+  for (const cloud of cloudLayers) {
+    const phase = cloud.userData.phase;
+    cloud.position.set(
+      playerX + cloud.userData.offsetX + cloudDrift,
+      cloud.userData.baseY,
+      playerZ + cloud.userData.offsetZ + Math.sin(nowMs * 0.00012 + phase) * 2.5
+    );
+  }
+
   if (rainVisible) {
     const dropsPerSecond = 9 + environment.precipitation * 24;
     for (let i = 0; i < WEATHER_PARTICLE_COUNT; i++) {
