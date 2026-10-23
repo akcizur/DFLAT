@@ -310,7 +310,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     0.055, 2.34, 0.78, doorMaterial);
   for (const side of [-1, 1]) {
     box("Vchod / zasklení otevřeného dveřního křídla",
-      side * 0.90, 1.52, frontZ + 0.34,
+      side * 0.94, 1.52, frontZ + 0.34,
       0.025, 1.08, 0.52, glassDark);
   }
   box("Vchod / madlo", 0.70, 1.12, frontZ + 0.16,
