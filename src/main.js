@@ -251,26 +251,40 @@ function updateSimulation(deltaSeconds, nowMs) {
   const environment = sampleEnvironment((nowMs - clockStart) / 1000);
   state.environment = environment;
   applyEnvironment({ THREE, scene, hemisphere: globalHemisphere, sun: globalSun, panorama, environment });
-  rainMesh.visible = environment.precipitation > 0.025;
+  const playerX = controller.player.x;
+  const playerZ = controller.player.z;
+  const outsideFootprint = playerX < world.navigation.footprint.minX - 0.1 ||
+    playerX > world.navigation.footprint.maxX + 0.1 ||
+    playerZ > world.navigation.footprint.frontZ + 0.1 ||
+    playerZ < world.navigation.footprint.rearZ - 0.1;
+  const onOpenLoggia = [-3.6, 3.6].some(x =>
+    Math.abs(playerX - x) < 1.30 &&
+    playerZ < world.navigation.footprint.rearZ + 1.78 &&
+    playerZ > world.navigation.footprint.rearZ - 0.20
+  );
+  const rainVisible = environment.precipitation > 0.025 && (outsideFootprint || onOpenLoggia);
+  rainMesh.visible = rainVisible;
   rainMaterial.opacity = environment.precipitation * 0.52;
-  rainMesh.position.set(controller.player.x, controller.player.elevation, controller.player.z);
-  const dropsPerSecond = 9 + environment.precipitation * 24;
-  for (let i = 0; i < WEATHER_PARTICLE_COUNT; i++) {
-    const offset = i * 6;
-    rainPositions[offset + 1] -= dropsPerSecond * deltaSeconds;
-    rainPositions[offset + 4] = rainPositions[offset + 1] - 0.24;
-    rainPositions[offset] += environment.wind * deltaSeconds;
-    rainPositions[offset + 3] = rainPositions[offset] - 0.035;
-    if (rainPositions[offset + 1] < 0.25) {
-      rainPositions[offset] = (weatherRandom() - 0.5) * 24;
-      rainPositions[offset + 1] = 10 + weatherRandom() * 10;
-      rainPositions[offset + 2] = (weatherRandom() - 0.5) * 24;
-      rainPositions[offset + 3] = rainPositions[offset] - 0.035;
+  rainMesh.position.set(playerX, controller.player.elevation, playerZ);
+  if (rainVisible) {
+    const dropsPerSecond = 9 + environment.precipitation * 24;
+    for (let i = 0; i < WEATHER_PARTICLE_COUNT; i++) {
+      const offset = i * 6;
+      rainPositions[offset + 1] -= dropsPerSecond * deltaSeconds;
       rainPositions[offset + 4] = rainPositions[offset + 1] - 0.24;
-      rainPositions[offset + 5] = rainPositions[offset + 2];
+      rainPositions[offset] += environment.wind * deltaSeconds;
+      rainPositions[offset + 3] = rainPositions[offset] - 0.035;
+      if (rainPositions[offset + 1] < 0.25) {
+        rainPositions[offset] = (weatherRandom() - 0.5) * 24;
+        rainPositions[offset + 1] = 10 + weatherRandom() * 10;
+        rainPositions[offset + 2] = (weatherRandom() - 0.5) * 24;
+        rainPositions[offset + 3] = rainPositions[offset] - 0.035;
+        rainPositions[offset + 4] = rainPositions[offset + 1] - 0.24;
+        rainPositions[offset + 5] = rainPositions[offset + 2];
+      }
     }
+    rainGeometry.attributes.position.needsUpdate = true;
   }
-  rainGeometry.attributes.position.needsUpdate = true;
   for (const door of world.doorAnimations) {
     const target = door.targetOpen ? 1 : 0;
     door.progress += (target - door.progress) * (1 - Math.exp(-deltaSeconds * 5.5));
