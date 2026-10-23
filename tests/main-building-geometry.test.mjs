@@ -65,5 +65,5 @@ test("mesh collection and exports include transformed corners, world bounds, and
   assert.match(source, /semanticAnchors: anchors\.length/);
   assert.match(source, /function exportCoordinateCSV\(\)/);
   assert.match(source, /join\("\\r\\n"\)/);
-  assert.match(source, /return \{ colliders, interactables, meshesToAnimate, doorAnimations, meshes, getCoordinateData, exportCoordinateCSV \}/);
+  assert.match(source, /return \{[\s\S]*?colliders, interactables, meshesToAnimate, doorAnimations, meshes,\s*navigation, getCoordinateData, exportCoordinateCSV\s*\}/);
 });
