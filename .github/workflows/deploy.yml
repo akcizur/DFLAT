@@ -3,22 +3,16 @@ name: Deploy DFLAT to GitHub Pages
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  validate:
+    name: Validate geometry and production build
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -27,10 +21,37 @@ jobs:
         uses: oven-sh/setup-bun@v2
       - name: Install dependencies
         run: bun install
-      - name: Run project checks
-        run: |
-          bun run check:syntax
-          bun run check
+      - name: Check JavaScript syntax
+        run: bun run check:syntax
+      - name: Check repository architecture
+        run: bun run check
+      - name: Test building geometry invariants
+        run: bun run test
+      - name: Verify production build
+        run: bun run build
+
+  deploy:
+    name: Deploy validated build to GitHub Pages
+    needs: validate
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+      - name: Install dependencies
+        run: bun install
       - name: Build static site
         run: bun run build
       - name: Configure GitHub Pages
