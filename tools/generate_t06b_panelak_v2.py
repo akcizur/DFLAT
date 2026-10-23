@@ -173,6 +173,7 @@ for floor in range(-1, FLOORS):
         rear_bridge_bays = (
             (-WIDTH/2, loggia_left_outer),
             (loggia_left_inner, core_left),
+            (core_left, core_right),
             (core_right, loggia_right_inner),
             (loggia_right_outer, WIDTH/2),
         )
