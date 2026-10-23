@@ -18,7 +18,7 @@ FLOORS = 4                    # 4 above-ground storeys; no lift
 FLOOR_HEIGHT = 2.8
 BASEMENT_HEIGHT = 2.6
 SLAB = 0.18
-WALL = 0.18
+WALL = 0.15
 WINDOW_W = 1.35
 WINDOW_SILL = 0.78
 WINDOW_HEAD = 2.18
@@ -268,10 +268,10 @@ for floor in range(FLOORS):
         inner = side*3.6
         # Floor finishes are intentionally muted institutional lino.
         for cx, cz, sx, sz, label, mat in [
-            (outer, -3.75, 3.42, 3.0, "Children room", lino),
-            (outer,  3.05, 3.42, 4.35, "Bedroom", lino),
-            (inner, -3.50, 3.42, 3.5, "Kitchen", lino),
-            (inner,  3.00, 3.42, 4.65, "Living room", lino),
+            (outer, -3.75, 3.45, 3.0, "Children room", lino),
+            (outer,  3.05, 3.45, 4.35, "Bedroom", lino),
+            (inner, -3.50, 3.45, 3.5, "Kitchen", lino),
+            (inner,  3.00, 3.45, 4.65, "Living room", lino),
         ]:
             box(f"Flat {side} | {label} | level {floor} finish", (cx, y+0.035, cz),
                 (sx, 0.05, sz), mat)
@@ -284,7 +284,7 @@ for floor in range(FLOORS):
                     (WALL, 2.5, z1-z0), cream)
         box("Apartment partition | boundary door lintel", (side*5.4, y+2.20, (entry_z0+entry_z1)/2),
             (WALL, 0.60, entry_z1-entry_z0), cream)
-        box("Apartment hall | lino", (outer, y+0.035, -0.57), (3.42, 0.05, 2.25), lino)
+        box("Apartment hall | lino", (outer, y+0.035, -0.57), (3.45, 0.05, 2.30), lino)
 
         # Close both walls facing the central stair, leaving only the apartment door.
         for z0, z1 in ((FRONT_Z+0.14, entry_z0), (entry_z1, REAR_Z-0.14)):
@@ -297,7 +297,7 @@ for floor in range(FLOORS):
         # Cross walls have real gaps for room doors rather than sealed-off display boxes.
         for z in (-1.95, 0.80):
             doorway_x = inner-side*1.12
-            for x0, x1 in sorted(((inner-1.71, doorway_x-0.48), (doorway_x+0.48, inner+1.71))):
+            for x0, x1 in sorted(((inner-1.725, doorway_x-0.48), (doorway_x+0.48, inner+1.725))):
                 if x1 > x0:
                     box("Apartment partition | room cross wall", ((x0+x1)/2, y+1.25, z),
                         (x1-x0, 2.5, WALL), cream)
@@ -307,7 +307,7 @@ for floor in range(FLOORS):
         # B7-style service zone. Bath and WC are separated by a full-height partition
         # with a standard narrow doorway; the toilet is no longer in the bathtub zone.
         wc_z0, wc_z1 = -0.74, -0.10
-        box("Flat | B7 service-core floor", (inner, y+0.08, -0.42), (2.05, 0.10, 2.05), cream)
+        box("Flat | B7 service-core floor", (inner, y+0.08, -0.42), (2.0, 0.10, 2.05), cream)
         for z0, z1 in ((-1.445, wc_z0), (wc_z1, 0.605)):
             if z1 > z0:
                 box("Flat | bathroom-WC divider", (inner, y+1.05, (z0+z1)/2),
@@ -376,12 +376,12 @@ scene.render.filepath = "//T06B_Panelak_V2_preview.png"
 # Clear/net construction areas require a dimensioned drawing and professional review.
 import json
 room_schedule = {
-    "children_room_m2": round(3.42*3.0, 2),
-    "kitchen_m2": round(3.42*3.5, 2),
-    "bedroom_m2": round(3.42*4.35, 2),
-    "living_room_m2": round(3.42*4.65, 2),
-    "hall_m2": round(3.42*2.25, 2),
-    "bathroom_wc_zone_m2": round(2.05*2.05, 2),
+    "children_room_m2": round(3.45*3.0, 2),
+    "kitchen_m2": round(3.45*3.5, 2),
+    "bedroom_m2": round(3.45*4.35, 2),
+    "living_room_m2": round(3.45*4.65, 2),
+    "hall_m2": round(3.45*2.30, 2),
+    "bathroom_wc_zone_m2": round(2.0*2.05, 2),
 }
 # Store the intended dimensional design as scene metadata for downstream checks.
 scene["room_area_schedule_m2"] = json.dumps(room_schedule, sort_keys=True)
