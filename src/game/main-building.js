@@ -241,7 +241,19 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
   for (let x = -102; x <= 102; x += 12) box("Silnice / přerušovaná čára", x, 0.034, 2.7, 4.4, 0.012, 0.12, materials.marking);
 
   // Foundation plinth and shallow basement level (1 PP). The cellar remains below grade.
-  box("Suterén / základový sokl", 0, -0.66, buildingZ, width + 0.34, 1.40, depth + 0.34, materials.darkConcrete);
+  const plinthY = -0.66;
+  const plinthHeight = 1.40;
+  const plinthBorder = 0.34;
+  // Four perimeter strips leave the interior floor visible. A solid foundation
+  // block here would cover the playable floor and share coplanar faces with terrain.
+  box("Suterén / základový sokl / přední", 0, plinthY, frontZ,
+    width + plinthBorder, plinthHeight, plinthBorder, materials.darkConcrete);
+  box("Suterén / základový sokl / zadní", 0, plinthY, rearZ,
+    width + plinthBorder, plinthHeight, plinthBorder, materials.darkConcrete);
+  for (const x of [leftX, rightX]) {
+    box("Suterén / základový sokl / boční", x, plinthY, buildingZ,
+      plinthBorder, plinthHeight, depth - plinthBorder, materials.darkConcrete);
+  }
   box("Hlavní budova / levý štít", leftX + wallT / 2, buildingHeight / 2, buildingZ,
     wallT, buildingHeight, depth, materials.concrete);
   box("Hlavní budova / pravý štít", rightX - wallT / 2, buildingHeight / 2, buildingZ,
