@@ -577,10 +577,13 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
       addAnchor(`entrance-${label}-top`, `Vchod ${label} nahoře`, x, doorHeight, frontWallZ, "door opening");
     }
 
-    for (const [xLabel, x] of [["left", coreOpening.minX], ["right", coreOpening.maxX]]) {
-      for (const [zLabel, z] of [["rear", coreOpening.minZ], ["front", coreOpening.maxZ]]) {
-        addAnchor(`core-${xLabel}-${zLabel}-ground`, `Kout jádra ${xLabel}/${zLabel}`, x, 0, z, "coreOpening");
-        addAnchor(`core-${xLabel}-${zLabel}-roof`, `Kout jádra ${xLabel}/${zLabel} nahoře`, x, height, z, "coreOpening");
+    for (let floor = 1; floor < floors; floor++) {
+      const openingY = floor * floorHeight;
+      for (const [xLabel, x] of [["left", coreOpening.minX], ["right", coreOpening.maxX]]) {
+        for (const [zLabel, z] of [["rear", coreOpening.minZ], ["front", coreOpening.maxZ]]) {
+          addAnchor(`core-f${floor}-${xLabel}-${zLabel}`,
+            `Kout jádra patro ${floor}, ${xLabel}/${zLabel}`, x, openingY, z, "coreOpening on residential slab datum");
+        }
       }
     }
 
@@ -670,7 +673,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     const csvField = value => {
       if (value === null || value === undefined) return "";
       const text = String(value);
-      return /[",\\r\\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+      return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
     };
     const rows = [header];
 
