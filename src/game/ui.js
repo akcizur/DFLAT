@@ -16,11 +16,6 @@ export function createUI() {
   }
 
   function updateObjective(state) {
-    if (state.panelakScene) {
-      objectiveText.textContent = "Panelák: prozkoumej okolí a vstup.";
-      inventoryText.textContent = "SCÉNA: PANELÁK";
-      return;
-    }
     if (state.emptyMap) {
       objectiveText.textContent = "Holobyt: zatím bez nábytku a úkolů.";
       inventoryText.textContent = "MAPA: HOLOBYT";
