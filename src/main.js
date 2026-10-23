@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { createMainBuildingWorld } from "./game/main-building.js";
 import { createPlayerController } from "./game/player.js";
 import { createUI } from "./game/ui.js";
@@ -122,7 +121,7 @@ renderer.shadowMap.autoUpdate = true;
 renderer.domElement.id = "screenCanvas";
 renderer.domElement.tabIndex = 0;
 mount.appendChild(renderer.domElement);
-setLoadingProgress(34, "VYKRESLOVAČ PŘIPRAVEN", "Připravuji terén a hlavní budovu.", "RENDERER");
+setLoadingProgress(34, "VYKRESLOVAČ PŘIPRAVEN", "Připravuji prázdný terén, silnici a chodníky.", "RENDERER");
 
 function resize() {
   const displayWidth = Math.max(1, innerWidth);
@@ -149,160 +148,37 @@ resize();
 const state = {
   hasKeys: false, doorOpen: false, finished: false, started: false,
   paused: false, balconyDoorOpen: false, emptyMap: true, mainBuildingScene: true, currentFloor: 0,
-  ready: false, t06bModelActive: false
+  ready: false, t06bModelActive: false, allBuildingsRemoved: false
 };
 const ui = createUI();
 const world = createMainBuildingWorld({ THREE, scene, state, ui });
 
-// The Blender-authored five-module T06B model is the active building when its
-// generated GLB is available. The procedural building stays as a safe fallback
-// for direct/local runs where Blender has not yet generated the asset.
-setLoadingProgress(56, "NAČÍTÁM SEKCI T06B", "Pět modulů, čtyři podlaží, suterén a schodiště.", "T06B MODEL");
-setLoadingProgress(62, "NAČÍTÁM ARCHITEKTURU", "Kontroluji geometrii sekce T06B.", "MODEL");
-const t06bModelRoot = await new Promise(resolve => {
-  let settled = false;
-  const finish = value => {
-    if (settled) return;
-    settled = true;
-    window.clearTimeout(timeout);
-    resolve(value);
-  };
-  const timeout = window.setTimeout(() => finish(null), 10000);
-  new GLTFLoader().load(
-    `${import.meta.env.BASE_URL}models/t06b-panelak-v2.glb`,
-    gltf => finish(gltf.scene),
-    undefined,
-    error => {
-      console.warn("T06B Blender model unavailable; using the procedural fallback.", error);
-      finish(null);
-    }
-  );
-});
-
-if (t06bModelRoot) {
-  // Preserve the outdoor site, but discard the old eight-storey building geometry.
-  const siteMeshes = world.meshes.filter(mesh =>
-    mesh.name.startsWith("Mapa /") || mesh.name.startsWith("Silnice /")
-  );
-  for (const mesh of world.meshes) {
-    if (siteMeshes.includes(mesh)) continue;
-    scene.remove(mesh);
-    mesh.geometry?.dispose();
-  }
-  world.meshes.splice(0, world.meshes.length, ...siteMeshes);
-  world.meshesToAnimate.length = 0;
-  world.doorAnimations.length = 0;
-  world.colliders.length = 0;
-  world.interactables.length = 0;
-  delete state.onElevatorMoved;
-
-  // The authored model's front is local z=-6. Reflect depth and move its centre
-  // to z=-22 so its front/back facades align with the existing outdoor approach.
-  t06bModelRoot.name = "T06B V2 | five-module panelak";
-  t06bModelRoot.scale.z = -1;
-  t06bModelRoot.position.z = -22;
-  scene.add(t06bModelRoot);
-  const t06bRuntimeBounds = new THREE.Box3().setFromObject(t06bModelRoot);
-  state.t06bRuntimeBounds = t06bRuntimeBounds;
-  world.navigation = {
-    floorHeight: 2.8,
-    floors: 4,
-    coreOpening: { minX: -1.5, maxX: 1.5, minZ: -24.2, maxZ: -19.8 },
-    stairs: {
-      lowX: -1.5, highX: 0.9, firstZ: -21.2, secondZ: -23.5, steps: 8,
-      stepRise: 0.175, stepRun: 0.3, treadDepth: 1.2, treadOverlap: 0.025,
-      landingWidth: 0.6, landingDepth: 4.3,
-      landingCenterX: 1.2, landingCenterZ: -22.0
-    }
-  };
-
-  const addCollider = (minX, maxX, minZ, maxZ, floor = null) => {
-    const collider = { minX, maxX, minZ, maxZ };
-    if (Number.isInteger(floor)) collider.floor = floor;
-    world.colliders.push(collider);
-  };
-  // Convert authored Y-up/local-Z facade intervals into the site's world Z.
-  const addLocalCollider = (minX, maxX, localMinZ, localMaxZ, floor = null) => {
-    addCollider(minX, maxX, -22-localMaxZ, -22-localMinZ, floor);
-  };
-
-  // Full-height end walls remain solid on every storey.
-  addLocalCollider(-9.075, -8.925, -6.075, 6.075);
-  addLocalCollider(8.925, 9.075, -6.075, 6.075);
-
-  const rearWallSegments = [[-9, -5.2], [-2.0, 2.0], [5.2, 9]];
-  const loggiaWidth = 3.2;
-  const loggiaDepth = 1.25;
-  const rearZ = 6.0;
-  const loggiaBackZ = rearZ-loggiaDepth;
-  const entryZ0 = -1.74, entryZ1 = -0.86;
-  for (let floor = 0; floor < 4; floor++) {
-    // Only the ground floor has a walk-through exterior door; luxfer panels
-    // on upper floors are glazing, not openings.
-    const frontSegments = floor === 0 ? [[-9, -0.9], [0.9, 9]] : [[-9, 9]];
-    for (const [left, right] of frontSegments) {
-      addLocalCollider(left, right, -6.075, -5.925, floor);
-    }
-    // The rear wall is open across each 3.2 m recessed loggia doorway.
-    for (const [left, right] of rearWallSegments) {
-      addLocalCollider(left, right, rearZ-0.075, rearZ+0.075, floor);
-    }
-
-    // The side returns and railing are physical barriers: the player may enter
-    // a loggia through its central sliding-door gap, but cannot walk through its
-    // concrete cheeks or straight over the oxide-red railing.
-    for (const cx of [-3.6, 3.6]) {
-      for (const side of [-1, 1]) {
-        const sideX = cx + side*(loggiaWidth/2-0.15/2);
-        addLocalCollider(sideX-0.075, sideX+0.075, loggiaBackZ-0.075, rearZ+0.075, floor);
-      }
-      const railWidth = loggiaWidth-0.20;
-      const railZ = rearZ-0.09;
-      addLocalCollider(cx-railWidth/2, cx+railWidth/2, railZ-0.065/2, railZ+0.065/2, floor);
-    }
-
-    // Apartment/core walls retain aligned 0.88 m doorways.
-    for (const side of [-1, 1]) {
-      for (const xCenter of [side * 1.8, side * 5.4]) {
-        for (const [z0, z1] of [[-5.85, entryZ0], [entryZ1, 5.85]]) {
-          addLocalCollider(xCenter-0.075, xCenter+0.075, z0, z1, floor);
-        }
-      }
-      const inner = side * 3.6;
-      const doorwayX = inner - side * 1.12;
-      for (const z of [-2.275, -0.075]) {
-        for (const [left, right] of [
-          [inner-1.725, doorwayX-0.48],
-          [doorwayX+0.48, inner+1.725]
-        ]) {
-          if (right > left) addLocalCollider(left, right, z-0.075, z+0.075, floor);
-        }
-      }
-
-      const outer = side * 7.2;
-      for (const z of [-2.775, -0.075]) {
-        const halfDoor = 0.44;
-        addLocalCollider(outer-1.725, outer-halfDoor, z-0.075, z+0.075, floor);
-        addLocalCollider(outer+halfDoor, outer+1.725, z-0.075, z+0.075, floor);
-      }
-      for (const [z0, z1] of [[-2.20, -1.525], [-0.875, -0.20]]) {
-        addLocalCollider(inner-0.075, inner+0.075, z0, z1, floor);
-      }
-    }
-  }
-
-  world.interactables.push({
-    id: "stairs", name: "Schodiště",
-    description: "Čtyři podlaží. Vystoupej po skutečných schodišťových ramenech.",
-    x: 0, z: -22.0, range: 1.8, used: false,
-    action: () => ui.showToast("T06B / čtyři nadzemní podlaží / bez výtahu")
-  });
-  state.currentFloor = 0;
-  state.t06bModelActive = true;
-  setLoadingProgress(78, "PANELÁK T06B PŘIPRAVEN", "18 m / pět modulů / osm bytů.", "MODEL READY");
-} else {
-  setLoadingProgress(78, "ZÁLOŽNÍ SCÉNA", "Model T06B není dostupný; používám procedurální náhradní budovu.", "FALLBACK");
+// The requested scene is now an empty housing-estate site. Keep the ground,
+ // road, pavement and approach path, but remove every building model from runtime.
+setLoadingProgress(56, "ODSTRAŇUJI BUDOVY", "Ponechávám pouze terén, silnici a chodníky.", "EMPTY SITE");
+const siteMeshes = world.meshes.filter(mesh =>
+  mesh.name.startsWith("Mapa /") || mesh.name.startsWith("Silnice /")
+);
+for (const mesh of world.meshes) {
+  if (siteMeshes.includes(mesh)) continue;
+  scene.remove(mesh);
+  mesh.geometry?.dispose();
 }
+world.meshes.splice(0, world.meshes.length, ...siteMeshes);
+world.meshesToAnimate.length = 0;
+world.doorAnimations.length = 0;
+world.colliders.length = 0;
+world.interactables.length = 0;
+world.navigation = {
+  floorHeight: 2.8,
+  floors: 1,
+  footprint: { minX: -120, maxX: 120, minZ: -142, maxZ: 98 },
+  coreOpening: { minX: 1, maxX: -1, minZ: 1, maxZ: -1 },
+  stairs: null
+};
+state.currentFloor = 0;
+state.t06bModelActive = false;
+state.allBuildingsRemoved = true;
 panelakResolved = true;
 finishStartupWhenReady();
 
