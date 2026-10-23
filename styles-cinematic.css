@@ -1130,3 +1130,121 @@
 #bootScreen.boot-screen {
   animation-duration: 1.55s;
 }
+
+
+/* Final startup contract: one centered menu, one centered loader, one clear Start action. */
+#startScreen.nexus-menu {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+#startScreen.nexus-menu .nexus-monitor {
+  position: relative;
+  left: auto;
+  top: auto;
+  margin: auto;
+  width: min(880px, calc(100vw - 32px));
+  max-height: min(86vh, 720px);
+  max-height: min(86dvh, 720px);
+  aspect-ratio: 1.5;
+}
+#startScreen.nexus-menu .nexus-bezel,
+#startScreen.nexus-menu .nexus-glass {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+}
+#startScreen.nexus-menu .nexus-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(70px, .7fr) auto;
+  justify-items: center;
+  align-items: center;
+  align-content: center;
+}
+#startScreen.nexus-menu .nexus-menu {
+  justify-self: center;
+  align-self: center;
+  margin-inline: auto;
+  text-align: center;
+}
+#startScreen.nexus-menu .nexus-command {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+#startScreen.nexus-menu .nexus-command:disabled {
+  opacity: .58;
+  cursor: wait;
+  transform: none;
+  box-shadow: none;
+  color: #bca16a;
+  background: #201a11;
+  border-color: #66502d;
+}
+#startScreen.nexus-menu .nexus-command:disabled .nexus-chevron,
+#startScreen.nexus-menu .nexus-command:disabled .nexus-enter {
+  color: #a78342;
+}
+.loading-screen {
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  box-sizing: border-box;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+.loading-panel {
+  position: relative;
+  margin: 0 auto;
+  width: min(390px, calc(100vw - 36px));
+  box-sizing: border-box;
+}
+.loading-progress span {
+  min-width: 0;
+}
+@media (max-width: 620px) {
+  #startScreen.nexus-menu {
+    padding: 10px;
+  }
+  #startScreen.nexus-menu .nexus-monitor {
+    width: min(480px, calc(100vw - 20px));
+    height: min(90dvh, 760px);
+    max-height: 90dvh;
+    aspect-ratio: auto;
+    margin: auto;
+  }
+  #startScreen.nexus-menu .nexus-glass {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    padding: 5% 4%;
+  }
+  #startScreen.nexus-menu .nexus-content {
+    grid-template-rows: minmax(72px, .55fr) auto;
+  }
+  #startScreen.nexus-menu .nexus-menu {
+    width: min(100%, 350px);
+  }
+}
+@media (max-height: 520px) and (min-width: 621px) {
+  #startScreen.nexus-menu .nexus-monitor {
+    width: min(760px, calc(100vw - 24px));
+    height: calc(100dvh - 24px);
+    max-height: none;
+    aspect-ratio: auto;
+  }
+  #startScreen.nexus-menu .nexus-glass {
+    padding-block: 2.5%;
+    gap: 2%;
+  }
+  #startScreen.nexus-menu .nexus-art svg {
+    max-height: 72px;
+  }
+}
