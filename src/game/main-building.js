@@ -241,7 +241,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
   for (let x = -102; x <= 102; x += 12) box("Silnice / přerušovaná čára", x, 0.034, 2.7, 4.4, 0.012, 0.12, materials.marking);
 
   // Foundation plinth and shallow basement level (1 PP). The cellar remains below grade.
-  box("Suterén / základový sokl", 0, -0.68, buildingZ, width + 0.34, 1.36, depth + 0.34, materials.darkConcrete);
+  box("Suterén / základový sokl", 0, -0.66, buildingZ, width + 0.34, 1.40, depth + 0.34, materials.darkConcrete);
   box("Hlavní budova / levý štít", leftX + wallT / 2, buildingHeight / 2, buildingZ,
     wallT, buildingHeight, depth, materials.concrete);
   box("Hlavní budova / pravý štít", rightX - wallT / 2, buildingHeight / 2, buildingZ,
