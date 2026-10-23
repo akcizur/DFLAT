@@ -256,7 +256,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     0.025, 1.08, 0.50, glassDark);
   box("Vchod / sklo pravého otevřeného křídla", 0.90, 1.52, frontZ + 0.34,
     0.025, 1.08, 0.50, glassDark);
-  box("Vchod / madlo", 0.70, 1.12, frontZ + 0.16,
+  box("Vchod / madlo pravého křídla", 0.90, 1.12, frontZ + 0.34,
     0.035, 0.43, 0.035, facadePanel);
   box("Vchod / přístřešek", 0, 2.92, frontZ + 0.78,
     3.65, 0.18, 1.46, concreteDark);
