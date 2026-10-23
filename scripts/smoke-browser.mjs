@@ -48,6 +48,25 @@ try {
   if (!beforeStart.webgl) throw new Error("WebGL context could not be created.");
   if (beforeStart.debugText.trim()) throw new Error("Boot diagnostics reported an error: " + beforeStart.debugText);
 
+  const worldBeforeStart = await page.evaluate(() => ({
+    names: window.__DFLAT_SMOKE__?.meshNames?.() || [],
+    environment: window.__DFLAT_SMOKE__?.environment?.(),
+    state: window.__DFLAT_SMOKE__?.gameState?.()
+  }));
+  const unexpectedBuilding = worldBeforeStart.names.filter(name =>
+    /Fasáda|Lodžie|Suterén|Schodiště|Hlavní budova|Střecha \/|Vchod \/|Okno \/|Podlaha \/ přízemí/i.test(name)
+  );
+  if (unexpectedBuilding.length) {
+    throw new Error("Building geometry must be absent from the live scene: " + unexpectedBuilding.slice(0, 10).join(", "));
+  }
+  if (!worldBeforeStart.names.some(name => name === "Sídliště / travnatý pozemek")) {
+    throw new Error("The open-world terrain is missing.");
+  }
+  if (!worldBeforeStart.environment?.timeLabel || !worldBeforeStart.environment?.weatherLabel) {
+    throw new Error("The live day/night and weather environment has not initialised.");
+  }
+  if (worldBeforeStart.state?.buildingVisible) throw new Error("A building is still visible in building-free mode.");
+
   await page.locator("#startButton").click();
   await page.waitForTimeout(500);
   const movementBefore = await page.evaluate(() => ({
