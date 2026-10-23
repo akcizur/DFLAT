@@ -516,58 +516,6 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     }
   }
 
-  // Structural stairwell walls are aligned to the actual slab opening. The
-  // front wall deliberately leaves a 1.05 m doorway into the shared corridor.
-  // The 2D movement solver does not distinguish floor heights, so each unique
-  // wall footprint is added to collision once while the visible wall repeats per storey.
-  const stairWallThickness = 0.16;
-  const stairwell = {
-    minX: coreOpening.minX,
-    maxX: 0.95, // leaves a 20 mm construction joint before the elevator shaft wall
-    minZ: coreOpening.minZ,
-    maxZ: coreOpening.maxZ,
-    doorwayMinX: coreOpening.minX,
-    doorwayMaxX: coreOpening.minX + 1.05
-  };
-  const stairwellDepth = stairwell.maxZ - stairwell.minZ;
-  const stairwellWidth = stairwell.maxX - stairwell.minX;
-  const stairwellCenterX = (stairwell.minX + stairwell.maxX) / 2;
-  const stairwellCenterZ = (stairwell.minZ + stairwell.maxZ) / 2;
-  const flightWallInset = 0.38;
-  const flightWallRun = stair.highX - stair.lowX - flightWallInset * 2;
-  const flightWallCenterX = (stair.lowX + stair.highX) / 2;
-  const flightWallOffset = 1.16 / 2 + stairWallThickness / 2 + 0.04;
-
-  for (let floor = 0; floor < floors; floor++) {
-    const wallY = floor * floorHeight + floorHeight / 2;
-    const uniqueCollider = floor === 0 ? { collider: true } : {};
-
-    box("Schodiště / západní obvodová stěna",
-      stairwell.minX + stairWallThickness / 2, wallY, stairwellCenterZ,
-      stairWallThickness, floorHeight, stairwellDepth, concrete, uniqueCollider);
-    box("Schodiště / dělicí stěna u výtahu",
-      stairwell.maxX, wallY, stairwellCenterZ,
-      stairWallThickness, floorHeight, stairwellDepth, concrete, uniqueCollider);
-    box("Schodiště / zadní uzavírací stěna",
-      stairwellCenterX, wallY, stairwell.minZ + stairWallThickness / 2,
-      stairwellWidth, floorHeight, stairWallThickness, concrete, uniqueCollider);
-
-    const frontWallWidth = stairwell.maxX - stairwell.doorwayMaxX;
-    box("Schodiště / čelní stěna k chodbě",
-      stairwell.doorwayMaxX + frontWallWidth / 2, wallY,
-      stairwell.maxZ - stairWallThickness / 2,
-      frontWallWidth, floorHeight, stairWallThickness, concrete, uniqueCollider);
-
-    for (const side of [-1, 1]) {
-      box("Schodiště / boční stěna dolního ramene",
-        flightWallCenterX, wallY, stair.firstZ + side * flightWallOffset,
-        flightWallRun, floorHeight, stairWallThickness, concrete, uniqueCollider);
-      box("Schodiště / boční stěna horního ramene",
-        flightWallCenterX, wallY, stair.secondZ + side * flightWallOffset,
-        flightWallRun, floorHeight, stairWallThickness, concrete, uniqueCollider);
-    }
-  }
-
   // Continuous lift shaft with a visible car at ground level and landing doors on all floors.
   const lift = { centerX: 2.2, rearZ: -25.0, frontZ: -22.52, width: 2.3, wall: 0.12 };
   const liftLeft = lift.centerX - lift.width / 2;
@@ -620,6 +568,58 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
   box("Výtah / pravá stěna kabiny", lift.centerX + 0.69, 1.15, -23.82, 0.08, 2.10, 1.65, concreteDark);
   for (const x of [liftLeft + 0.26, liftRight - 0.26]) {
     box("Výtah / vodicí lišta", x, height / 2, -24.15, 0.06, height, 0.06, railMaterial);
+  }
+
+  // Structural stairwell walls are aligned to the actual slab opening. The
+  // front wall deliberately leaves a 1.05 m doorway into the shared corridor.
+  // The 2D movement solver does not distinguish floor heights, so each unique
+  // wall footprint is added to collision once while the visible wall repeats per storey.
+  const stairWallThickness = 0.16;
+  const stairwell = {
+    minX: coreOpening.minX,
+    maxX: 0.95, // leaves a 20 mm construction joint before the elevator shaft wall
+    minZ: coreOpening.minZ,
+    maxZ: coreOpening.maxZ,
+    doorwayMinX: coreOpening.minX,
+    doorwayMaxX: coreOpening.minX + 1.05
+  };
+  const stairwellDepth = stairwell.maxZ - stairwell.minZ;
+  const stairwellWidth = stairwell.maxX - stairwell.minX;
+  const stairwellCenterX = (stairwell.minX + stairwell.maxX) / 2;
+  const stairwellCenterZ = (stairwell.minZ + stairwell.maxZ) / 2;
+  const flightWallInset = 0.38;
+  const flightWallRun = stair.highX - stair.lowX - flightWallInset * 2;
+  const flightWallCenterX = (stair.lowX + stair.highX) / 2;
+  const flightWallOffset = 1.16 / 2 + stairWallThickness / 2 + 0.04;
+
+  for (let floor = 0; floor < floors; floor++) {
+    const wallY = floor * floorHeight + floorHeight / 2;
+    const uniqueCollider = floor === 0 ? { collider: true } : {};
+
+    box("Schodiště / západní obvodová stěna",
+      stairwell.minX + stairWallThickness / 2, wallY, stairwellCenterZ,
+      stairWallThickness, floorHeight, stairwellDepth, concrete, uniqueCollider);
+    box("Schodiště / dělicí stěna u výtahu",
+      stairwell.maxX, wallY, stairwellCenterZ,
+      stairWallThickness, floorHeight, stairwellDepth, concrete, uniqueCollider);
+    box("Schodiště / zadní uzavírací stěna",
+      stairwellCenterX, wallY, stairwell.minZ + stairWallThickness / 2,
+      stairwellWidth, floorHeight, stairWallThickness, concrete, uniqueCollider);
+
+    const frontWallWidth = stairwell.maxX - stairwell.doorwayMaxX;
+    box("Schodiště / čelní stěna k chodbě",
+      stairwell.doorwayMaxX + frontWallWidth / 2, wallY,
+      stairwell.maxZ - stairWallThickness / 2,
+      frontWallWidth, floorHeight, stairWallThickness, concrete, uniqueCollider);
+
+    for (const side of [-1, 1]) {
+      box("Schodiště / boční stěna dolního ramene",
+        flightWallCenterX, wallY, stair.firstZ + side * flightWallOffset,
+        flightWallRun, floorHeight, stairWallThickness, concrete, uniqueCollider);
+      box("Schodiště / boční stěna horního ramene",
+        flightWallCenterX, wallY, stair.secondZ + side * flightWallOffset,
+        flightWallRun, floorHeight, stairWallThickness, concrete, uniqueCollider);
+    }
   }
 
   // Interactions make vertical circulation explorable despite the 2.5D movement model.
