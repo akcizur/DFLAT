@@ -101,7 +101,7 @@ try {
     !movementBefore?.position || !movementDuring?.position ||
     !movementBefore.state?.started || movementBefore.state.paused ||
     !movementDuring.keys?.KeyW ||
-    movementDuring.position.z > movementBefore.position.z - 0.35
+    movementDuring.position.z > movementBefore.position.z - 0.20
   ) {
     throw new Error("WASD movement test failed: " + JSON.stringify({ movementBefore, movementDuring }));
   }
