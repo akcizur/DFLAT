@@ -160,9 +160,9 @@ test("the intermediate platform meets the last lower tread and the lift-side wal
   const lowerTreadEnd = last.position.x + last.geometry.parameters.width / 2;
   const landingStart = landing.position.x - landing.geometry.parameters.width / 2;
   const landingEnd = landing.position.x + landing.geometry.parameters.width / 2;
-  const liftLeftInnerFace = 2.2 - 2.3 / 2 + 0.12;
+  const stairwellSideFace = 2.2 - 2.3 / 2;
   assert.ok(Math.abs(lowerTreadEnd - landingStart) < 1e-6, "there must be no overlap or slit at the tread/landing joint");
-  assert.ok(Math.abs(landingEnd - liftLeftInnerFace) < 1e-6, "landing must meet the inner face of the lift wall");
+  assert.ok(Math.abs(landingEnd - stairwellSideFace) < 1e-6, "landing must meet the west face of the lift shaft wall");
   assert.equal(landing.geometry.parameters.depth, Math.abs(stair.firstZ - stair.secondZ) + stair.treadDepth);
 });
 
