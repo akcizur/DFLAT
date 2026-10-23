@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { createMainBuildingWorld } from "./game/main-building.js";
 import { createPlayerController } from "./game/player.js";
 import { createUI } from "./game/ui.js";
@@ -13,6 +14,7 @@ const loadingStartedAt = performance.now();
 const MIN_LOADING_VISIBLE_MS = 900;
 let firstSceneFrame = false;
 let panoramaResolved = false;
+let panelakResolved = false;
 let startupComplete = false;
 let highestLoadingProgress = 8;
 
@@ -34,7 +36,7 @@ function setLoadingProgress(value, title, detail, phase = title) {
 }
 
 function finishStartupWhenReady() {
-  if (startupComplete || !firstSceneFrame || !panoramaResolved) return;
+  if (startupComplete || !firstSceneFrame || !panoramaResolved || !panelakResolved) return;
   startupComplete = true;
   state.ready = true;
   setLoadingProgress(100, "SVĚT JE PŘIPRAVEN", "Vstup do hlavní budovy.", "READY");
@@ -147,11 +149,119 @@ resize();
 const state = {
   hasKeys: false, doorOpen: false, finished: false, started: false,
   paused: false, balconyDoorOpen: false, emptyMap: true, mainBuildingScene: true, currentFloor: 0,
-  ready: false
+  ready: false, t06bModelActive: false
 };
 const ui = createUI();
 const world = createMainBuildingWorld({ THREE, scene, state, ui });
-setLoadingProgress(59, "STAVÍM HLAVNÍ BUDOVU", "Podlaží, balkony, schodiště a výtah.", "GEOMETRY");
+
+// The Blender-authored five-module T06B model is the active building when its
+// generated GLB is available. The procedural building stays as a safe fallback
+// for direct/local runs where Blender has not yet generated the asset.
+setLoadingProgress(62, "NAČÍTÁM ARCHITEKTURU", "Kontroluji geometrii sekce T06B.", "MODEL");
+const t06bModelRoot = await new Promise(resolve => {
+  let settled = false;
+  const finish = value => {
+    if (settled) return;
+    settled = true;
+    window.clearTimeout(timeout);
+    resolve(value);
+  };
+  const timeout = window.setTimeout(() => finish(null), 10000);
+  new GLTFLoader().load(
+    `${import.meta.env.BASE_URL}models/t06b-panelak-v2.glb`,
+    gltf => finish(gltf.scene),
+    undefined,
+    error => {
+      console.warn("T06B Blender model unavailable; using the procedural fallback.", error);
+      finish(null);
+    }
+  );
+});
+
+if (t06bModelRoot) {
+  // Remove the legacy 28 m / 8-storey visual assembly before inserting T06B V2.
+  for (const mesh of world.meshes) {
+    scene.remove(mesh);
+    mesh.geometry?.dispose();
+  }
+  world.meshes.length = 0;
+  world.meshesToAnimate.length = 0;
+  world.doorAnimations.length = 0;
+  world.colliders.length = 0;
+  world.interactables.length = 0;
+  delete state.onElevatorMoved;
+
+  t06bModelRoot.name = "T06B V2 | five-module panelak";
+  scene.add(t06bModelRoot);
+  world.navigation = {
+    floorHeight: 2.8,
+    floors: 4,
+    coreOpening: { minX: -1.5, maxX: 1.5, minZ: -1.4, maxZ: 2.2 },
+    stairs: {
+      lowX: -1.22, highX: 1.22, firstZ: -0.55, secondZ: 1.35, steps: 8,
+      stepRise: 0.175, stepRun: 0.305, treadDepth: 1.35, treadOverlap: 0.025,
+      landingWidth: 2.7, landingDepth: 3.3,
+      landingCenterX: 0, landingCenterZ: 0.4
+    }
+  };
+
+  const addCollider = (minX, maxX, minZ, maxZ, floor = null) => {
+    const collider = { minX, maxX, minZ, maxZ };
+    if (Number.isInteger(floor)) collider.floor = floor;
+    world.colliders.push(collider);
+  };
+  // Exterior walls. The ground-floor front has one entrance; upper front windows
+  // stay non-passable, while the two rear loggia doors are open at every level.
+  addCollider(-9.075, -8.925, -5.775, 5.775);
+  addCollider(8.925, 9.075, -5.775, 5.775);
+  const rearWallSegments = [[-9, -4.375], [-2.825, 2.825], [4.375, 9]];
+  for (let floor = 0; floor < 4; floor++) {
+    const frontSegments = floor === 0 ? [[-9, -0.9], [0.9, 9]] : [[-9, 9]];
+    for (const [left, right] of frontSegments) {
+      addCollider(left, right, -5.775, -5.625, floor);
+    }
+    for (const [left, right] of rearWallSegments) {
+      addCollider(left, right, 5.625, 5.775, floor);
+    }
+
+    // Core walls and the two apartment entry partitions retain 0.88 m doorways.
+    const entryZ0 = -1.01, entryZ1 = -0.13;
+    for (const side of [-1, 1]) {
+      for (const xCenter of [side * 1.8, side * 5.4]) {
+        for (const [z0, z1] of [[-5.55, entryZ0], [entryZ1, 5.55]]) {
+          addCollider(xCenter - 0.075, xCenter + 0.075, z0, z1, floor);
+        }
+      }
+      const inner = side * 3.6;
+      const doorwayX = inner - side * 1.12;
+      for (const z of [-1.95, 0.80]) {
+        for (const [left, right] of [
+          [inner - 1.725, doorwayX - 0.48],
+          [doorwayX + 0.48, inner + 1.725]
+        ]) {
+          if (right > left) addCollider(left, right, z - 0.075, z + 0.075, floor);
+        }
+      }
+      for (const [z0, z1] of [[-1.42, -0.74], [-0.10, 0.58]]) {
+        addCollider(inner - 0.075, inner + 0.075, z0, z1, floor);
+      }
+    }
+  }
+  world.interactables.push({
+    id: "stairs", name: "Schodiště",
+    description: "Čtyři podlaží. Vystoupej po skutečných schodišťových ramenech.",
+    x: 0, z: -0.85, range: 2.0, used: false,
+    action: () => ui.showToast("T06B / čtyři nadzemní podlaží / bez výtahu")
+  });
+  state.currentFloor = 0;
+  state.t06bModelActive = true;
+  setLoadingProgress(78, "PANELÁK T06B PŘIPRAVEN", "18 m / pět modulů / osm bytů.", "MODEL READY");
+} else {
+  setLoadingProgress(78, "ZÁLOŽNÍ SCÉNA", "Model T06B není dostupný; používám procedurální náhradní budovu.", "FALLBACK");
+}
+panelakResolved = true;
+finishStartupWhenReady();
+setLoadingProgress(56, "NAČÍTÁM SEKCI T06B", "Pět modulů, čtyři podlaží, suterén a schodiště.", "T06B MODEL");
 
 // The outdoor map has no interior mission, furniture, or scripted interactables.
 
@@ -178,9 +288,9 @@ if (new URLSearchParams(location.search).get("smoke") === "1") {
   Object.defineProperty(window, "__DFLAT_SMOKE__", {
     configurable: true,
     value: {
-      playerPosition: () => ({ x: controller.player.x, z: controller.player.z }),
+      playerPosition: () => ({ x: controller.player.x, z: controller.player.z, elevation: controller.player.elevation, floor: controller.player.floor }),
       keysDown: () => ({ ...controller.keysDown }),
-      gameState: () => ({ started: state.started, paused: state.paused })
+      gameState: () => ({ started: state.started, paused: state.paused, t06bModelActive: state.t06bModelActive, currentFloor: state.currentFloor })
     }
   });
 }
