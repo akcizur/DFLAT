@@ -17,7 +17,6 @@ const required = [
   "src/main.js",
   "src/boot-debug.js",
   "src/game/materials.js",
-  "src/game/panelak.js",
   "src/game/world.js",
   "src/game/player.js",
   "src/game/ui.js",
@@ -77,23 +76,15 @@ if (!inputSource.includes('} else clearSource("gamepad");')) fail("gamepad polli
 if (!inputSource.includes('ui.showToast("Ovladač odpojen.");\n    clearSource("gamepad");')) fail("disconnecting a gamepad must only clear gamepad movement");
 if (!inputSource.includes("clearMovement();\n    state.started = true;")) fail("movement input must be reset when a new game starts");
 const playerSource = await readFile(path.join(root, "src/game/player.js"), "utf8");
-if (!playerSource.includes("z: 1.5, yaw: 0")) fail("V2 player spawn must face the panelak from the exterior");
+if (!playerSource.includes("z: 4.95")) fail("player must spawn inside the apartment");
 const uiSource = await readFile(path.join(root, "src/game/ui.js"), "utf8");
-if (!uiSource.includes('objectiveText.textContent = "Panelák: prozkoumej okolí a vstup."')) fail("panelak V2 needs its own objective text");
+if (!uiSource.includes('"Prozkoumej byt. Najdi klíče."')) fail("default objective must target the playable apartment");
 if (!mainSource.includes('object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone())')) fail("mesh UV2 channels are required for baked light maps");
 
 const worldSource = await readFile(path.join(root, "src/game/world.js"), "utf8");
 if (!worldSource.includes("export function createEmptyApartment")) fail("playable empty-apartment map shell is required");
-if (!worldSource.includes("function createPanelakWorld({ THREE, scene, state, ui })")) fail("default DFLAT V2 panelak scene is missing");
-const panelakSource = await readFile(path.join(root, "src/game/panelak.js"), "utf8");
-if (!panelakSource.includes("floorCount = 4")) fail("browser panelak model must contain exactly four storeys");
-if (!panelakSource.includes("function buildFrontFacade")) fail("panelak facade openings must be built as wall panels, not floating window slabs");
-if (!panelakSource.includes("Sovětský panelový dům")) fail("Soviet-style prefabricated panel building is missing");
+if (worldSource.includes("createPanelakWorld")) fail("outdoor panelak map must not be part of the gameplay runtime");
 if (/ghost|apparition/i.test(worldSource)) fail("the game world must not include ghost effects");
-if (!worldSource.includes('get("scene") !== "v1"')) fail("panelak V2 must be the default while the legacy apartment stays opt-in");
-if (!worldSource.includes('groundBox("V2 / chodník před vchodem"')) fail("panelak scene must include a connected entrance approach");
-if (!worldSource.includes('id: "panelakEntrance"')) fail("panelak entry interaction is missing");
-if (!worldSource.includes("const frontZ = -15.9 + 8.2 / 2")) fail("panelak exterior collision geometry must align with the building facade");
 if (!worldSource.includes("wall(-4.375, 6, 7.25, wallT)")) fail("entrance wall must align to the door-frame opening");
 if (!worldSource.includes("localBox(doorPivot, .69, 1.40, 0, 1.38, 2.80")) fail("front door leaf must fit the clear entrance width");
 if (!worldSource.includes("wallH - 2.22, 1.2, M.wall")) fail("interior door header infill must meet its lintel without a gap");
