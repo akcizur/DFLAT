@@ -49,7 +49,13 @@ export function createPlayerController({ camera, colliders, interactables, state
 
   function canMove(nx, nz) {
     const r = player.radius;
+    const bodyBottom = player.elevation + player.jumpHeight;
+    const bodyTop = bodyBottom + 1.68;
     for (const c of colliders) {
+      // Wall pieces on another storey must not become invisible full-height
+      // barriers. Untagged perimeter volumes still span the whole building.
+      if (Number.isFinite(c.minY) && Number.isFinite(c.maxY) &&
+        (bodyTop <= c.minY + 1e-6 || bodyBottom >= c.maxY - 1e-6)) continue;
       if (nx + r > c.minX && nx - r < c.maxX && nz + r > c.minZ && nz - r < c.maxZ) return false;
     }
     return true;
