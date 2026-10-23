@@ -43,6 +43,8 @@ export function createPlayerController({ camera, colliders, interactables, state
   function canMove(nx, nz) {
     const r = player.radius;
     for (const c of colliders) {
+      if (Number.isInteger(c.floor) && c.floor !== player.floor) continue;
+      if (c.active === false) continue;
       if (nx + r > c.minX && nx - r < c.maxX && nz + r > c.minZ && nz - r < c.maxZ) return false;
     }
     return true;
@@ -287,6 +289,7 @@ export function createPlayerController({ camera, colliders, interactables, state
     stairPitch = 0;
     stairPitchTarget = 0;
     state.currentFloor = nextFloor;
+    if (method === "Výtah") state.onElevatorMoved?.(nextFloor);
     cameraX = player.x;
     cameraZ = player.z;
     syncCamera(1 / 30);
