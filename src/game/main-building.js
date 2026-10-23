@@ -421,6 +421,26 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     box("Výtah / číselný panel", liftRight + 0.16, floorY + 1.42, lift.frontZ + 0.08,
       0.10, 0.35, 0.08, railMaterial);
   }
+  // Collision shell: no walking through shaft walls. The landing opening is traversable
+  // only on the ground floor; upper-floor doors remain solid in the 2D movement model.
+  const liftDoorWidth = 1.42;
+  const liftOpeningLeft = lift.centerX - liftDoorWidth / 2;
+  const liftOpeningRight = lift.centerX + liftDoorWidth / 2;
+  colliders.push(
+    { minX: liftLeft, maxX: liftLeft + lift.wall, minZ: lift.rearZ, maxZ: lift.frontZ },
+    { minX: liftRight - lift.wall, maxX: liftRight, minZ: lift.rearZ, maxZ: lift.frontZ },
+    { minX: liftLeft, maxX: liftRight, minZ: lift.rearZ, maxZ: lift.rearZ + lift.wall },
+    { minX: liftLeft, maxX: liftOpeningLeft, minZ: lift.frontZ - lift.wall / 2, maxZ: lift.frontZ + lift.wall / 2 },
+    { minX: liftOpeningRight, maxX: liftRight, minZ: lift.frontZ - lift.wall / 2, maxZ: lift.frontZ + lift.wall / 2 }
+  );
+  for (let floor = 1; floor < floors; floor++) {
+    colliders.push({
+      minX: liftOpeningLeft, maxX: liftOpeningRight,
+      minZ: lift.frontZ - lift.wall / 2, maxZ: lift.frontZ + lift.wall / 2,
+      floor
+    });
+  }
+
   // Lift car is open towards the landing, so the interior reads clearly from the lobby.
   box("Výtah / podlaha kabiny", lift.centerX, 0.10, -23.82, 1.45, 0.20, 1.78, concreteDark);
   box("Výtah / zadní stěna kabiny", lift.centerX, 1.15, -24.64, 1.42, 2.10, 0.08, concreteDark);
