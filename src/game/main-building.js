@@ -1,5 +1,5 @@
 // Main-building remaster: a sparse exterior map and a structurally open, eight-storey panelák.
-export function createMainBuildingWorld({ THREE, scene, state, ui }) {
+export function createMainBuildingWorld({ THREE, scene, state, ui, siteOnly = false }) {
   const colliders = [];
   const interactables = [];
   const meshesToAnimate = [];
@@ -76,6 +76,21 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     box("Silnice / přerušovaná čára", x, 0.034, 2.7, 4.4, 0.012, 0.12, roadMark, {
       castShadow: false, receiveShadow: false
     });
+  }
+
+  // The live empty-site map should not allocate a building and remove it later.
+  // Export tools/tests omit siteOnly and continue to exercise the detailed model.
+  if (siteOnly) {
+    return {
+      colliders, interactables, meshesToAnimate, doorAnimations, meshes,
+      navigation: {
+        floorHeight: 2.8,
+        floors: 1,
+        footprint: { minX: -120, maxX: 120, minZ: -142, maxZ: 98, frontZ: 98, rearZ: -142 },
+        coreOpening: { minX: 1, maxX: -1, minZ: 1, maxZ: -1 },
+        stairs: null
+      }
+    };
   }
 
   // Consistent dimensions: 28 m wide, 12 m deep, 8 storeys, 2.8 m floor-to-floor.
