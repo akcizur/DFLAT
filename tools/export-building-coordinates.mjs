@@ -113,6 +113,19 @@ closeTo(
   world.navigation.stairs.landingCenterX,
   "Landing semantic X must equal the navigation geometry's true center"
 );
+closeTo(world.navigation.coreOpening.maxZ, -22.52, "Core opening front datum");
+closeTo(anchorById.get("lift-left-front-base").position.z, world.navigation.coreOpening.maxZ, "Lift threshold and core opening must share Z");
+const stairLandingDepth = world.navigation.stairs.landingDepth;
+closeTo(
+  world.navigation.stairs.landingCenterZ - stairLandingDepth / 2,
+  world.navigation.stairs.firstZ - world.navigation.stairs.treadDepth / 2,
+  "Stair landing rear edge must meet lower flight"
+);
+closeTo(
+  world.navigation.stairs.landingCenterZ + stairLandingDepth / 2,
+  world.navigation.coreOpening.maxZ,
+  "Stair landing front edge must meet the core opening and lift threshold"
+);
 
 const windowDoorAnchors = data.anchors.filter(anchor => anchor.id.startsWith("balcony-door-f"));
 assert.equal(windowDoorAnchors.length, EXPECTED.floors * 2, "Each occupied storey needs two real balcony door anchors.");
