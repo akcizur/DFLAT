@@ -104,7 +104,7 @@ asphalt = material("Old asphalt", (0.12, 0.13, 0.12))
 
 # Ground and the restrained edge of a typical estate access road.
 box("Site | terrain", (0, -0.24, 0), (90, 0.25, 90), grass)
-box("Soviet-era estate access road", (0, -0.095, -13), (90, 0.04, 5.5), asphalt)
+box("Soviet-era estate access road", (0, -0.095, 2.7), (90, 0.04, 5.5), asphalt)
 box("Concrete entrance apron", (0, -0.075, FRONT_Z-2.2), (7.5, 0.07, 4.2), panel)
 box("Entrance step | lower", (0, -0.015, FRONT_Z-0.95), (3.2, 0.18, 0.55), panel)
 box("Entrance step | upper", (0, 0.075, FRONT_Z-0.48), (2.8, 0.12, 0.42), panel)
