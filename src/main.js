@@ -157,6 +157,7 @@ const world = createMainBuildingWorld({ THREE, scene, state, ui });
 // The Blender-authored five-module T06B model is the active building when its
 // generated GLB is available. The procedural building stays as a safe fallback
 // for direct/local runs where Blender has not yet generated the asset.
+setLoadingProgress(56, "NAČÍTÁM SEKCI T06B", "Pět modulů, čtyři podlaží, suterén a schodiště.", "T06B MODEL");
 setLoadingProgress(62, "NAČÍTÁM ARCHITEKTURU", "Kontroluji geometrii sekce T06B.", "MODEL");
 const t06bModelRoot = await new Promise(resolve => {
   let settled = false;
@@ -179,29 +180,39 @@ const t06bModelRoot = await new Promise(resolve => {
 });
 
 if (t06bModelRoot) {
-  // Remove the legacy 28 m / 8-storey visual assembly before inserting T06B V2.
+  // Preserve the outdoor site, but discard the old eight-storey building geometry.
+  const siteMeshes = world.meshes.filter(mesh =>
+    mesh.name.startsWith("Mapa /") || mesh.name.startsWith("Silnice /")
+  );
   for (const mesh of world.meshes) {
+    if (siteMeshes.includes(mesh)) continue;
     scene.remove(mesh);
     mesh.geometry?.dispose();
   }
-  world.meshes.length = 0;
+  world.meshes.splice(0, world.meshes.length, ...siteMeshes);
   world.meshesToAnimate.length = 0;
   world.doorAnimations.length = 0;
   world.colliders.length = 0;
   world.interactables.length = 0;
   delete state.onElevatorMoved;
 
+  // The authored model's front is local z=-6. Reflect depth and move its centre
+  // to z=-22 so its front/back facades align with the existing outdoor approach.
   t06bModelRoot.name = "T06B V2 | five-module panelak";
+  t06bModelRoot.scale.z = -1;
+  t06bModelRoot.position.z = -22;
   scene.add(t06bModelRoot);
+  const t06bRuntimeBounds = new THREE.Box3().setFromObject(t06bModelRoot);
+  state.t06bRuntimeBounds = t06bRuntimeBounds;
   world.navigation = {
     floorHeight: 2.8,
     floors: 4,
-    coreOpening: { minX: -1.5, maxX: 1.5, minZ: -1.4, maxZ: 2.2 },
+    coreOpening: { minX: -1.5, maxX: 1.5, minZ: -24.2, maxZ: -19.8 },
     stairs: {
-      lowX: -1.22, highX: 1.22, firstZ: -0.55, secondZ: 1.35, steps: 8,
-      stepRise: 0.175, stepRun: 0.305, treadDepth: 1.35, treadOverlap: 0.025,
-      landingWidth: 2.7, landingDepth: 3.3,
-      landingCenterX: 0, landingCenterZ: 0.4
+      lowX: -1.5, highX: 0.9, firstZ: -21.2, secondZ: -23.5, steps: 8,
+      stepRise: 0.175, stepRun: 0.3, treadDepth: 1.2, treadOverlap: 0.025,
+      landingWidth: 0.6, landingDepth: 4.3,
+      landingCenterX: 1.2, landingCenterZ: -22.0
     }
   };
 
@@ -210,47 +221,63 @@ if (t06bModelRoot) {
     if (Number.isInteger(floor)) collider.floor = floor;
     world.colliders.push(collider);
   };
-  // Exterior walls. The ground-floor front has one entrance; upper front windows
-  // stay non-passable, while the two rear loggia doors are open at every level.
-  addCollider(-9.075, -8.925, -5.775, 5.775);
-  addCollider(8.925, 9.075, -5.775, 5.775);
-  const rearWallSegments = [[-9, -4.375], [-2.825, 2.825], [4.375, 9]];
+  // Convert authored Y-up/local-Z facade intervals into the site's world Z.
+  const addLocalCollider = (minX, maxX, localMinZ, localMaxZ, floor = null) => {
+    addCollider(minX, maxX, -22-localMaxZ, -22-localMinZ, floor);
+  };
+
+  // Full-height end walls remain solid on every storey.
+  addLocalCollider(-9.075, -8.925, -6.075, 6.075);
+  addLocalCollider(8.925, 9.075, -6.075, 6.075);
+
+  const rearWallSegments = [[-9, -5.2], [-2.0, 2.0], [5.2, 9]];
+  const entryZ0 = -1.74, entryZ1 = -0.86;
   for (let floor = 0; floor < 4; floor++) {
+    // Only the ground floor has a walk-through exterior door; luxfer panels
+    // on upper floors are glazing, not openings.
     const frontSegments = floor === 0 ? [[-9, -0.9], [0.9, 9]] : [[-9, 9]];
     for (const [left, right] of frontSegments) {
-      addCollider(left, right, -5.775, -5.625, floor);
+      addLocalCollider(left, right, -6.075, -5.925, floor);
     }
+    // The rear wall is open across each 3.2 m recessed loggia doorway.
     for (const [left, right] of rearWallSegments) {
-      addCollider(left, right, 5.625, 5.775, floor);
+      addLocalCollider(left, right, 5.925, 6.075, floor);
     }
 
-    // Core walls and the two apartment entry partitions retain 0.88 m doorways.
-    const entryZ0 = -1.01, entryZ1 = -0.13;
+    // Apartment/core walls retain aligned 0.88 m doorways.
     for (const side of [-1, 1]) {
       for (const xCenter of [side * 1.8, side * 5.4]) {
-        for (const [z0, z1] of [[-5.55, entryZ0], [entryZ1, 5.55]]) {
-          addCollider(xCenter - 0.075, xCenter + 0.075, z0, z1, floor);
+        for (const [z0, z1] of [[-5.85, entryZ0], [entryZ1, 5.85]]) {
+          addLocalCollider(xCenter-0.075, xCenter+0.075, z0, z1, floor);
         }
       }
       const inner = side * 3.6;
       const doorwayX = inner - side * 1.12;
-      for (const z of [-1.95, 0.80]) {
+      for (const z of [-2.275, -0.075]) {
         for (const [left, right] of [
-          [inner - 1.725, doorwayX - 0.48],
-          [doorwayX + 0.48, inner + 1.725]
+          [inner-1.725, doorwayX-0.48],
+          [doorwayX+0.48, inner+1.725]
         ]) {
-          if (right > left) addCollider(left, right, z - 0.075, z + 0.075, floor);
+          if (right > left) addLocalCollider(left, right, z-0.075, z+0.075, floor);
         }
       }
-      for (const [z0, z1] of [[-1.42, -0.74], [-0.10, 0.58]]) {
-        addCollider(inner - 0.075, inner + 0.075, z0, z1, floor);
+
+      const outer = side * 7.2;
+      for (const z of [-2.775, -0.075]) {
+        const halfDoor = 0.44;
+        addLocalCollider(outer-1.725, outer-halfDoor, z-0.075, z+0.075, floor);
+        addLocalCollider(outer+halfDoor, outer+1.725, z-0.075, z+0.075, floor);
+      }
+      for (const [z0, z1] of [[-2.20, -1.525], [-0.875, -0.20]]) {
+        addLocalCollider(inner-0.075, inner+0.075, z0, z1, floor);
       }
     }
   }
+
   world.interactables.push({
     id: "stairs", name: "Schodiště",
     description: "Čtyři podlaží. Vystoupej po skutečných schodišťových ramenech.",
-    x: 0, z: -0.85, range: 2.0, used: false,
+    x: 0, z: -22.0, range: 1.8, used: false,
     action: () => ui.showToast("T06B / čtyři nadzemní podlaží / bez výtahu")
   });
   state.currentFloor = 0;
@@ -261,7 +288,6 @@ if (t06bModelRoot) {
 }
 panelakResolved = true;
 finishStartupWhenReady();
-setLoadingProgress(56, "NAČÍTÁM SEKCI T06B", "Pět modulů, čtyři podlaží, suterén a schodiště.", "T06B MODEL");
 
 // The outdoor map has no interior mission, furniture, or scripted interactables.
 
@@ -290,7 +316,7 @@ if (new URLSearchParams(location.search).get("smoke") === "1") {
     value: {
       playerPosition: () => ({ x: controller.player.x, z: controller.player.z, elevation: controller.player.elevation, floor: controller.player.floor }),
       keysDown: () => ({ ...controller.keysDown }),
-      gameState: () => ({ started: state.started, paused: state.paused, ready: state.ready, t06bModelActive: state.t06bModelActive, currentFloor: state.currentFloor, floorCount: world.navigation?.floors ?? 8 })
+      gameState: () => ({ started: state.started, paused: state.paused, ready: state.ready, t06bModelActive: state.t06bModelActive, currentFloor: state.currentFloor, floorCount: world.navigation?.floors ?? 8, modelBounds: state.t06bRuntimeBounds ? (() => { const b = state.t06bRuntimeBounds; return { min: { x: b.min.x, y: b.min.y, z: b.min.z }, max: { x: b.max.x, y: b.max.y, z: b.max.z }, size: { x: b.max.x-b.min.x, y: b.max.y-b.min.y, z: b.max.z-b.min.z } }; })() : null })
     }
   });
 }
