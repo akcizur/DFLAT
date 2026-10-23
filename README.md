@@ -1,8 +1,8 @@
 # DFLAT — Main Building
 
-A compact first-person, low-poly exploration scene built with Three.js, Vite and Bun. The active game starts outdoors beside a T06B-inspired four-storey Czech/Slovak panelák section, with five 3.6 m planning modules across an 18 m facade. Its plan includes two mirrored flats per floor, recessed loggias, břízolit-style panels, stairwell luxfer glazing, a basement plinth and a central switchback stair. It intentionally has no elevator.
+A compact first-person, low-poly open-world environment built with Three.js, Vite and Bun. The active game now contains no visible buildings and no city-skyline panorama. The scene is intentionally limited to open terrain, a road, sidewalks and an entry path, with a live accelerated day/night cycle and smooth transitions between clear weather, overcast skies, rain and mist. The T06B-inspired four-storey panelák remains available as an optional authoring/test model, not as geometry in the playable scene.
 
-The building is generated from native Three.js box geometry at runtime, so the live game does not need GLB/GLTF/FBX assets. The separate Blender scripts in `tools/` remain editable architectural modelling tools and are not loaded by the browser game.
+The panelák geometry is generated from native Three.js box geometry for architectural regression tests and coordinate export. The playable scene calls the same generator in building-free mode, so it does not instantiate the building's walls, floors, loggias or stairwell. The separate Blender scripts in `tools/` remain editable architectural modelling tools and are not loaded by the browser game.
 
 ## Run locally
 
@@ -24,10 +24,11 @@ bun run preview
 
 ## Map and rendering
 
-- **Empty outdoor map:** open terrain, one main building, a single approach path and a road. No surrounding buildings, vehicles or furniture.
-- **Main building:** four occupied storeys over a shallow basement plinth, an 18 × 12 m five-module section, two flats per floor, recessed loggias, luxfer stair glazing, old-fashioned metal railings and weathered concrete/břízolit panels.
-- **Interior circulation:** three connecting stair runs link all four floors; apartment entries face the central core. There is no elevator.
-- **Vertical navigation:** walk the switchback stairs using `W A S D`; the HUD displays the active floor.
+- **Open map:** terrain, road, pedestrian paths and a blank sky. All buildings and the city panorama are disabled in the running scene.
+- **Stable ground surfaces:** ground height is offset from the terrain, and the design model's loggia slabs are cut out of adjoining floor slabs to prevent coplanar overlap and z-fighting.
+- **Day/night:** one in-game day lasts 240 seconds. Sky tint, hemisphere light, sunlight, fog and the HUD clock update continuously.
+- **Weather:** clear, overcast, rain and mist states blend across nine seconds; cloudiness, rain intensity, fog, lighting and wind are interpolated rather than snapping at state changes.
+- **Rain:** localised pixel-style raindrop lines become visible during rain and move with the player across the uncovered map.
 - **Pixel-grid WebGL:** the scene renders into a compact canvas and scales with nearest-neighbour sampling. Antialiasing is disabled.
 - **Direct rendering:** no screen-wide CRT, VHS, PS1, blur or post-processing effects.
 - **Stable simulation:** movement updates target 60 Hz and rendering is capped at 60 FPS.
@@ -68,7 +69,7 @@ The deployment workflow builds the static site into `dist/` and deploys to [akci
 - Touch screens: on-screen movement/look controls
 - Gamepad: left stick to move, right stick to look
 
-The map is currently a free-roam environment. There is no objective beyond exploring the exterior and approaching the main building.
+The map is currently a building-free free-roam environment. There are no building interactions or interior objectives.
 
 ## Optional Blender generators
 
@@ -92,10 +93,11 @@ This independent generator writes `tools/VP_OS_Building_Architecture_v4.blend` a
 
 - `index.html`: game shell and start/pause menus.
 - `src/main.js`: Three.js renderer, lights, camera, fixed-step simulation and runtime bootstrap.
-- `src/game/main-building.js`: empty outdoor map and main building geometry.
+- `src/game/main-building.js`: shared terrain/environment generator plus optional T06B-inspired design geometry; gameplay sets `showBuilding: false`.
 - `src/game/player.js`: first-person movement and collision handling.
 - `src/game/input.js`: keyboard, pointer lock, touch and gamepad.
-- `src/game/ui.js`: overlays, notifications and map label.
+- `src/game/ui.js`: overlays, notifications, time/weather labels and map status.
+- `src/game/environment.js`: accelerated day/night clock, smoothly blended weather, sky, fog and lighting.
 - `src/game/world.js`: retained legacy apartment and empty-apartment generators, not used by the active runtime.
 - `src/game/materials.js`: procedural pixel textures and the material palette.
 - `vendor/three.module.min.js`: local Three.js r169 fallback for unbundled static hosting.
