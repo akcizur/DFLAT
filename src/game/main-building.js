@@ -204,19 +204,30 @@ export function createMainBuildingWorld({ THREE, scene, state, ui, showBuilding 
 
   function makeFloorSlab(floor) {
     const y = floor * floorHeight - 0.08;
-    if (floor === 0) {
-      box("Podlaha / přízemí", 0, y + 0.02, buildingZ, width, 0.16, depth, materials.floor);
-      return;
-    }
+    // Separate the ground and outdoor terrain by 15 mm: avoid coplanar depth
+    // fighting while keeping the threshold visually almost flush with grade.
+    const slabY = floor === 0 ? y + 0.005 : y;
     const core = navigationCore();
     const leftWidth = core.minX - leftX;
     const rightWidth = rightX - core.maxX;
     const frontDepth = frontZ - core.maxZ;
-    const rearDepth = core.minZ - rearZ;
-    // Main occupied area starts behind the recessed loggias. Full-depth wing
-    // slabs would overlap the separately modelled loggia floors and flicker.
     const interiorRearZ = rearZ + 1.72;
     const interiorDepth = frontZ - interiorRearZ;
+
+    // There are genuine notches beneath both rear loggias on every floor,
+    // including the ground level. This prevents the main slab hiding or
+    // coplanarly overlapping the independently modelled balcony surfaces.
+    if (floor === 0) {
+      box("Podlaha / přízemí", 0, slabY, (frontZ + interiorRearZ) / 2,
+        width, 0.16, interiorDepth, materials.floor);
+      const rearBands = [[leftX, -4.875], [-2.325, 2.325], [4.875, rightX]];
+      for (const [x0, x1] of rearBands) {
+        box("Podlaha / přízemí / pás mimo lodžie", (x0 + x1) / 2, slabY,
+          (rearZ + interiorRearZ) / 2, x1 - x0, 0.16, interiorRearZ - rearZ, materials.floor);
+      }
+      return;
+    }
+
     box("Stropní panel / levý trakt", (leftX + core.minX) / 2, y,
       (frontZ + interiorRearZ) / 2, leftWidth, 0.16, interiorDepth, materials.floor);
     box("Stropní panel / pravý trakt", (core.maxX + rightX) / 2, y,
@@ -226,10 +237,8 @@ export function createMainBuildingWorld({ THREE, scene, state, ui, showBuilding 
     box("Stropní panel / zadní trakt", 0, y, (core.minZ + interiorRearZ) / 2,
       core.maxX - core.minX, 0.16, Math.max(0.1, core.minZ - interiorRearZ), materials.floor);
 
-    // Close the rear transverse slab only outside loggia bays and the stair core.
-    const sideBands = [[leftX, -4.875], [-2.325, core.minX], [core.maxX, 2.325], [4.875, rightX]];
-    for (const [x0, x1] of sideBands) {
-      if (x1 - x0 <= 0.05) continue;
+    const rearBands = [[leftX, -4.875], [-2.325, 2.325], [4.875, rightX]];
+    for (const [x0, x1] of rearBands) {
       box("Stropní panel / zadní pás mimo lodžie", (x0 + x1) / 2, y,
         (rearZ + interiorRearZ) / 2, x1 - x0, 0.16, interiorRearZ - rearZ, materials.floor);
     }
@@ -249,7 +258,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui, showBuilding 
   function navigationCore() { return core; }
 
   // Surroundings evoke a Czech normalisation-era estate, without competing with the hero building.
-  box("Sídliště / travnatý pozemek", 0, -0.11, -22, 240, 0.22, 240, materials.grass);
+  box("Sídliště / travnatý pozemek", 0, -0.12, -22, 240, 0.22, 240, materials.grass);
   box("Sídliště / asfaltová komunikace", 0, 0.012, 2.7, 220, 0.035, 8.2, materials.asphalt);
   box("Sídliště / chodník", 0, 0.025, -2.05, 220, 0.05, 1.55, materials.pavement);
   box("Sídliště / přístupový chodník", 0, 0.018, -8, 3.8, 0.036, 10, materials.pavement);
