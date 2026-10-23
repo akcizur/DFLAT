@@ -217,10 +217,12 @@ for floor in range(1, FLOORS):
 
 # Ground entrance and the two flats' access doors, with an old intercom and nameplate.
 box("Main entrance | lintel", (0, 2.46, FRONT_Z-0.18), (1.8, 0.20, 0.16), dark_concrete)
-box("Main entrance | green double door", (0, 1.18, FRONT_Z-0.20), (1.48, 2.28, 0.08), door)
+# Both leaves sit open against the entrance jambs, leaving a real walkable opening.
 for side in (-1, 1):
-    box("Entry door | narrow wired-glass pane", (side*0.42, 1.60, FRONT_Z-0.25),
-        (0.22, 0.90, 0.025), lux)
+    box("Main entrance | open green door leaf", (side*0.83, 1.18, FRONT_Z-0.55),
+        (0.055, 2.28, 0.78), door)
+    box("Entry door | narrow wired-glass pane", (side*0.84, 1.58, FRONT_Z-0.58),
+        (0.025, 0.88, 0.48), lux)
 box("Entrance canopy | exposed concrete", (0, 2.65, FRONT_Z-0.90), (3.25, 0.18, 1.35), dark_concrete)
 box("Old intercom | metal plate", (1.02, 1.42, FRONT_Z-0.25), (0.20, 0.38, 0.045), metal)
 text_label("House number plate", "VCHOD 01", (-0.63, 2.88, FRONT_Z-0.30), 0.20, cream)
