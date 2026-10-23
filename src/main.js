@@ -9,6 +9,8 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x858b8e);
 
 const loadingScreen = document.getElementById("loadingScreen");
+const loadingStartedAt = performance.now();
+const MIN_LOADING_VISIBLE_MS = 900;
 let firstSceneFrame = false;
 let panoramaResolved = false;
 let startupComplete = false;
@@ -37,6 +39,10 @@ function finishStartupWhenReady() {
   state.ready = true;
   setLoadingProgress(100, "SVĚT JE PŘIPRAVEN", "Vstup do hlavní budovy.", "READY");
   if (!loadingScreen) return;
+  const remainingVisibleMs = Math.max(
+    0,
+    MIN_LOADING_VISIBLE_MS - (performance.now() - loadingStartedAt)
+  );
   window.setTimeout(() => {
     loadingScreen.classList.add("loading-exit");
     window.setTimeout(() => {
@@ -44,7 +50,7 @@ function finishStartupWhenReady() {
       loadingScreen.setAttribute("aria-hidden", "true");
       document.getElementById("startButton")?.focus({ preventScroll: true });
     }, 240);
-  }, 180);
+  }, remainingVisibleMs);
 }
 
 setLoadingProgress(12, "ZAPÍNÁM ENGINE", "Inicializuji 3D vykreslování.", "INITIALIZING");
