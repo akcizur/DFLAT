@@ -86,3 +86,9 @@ test("elevator cabin meshes and landing doors follow the active floor", () => {
   assert.match(source, /entry\\.collider\\.active = entry\\.floor !== nextFloor/);
   assert.match(source, /entry\\.collider\\.active = entry\\.floor === nextFloor/);
 });
+
+test("the stairwell, upper treads, landing and lift threshold share exact depth datums", () => {
+  assert.match(source, /coreOpening = \\{ minX: -3\\.8, maxX: 3\\.8, minZ: -26\\.0, maxZ: -22\\.52 \\}/);
+  assert.match(source, /const lift = \\{ centerX: 2\\.2, rearZ: -25\\.0, frontZ: -22\\.52/);
+  assert.match(source, /Math\\.abs\\(stair\\.firstZ - stair\\.secondZ\\) \\+ 1\\.16/);
+});
