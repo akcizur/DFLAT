@@ -3,6 +3,7 @@ import { createMainBuildingWorld } from "./game/main-building.js";
 import { createPlayerController } from "./game/player.js";
 import { createUI } from "./game/ui.js";
 import { bindInput } from "./game/input.js";
+import { applyEnvironment, sampleEnvironment } from "./game/environment.js";
 
 const mount = document.getElementById("game");
 const scene = new THREE.Scene();
@@ -151,7 +152,7 @@ const state = {
 };
 const ui = createUI();
 const world = createMainBuildingWorld({ THREE, scene, state, ui });
-setLoadingProgress(59, "STAVÍM HLAVNÍ BUDOVU", "Podlaží, balkony, schodiště a výtah.", "GEOMETRY");
+setLoadingProgress(59, "STAVÍM HLAVNÍ BUDOVU", "Čtyřpodlažní sekce T06B, lodžie a schodiště.", "GEOMETRY");
 
 // The outdoor map has no interior mission, furniture, or scripted interactables.
 
@@ -188,6 +189,39 @@ bindInput({ renderer, state, controller, ui });
 setLoadingProgress(84, "KONTROLUJI SCÉNU", "Ověřuji vstupní body a připravuji první snímek.", "VALIDATION");
 
 const clockStart = performance.now();
+const WEATHER_PARTICLE_COUNT = LOW_POWER ? 110 : 320;
+const rainPositions = new Float32Array(WEATHER_PARTICLE_COUNT * 6);
+let rainSeed = 0xDF1A7;
+function weatherRandom() {
+  rainSeed = (Math.imul(rainSeed, 1664525) + 1013904223) >>> 0;
+  return rainSeed / 0x100000000;
+}
+for (let i = 0; i < WEATHER_PARTICLE_COUNT; i++) {
+  const offset = i * 6;
+  const x = (weatherRandom() - 0.5) * 24;
+  const y = 1 + weatherRandom() * 15;
+  const z = (weatherRandom() - 0.5) * 24;
+  rainPositions[offset] = x;
+  rainPositions[offset + 1] = y;
+  rainPositions[offset + 2] = z;
+  rainPositions[offset + 3] = x - 0.035;
+  rainPositions[offset + 4] = y - 0.24;
+  rainPositions[offset + 5] = z;
+}
+const rainGeometry = new THREE.BufferGeometry();
+const rainAttribute = new THREE.BufferAttribute(rainPositions, 3);
+rainAttribute.setUsage(THREE.DynamicDrawUsage);
+rainGeometry.setAttribute("position", rainAttribute);
+const rainMaterial = new THREE.LineBasicMaterial({
+  color: 0xb9cbd3, transparent: true, opacity: 0, depthWrite: false,
+  blending: THREE.NormalBlending, toneMapped: false
+});
+const rainMesh = new THREE.LineSegments(rainGeometry, rainMaterial);
+rainMesh.name = "Environment / rainfall";
+rainMesh.frustumCulled = false;
+rainMesh.renderOrder = 2;
+rainMesh.visible = false;
+scene.add(rainMesh);
 const SIMULATION_HZ = 60;
 const SIMULATION_STEP_MS = 1000 / SIMULATION_HZ;
 const SCENE_RENDER_HZ = 60;
@@ -214,6 +248,29 @@ const shimmerMaterials = (() => {
 
 function updateSimulation(deltaSeconds, nowMs) {
   const nearest = controller.update(deltaSeconds);
+  const environment = sampleEnvironment((nowMs - clockStart) / 1000);
+  state.environment = environment;
+  applyEnvironment({ THREE, scene, hemisphere: globalHemisphere, sun: globalSun, panorama, environment });
+  rainMesh.visible = environment.precipitation > 0.025;
+  rainMaterial.opacity = environment.precipitation * 0.52;
+  rainMesh.position.set(controller.player.x, controller.player.elevation, controller.player.z);
+  const dropsPerSecond = 9 + environment.precipitation * 24;
+  for (let i = 0; i < WEATHER_PARTICLE_COUNT; i++) {
+    const offset = i * 6;
+    rainPositions[offset + 1] -= dropsPerSecond * deltaSeconds;
+    rainPositions[offset + 4] = rainPositions[offset + 1] - 0.24;
+    rainPositions[offset] += environment.wind * deltaSeconds;
+    rainPositions[offset + 3] = rainPositions[offset] - 0.035;
+    if (rainPositions[offset + 1] < 0.25) {
+      rainPositions[offset] = (weatherRandom() - 0.5) * 24;
+      rainPositions[offset + 1] = 10 + weatherRandom() * 10;
+      rainPositions[offset + 2] = (weatherRandom() - 0.5) * 24;
+      rainPositions[offset + 3] = rainPositions[offset] - 0.035;
+      rainPositions[offset + 4] = rainPositions[offset + 1] - 0.24;
+      rainPositions[offset + 5] = rainPositions[offset + 2];
+    }
+  }
+  rainGeometry.attributes.position.needsUpdate = true;
   for (const door of world.doorAnimations) {
     const target = door.targetOpen ? 1 : 0;
     door.progress += (target - door.progress) * (1 - Math.exp(-deltaSeconds * 5.5));
@@ -239,7 +296,7 @@ function updateSimulation(deltaSeconds, nowMs) {
     item.object.rotation.y = 0.45 + Math.sin(nowMs * 0.001) * 0.18;
   }
   ui.setInteraction(nearest, state);
-  ui.tick(nowMs, clockStart);
+  ui.tick(nowMs, clockStart, environment);
 }
 
 function animate(now) {
