@@ -28,13 +28,15 @@ test("weather changes through clear, overcast, rain and mist with a smooth blend
   assert.equal(transitionStart.weatherLabel, "MĚNÍ SE");
   assert.ok(transitionMiddle.cloudiness > transitionStart.cloudiness);
   assert.ok(transitionEnd.cloudiness >= transitionMiddle.cloudiness);
+  assert.ok(transitionMiddle.wind >= transitionStart.wind && transitionEnd.wind >= transitionMiddle.wind,
+    "wind speed must blend with the incoming weather instead of jumping at the boundary");
   assert.equal(transitionEnd.weatherLabel, "ZATAŽENO");
 });
 
 test("lighting and fog remain finite and non-negative in every weather and daylight state", () => {
   for (let seconds = 0; seconds < 240; seconds += 3) {
     const environment = sampleEnvironment(seconds);
-    for (const key of ["daylight", "precipitation", "cloudiness", "fogDensity", "ambientIntensity", "sunIntensity", "skyBrightness"]) {
+    for (const key of ["daylight", "precipitation", "cloudiness", "fogDensity", "ambientIntensity", "sunIntensity", "skyBrightness", "wind"]) {
       assert.ok(Number.isFinite(environment[key]), key + " must be finite at t=" + seconds);
       assert.ok(environment[key] >= 0, key + " must not be negative at t=" + seconds);
     }
