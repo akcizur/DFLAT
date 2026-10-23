@@ -47,6 +47,33 @@ test("invalid elapsed times fall back safely to the initial conditions", () => {
 });
 
 
+
+test("weather parameters remain continuous at every transition boundary, including wind", () => {
+  const boundaries = [55, 110, 165, 220];
+  const parameters = ["cloudiness", "precipitation", "fogDensity", "ambientIntensity", "sunIntensity", "wind"];
+  for (const boundary of boundaries) {
+    const before = sampleEnvironment(boundary - 0.001);
+    const at = sampleEnvironment(boundary);
+    const after = sampleEnvironment(boundary + 0.001);
+    for (const key of parameters) {
+      assert.ok(Math.abs(before[key] - at[key]) < 0.01,
+        key + " jumps at " + boundary + " seconds");
+      assert.ok(Math.abs(at[key] - after[key]) < 0.01,
+        key + " has a discontinuous start at " + boundary + " seconds");
+    }
+  }
+});
+
+test("time-of-day produces visibly different night, dawn and midday lighting", () => {
+  const dawn = sampleEnvironment(0);
+  const noon = sampleEnvironment(50);
+  const midnight = sampleEnvironment(170);
+  assert.ok(noon.skyBrightness > midnight.skyBrightness);
+  assert.ok(noon.sunIntensity > dawn.sunIntensity);
+  assert.ok(noon.ambientIntensity > midnight.ambientIntensity);
+  assert.notEqual(noon.timeLabel, midnight.timeLabel);
+});
+
 test("applying a new time state smoothly updates sky, fog, and sun without scene churn", () => {
   const scene = new THREE.Scene();
   scene.fog = new THREE.FogExp2(0x858b8e, 0.0022);
