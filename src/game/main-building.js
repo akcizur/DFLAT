@@ -672,6 +672,16 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
           y: round(parameters.height ?? 0),
           z: round(parameters.depth ?? 0)
         },
+        scale: {
+          x: round(mesh.scale.x),
+          y: round(mesh.scale.y),
+          z: round(mesh.scale.z)
+        },
+        worldAabbSize: {
+          x: round(max.x - min.x),
+          y: round(max.y - min.y),
+          z: round(max.z - min.z)
+        },
         rotation: {
           x: round(mesh.rotation.x),
           y: round(mesh.rotation.y),
@@ -793,7 +803,9 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     const data = getCoordinateData();
     const header = [
       "record_type", "id", "name", "x", "y", "z",
-      "width", "height", "depth", "rotation_x", "rotation_y", "rotation_z",
+      "geometry_width", "geometry_height", "geometry_depth",
+      "scale_x", "scale_y", "scale_z", "world_aabb_width", "world_aabb_height", "world_aabb_depth",
+      "rotation_x", "rotation_y", "rotation_z",
       "min_x", "min_y", "min_z", "max_x", "max_y", "max_z",
       "corner_index", "floor_index", "provenance"
     ];
@@ -809,6 +821,8 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
         "object", object.id, object.name,
         object.center.x, object.center.y, object.center.z,
         object.dimensions.x, object.dimensions.y, object.dimensions.z,
+        object.scale.x, object.scale.y, object.scale.z,
+        object.worldAabbSize.x, object.worldAabbSize.y, object.worldAabbSize.z,
         object.rotation.x, object.rotation.y, object.rotation.z,
         object.bounds.min.x, object.bounds.min.y, object.bounds.min.z,
         object.bounds.max.x, object.bounds.max.y, object.bounds.max.z,
@@ -816,8 +830,8 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
       ]);
       object.corners.forEach((corner, index) => rows.push([
         "corner", object.id, object.name,
-        corner.x, corner.y, corner.z, "", "", "", "", "", "",
-        "", "", "", "", "", "", index + 1, object.floorIndex, object.provenance
+        corner.x, corner.y, corner.z, "", "", "", "", "", "", "", "", "",
+        "", "", "", "", "", "", "", "", "", "", "", "", index + 1, object.floorIndex, object.provenance
       ]));
     }
 
