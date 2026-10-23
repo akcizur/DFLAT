@@ -61,8 +61,9 @@ if (packageJson.devDependencies?.vite !== "6.4.5") fail("Vite must be installed 
 const mainSource = await readFile(path.join(root, "src/main.js"), "utf8");
 if (!mainSource.includes("function finishStartupWhenReady()") || !mainSource.includes("state.ready = true")) fail("the Start menu must wait for the first frame and required resources");
 if (/from\s+["']https?:\/\//i.test(mainSource)) fail("runtime modules must be bundled locally; remove CDN imports");
-if (!mainSource.includes("createMainBuildingWorld({ THREE, scene, state, ui })")) fail("the procedural fallback building must remain available");
-if (!mainSource.includes('import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js"') || !mainSource.includes("models/t06b-panelak-v2.glb")) fail("the active game must load the Blender-authored T06B V2 GLB when available");
+if (!mainSource.includes("createMainBuildingWorld({ THREE, scene, state, ui, siteOnly: true })")) fail("the runtime must initialise the outdoor site without constructing buildings");
+if (mainSource.includes("GLTFLoader") || mainSource.includes("models/t06b-panelak-v2.glb")) fail("the runtime must not load any building model");
+if (!mainSource.includes("state.allBuildingsRemoved = true")) fail("the live scene must explicitly confirm the no-buildings mode");
 if (!mainSource.includes("const SIMULATION_HZ = 60")) fail("game simulation must target 60 Hz");
 if (!mainSource.includes("const SCENE_RENDER_HZ = 60")) fail("scene rendering must target 60 FPS");
 if (!mainSource.includes("renderer.render(scene, camera)")) fail("scene must render directly without a compositor");
@@ -87,7 +88,7 @@ if (!inputSource.includes("clearMovement();\n    state.started = true;")) fail("
 const playerSource = await readFile(path.join(root, "src/game/player.js"), "utf8");
 if (!playerSource.includes("z: 9.2")) fail("player must spawn outdoors facing the main building");
 const uiSource = await readFile(path.join(root, "src/game/ui.js"), "utf8");
-if (!uiSource.includes('"Panelák T06B. Prozkoumej čtyři podlaží, schodiště a lodžie."') || !uiSource.includes('" / 4"')) fail("HUD must describe the four-storey T06B building without a lift");
+if (!uiSource.includes('"Prázdná mapa sídliště. Všechny budovy jsou odstraněné."') || !uiSource.includes('"BUDOVY: 0"')) fail("HUD must clearly show that every building has been removed");
 if (!mainSource.includes('object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone())')) fail("mesh UV2 channels are required for baked light maps");
 
 const coordinateExporter = await readFile(path.join(root, "tools/export-building-coordinates.mjs"), "utf8");
