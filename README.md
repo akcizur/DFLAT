@@ -1,8 +1,8 @@
 # The Flat — DFLAT
 
-A first-person apartment exploration game built with Three.js, Vite and Bun. Three.js is local, with no CDN dependency. Vite bundles the npm package for the production build; a version-matched vendored module plus an import map also keeps the unbundled source entry compatible with static branch hosting.
+A first-person apartment exploration game built with Three.js, Vite and Bun. Three.js is local, with no CDN dependency. Vite bundles the npm package for the production build; a version-matched vendored module plus an import map also keeps the unbundled source entry compatible with static branch hosting. The browser game creates its environment from JavaScript geometry and does not load GLB, GLTF or FBX models.
 
-The default browser world includes a four-storey Soviet-era prefabricated panel block (P + 3), repetitive concrete facade panels, recessed windows, loggias, a flat service roof and a connected entrance approach. Keyboard, mouse, touch and Gamepad API inputs remain supported, with fullscreen available from the HUD.
+The playable world is the furnished apartment interior, with rooms, furniture, doors, keys, collisions and interactions. The former outdoor panelák map and its generated skyline have been removed from the gameplay runtime. Keyboard, mouse, touch and Gamepad API inputs remain supported, with fullscreen available from the HUD.
 
 ## Run locally
 
@@ -82,7 +82,7 @@ The supplied `SCENE.BUILDING.glb` remains a separate interchange asset. To serve
 
 - `index.html` — game shell, centered BIOS menus and HUD.
 - `styles.css`, `styles-cinematic.css` — responsive HUD and menu styling, separate from scene rendering.
-- `assets/bg-scene-hq.png` — high-resolution panoramic exterior environment.
+- `assets/bg-scene-hq.png` — panoramic outside view visible through the apartment windows.
 - `src/main.js` — fixed-step movement simulation and direct low-resolution WebGL raster.
 - `vendor/three.module.min.js` — local Three.js r169 fallback for unbundled static branch hosting; its MIT license is included beside it.
 - `src/game/materials.js` — pixel-gradient materials and procedural baked-light map.
