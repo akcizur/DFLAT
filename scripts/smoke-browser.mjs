@@ -33,8 +33,7 @@ try {
     if (message.type() === "error") consoleErrors.push(message.text());
   });
 
-  await page.goto("http://127.0.0.1:4173/?smoke=1", { waitUntil: "networkidle", timeout: 30000 });
-  await page.waitForSelector("#screenCanvas", { timeout: 10000 });
+  await page.goto("http://127.0.0.1:4173/?smoke=1", { waitUntil: "domcontentloaded", timeout: 30000 });
   await page.waitForSelector("#loadingScreen", { state: "visible", timeout: 10000 });
 
   const initialStartup = await page.evaluate(() => {
@@ -62,6 +61,7 @@ try {
       throw new Error(key + " is not viewport-centred: " + JSON.stringify(initialStartup));
     }
   }
+  await page.waitForSelector("#screenCanvas", { timeout: 10000 });
   await page.waitForFunction(() => document.querySelector("#startButton")?.disabled === false, null, { timeout: 15000 });
   await page.waitForSelector("#loadingScreen[hidden]", { timeout: 5000 });
 
