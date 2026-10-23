@@ -27,7 +27,7 @@ test("the model has four above-ground storeys, a cellar and eight flats without 
   assert.ok(source.includes("BASEMENT_HEIGHT = 2.6"));
   assert.ok(source.includes('scene["apartments_per_floor"] = 2'));
   assert.ok(source.includes('scene["lift"] = False'));
-  assert.ok(source.includes('scene["apartments_total"]'));
+  assert.ok(source.includes('"apartmentsTotal": FLOORS*2'));
   assert.ok(!source.includes("Elevator cabin"));
   assert.ok(!source.includes("Lift shaft"));
 });
