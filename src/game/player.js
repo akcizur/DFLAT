@@ -67,7 +67,7 @@ export function createPlayerController({ camera, colliders, interactables, state
       z > coreOpening.minZ - margin && z < coreOpening.maxZ + margin;
   }
 
-  function stairSurfaceCandidates(x, z) {
+  function stairSurfaceCandidates(x, z, fromElevation = player.elevation) {
     const candidates = [];
     const halfTread = stair.treadDepth / 2;
     const halfLanding = stair.landingDepth / 2;
@@ -117,7 +117,7 @@ export function createPlayerController({ camera, colliders, interactables, state
   }
 
   function findSupportedHeight(x, z, fromElevation = player.elevation) {
-    const candidates = stairSurfaceCandidates(x, z)
+    const candidates = stairSurfaceCandidates(x, z, fromElevation)
       .map(surface => ({ ...surface, delta: Math.abs(surface.height - fromElevation) }))
       .filter(surface => surface.delta <= MAX_STEP_HEIGHT)
       .sort((a, b) => a.delta - b.delta);
