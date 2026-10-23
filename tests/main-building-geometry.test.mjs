@@ -39,19 +39,24 @@ test("the outdoor terrain and ground-floor slab no longer share a coplanar surfa
   const { world } = makeWorld();
   const terrain = world.meshes.find(mesh => mesh.name === "Sídliště / travnatý pozemek");
   const slab = world.meshes.find(mesh => mesh.name === "Podlaha / přízemí");
-  const plinth = world.meshes.find(mesh => mesh.name === "Suterén / základový sokl");
+  const plinths = world.meshes.filter(mesh => mesh.name.startsWith("Suterén / základový sokl /"));
   assert.ok(terrain, "outdoor terrain is missing");
   assert.ok(slab, "ground-floor slab is missing");
-  assert.ok(plinth, "basement/foundation plinth is missing");
+  assert.equal(plinths.length, 4, "foundation plinth must be a perimeter ring, not a solid cover over the floor");
   const top = mesh => mesh.position.y + mesh.geometry.parameters.height / 2;
   const terrainTop = top(terrain);
   const slabTop = top(slab);
-  const plinthTop = top(plinth);
   assert.ok(slabTop > terrainTop, "ground slab must sit above the terrain to prevent z-fighting");
   assert.ok(slabTop - terrainTop <= 0.03, "ground-floor threshold should remain nearly flush");
-  assert.ok(plinthTop > terrainTop, "foundation plinth must not be coplanar with the terrain");
-  assert.ok(plinthTop - terrainTop >= 0.03, "the foundation edge needs a visible vertical separation");
-  assert.ok(Math.abs(plinthTop - slabTop) >= 0.015, "plinth and interior floor must not share a coplanar face");
+  for (const plinth of plinths) {
+    const plinthTop = top(plinth);
+    assert.ok(plinthTop > terrainTop, "foundation plinth must not be coplanar with the terrain");
+    assert.ok(plinthTop - terrainTop >= 0.03, "the foundation edge needs a visible vertical separation");
+    const size = plinth.geometry.parameters;
+    const coversInteriorCenter = Math.abs(plinth.position.x) < size.width / 2 &&
+      Math.abs(-22 - plinth.position.z) < size.depth / 2;
+    assert.equal(coversInteriorCenter, false, "foundation strip must not cover the central walkable floor");
+  }
 });
 
 test("the stairwell provides three floor transitions and the building has no lift", () => {
