@@ -1,9 +1,7 @@
 // First-person movement, collision handling, proximity and camera synchronization.
 export function createPlayerController({ camera, colliders, interactables, state, ui }) {
-  const panelakScene = new URLSearchParams(globalThis.location?.search ?? "").get("scene") !== "v1";
-  const player = panelakScene
-    ? { x: 0, z: 1.5, yaw: 0, pitch: -0.035, speed: 2.65, radius: 0.29 }
-    : { x: 0, z: 4.95, yaw: Math.PI * 0.02, pitch: -0.04, speed: 2.65, radius: 0.29 };
+  // Spawn just inside the apartment entrance, facing into the playable interior.
+  const player = { x: 0, z: 4.95, yaw: Math.PI * 0.02, pitch: -0.04, speed: 2.65, radius: 0.29 };
   camera.position.set(player.x, 1.68, player.z);
   camera.rotation.order = "YXZ";
   let walkTime = 0;
