@@ -110,7 +110,7 @@ test("teleport-based floor changes still reset foot elevation and the jump state
   controller.player.jumpHeight = 0.8;
   controller.goToFloor(3, "Výtah");
   assert.equal(controller.player.floor, 3);
-  assert.equal(controller.player.elevation, 8.4);
+  assert.ok(Math.abs(controller.player.elevation - 8.4) < 1e-9);
   assert.equal(controller.player.jumpHeight, 0);
   assert.equal(state.currentFloor, 3);
 });
