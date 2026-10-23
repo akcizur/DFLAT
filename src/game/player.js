@@ -6,7 +6,7 @@ export function createPlayerController({ camera, colliders, interactables, state
   const coreOpening = navigation?.coreOpening ?? { minX: -3.8, maxX: 3.8, minZ: -26.0, maxZ: -22.35 };
   const stair = navigation?.stairs ?? {
     lowX: -3.2, highX: -0.8, firstZ: -25.1, secondZ: -23.1, steps: 8,
-    stepRise: FLOOR_HEIGHT / 16, stepRun: 0.3, treadDepth: 1.16,
+    stepRise: FLOOR_HEIGHT / 16, stepRun: 0.3, treadDepth: 1.16, treadOverlap: 0.025,
     landingWidth: 1.28, landingDepth: 3.1,
     landingCenterX: -0.16, landingCenterZ: -24.1
   };
@@ -70,12 +70,12 @@ export function createPlayerController({ camera, colliders, interactables, state
       const baseY = baseFloor * FLOOR_HEIGHT;
       if (inLowerFlight) {
         const progress = Math.max(0, Math.min(stair.steps,
-          Math.ceil((x - stair.lowX) / stair.stepRun - 1e-6)));
+          Math.ceil((x - stair.lowX - stair.treadOverlap / 2) / stair.stepRun - 1e-6)));
         candidates.push({ height: baseY + progress * stair.stepRise, kind: "stair" });
       }
       if (inUpperFlight) {
         const progress = Math.max(0, Math.min(stair.steps,
-          Math.ceil((stair.highX - x) / stair.stepRun - 1e-6)));
+          Math.ceil((stair.highX - x - stair.treadOverlap / 2) / stair.stepRun - 1e-6)));
         candidates.push({
           height: baseY + FLOOR_HEIGHT / 2 + progress * stair.stepRise,
           kind: "stair"
