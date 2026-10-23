@@ -62,7 +62,9 @@ if (packageJson.devDependencies?.vite !== "6.4.5") fail("Vite must be installed 
 const mainSource = await readFile(path.join(root, "src/main.js"), "utf8");
 if (!mainSource.includes("function finishStartupWhenReady()") || !mainSource.includes("state.ready = true")) fail("the Start menu must wait for the first frame and required resources");
 if (/from\s+["']https?:\/\//i.test(mainSource)) fail("runtime modules must be bundled locally; remove CDN imports");
-if (!mainSource.includes("createMainBuildingWorld({ THREE, scene, state, ui })")) fail("gameplay must boot into the main-building outdoor map and interior interactions");
+if (!mainSource.includes("createMainBuildingWorld({ THREE, scene, state, ui, showBuilding: false })")) fail("gameplay must boot into a building-free open environment");
+if (!mainSource.includes("No city panorama")) fail("open-world sky must not display a hidden city skyline");
+if (!mainSource.includes("const rainVisible = environment.precipitation > 0.025")) fail("rain must transition visibly across the uncovered open map");
 if (!mainSource.includes("const SIMULATION_HZ = 60")) fail("game simulation must target 60 Hz");
 if (!mainSource.includes("const SCENE_RENDER_HZ = 60")) fail("scene rendering must target 60 FPS");
 if (!mainSource.includes("renderer.render(scene, camera)")) fail("scene must render directly without a compositor");
@@ -87,7 +89,7 @@ if (!inputSource.includes("clearMovement();\n    state.started = true;")) fail("
 const playerSource = await readFile(path.join(root, "src/game/player.js"), "utf8");
 if (!playerSource.includes("z: 9.2")) fail("player must spawn outdoors facing the main building");
 const uiSource = await readFile(path.join(root, "src/game/ui.js"), "utf8");
-if (!uiSource.includes('"Panelák T06B. Projdi čtyři nadzemní podlaží po schodišti."')) fail("HUD must describe the four-storey no-lift T06B building");
+if (!uiSource.includes('"Otevřená krajina bez budov. Sleduj, jak se mění denní světlo a počasí."')) fail("HUD must describe the building-free dynamic environment");
 if (!uiSource.includes('environment?.timeLabel')) fail("HUD must display the live accelerated in-game clock");
 if (!uiSource.includes('environment?.weatherLabel')) fail("HUD must display the current weather transition");
 if (!mainSource.includes('object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone())')) fail("mesh UV2 channels are required for baked light maps");
@@ -101,7 +103,9 @@ const outdoorSource = await readFile(path.join(root, "src/game/main-building.js"
 if (!outdoorSource.includes('Fasáda / břízolitový panel')) fail("břízolit facade panel geometry is missing");
 if (!outdoorSource.includes('const moduleWidth = PANELAK_LAYOUT.moduleWidth')) fail("runtime geometry must use the central five-module layout config");
 if (!outdoorSource.includes('Podlaha / přízemí')) fail("ground-floor slab is missing");
-if (!outdoorSource.includes('y + 0.02, buildingZ')) fail("ground-floor slab must be separated from the terrain to prevent z-fighting");
+if (!outdoorSource.includes('y + 0.005')) fail("ground-floor slab must be separated from the lowered terrain to prevent z-fighting");
+if (!outdoorSource.includes('if (!showBuilding)')) fail("the live game needs a model-free environment mode");
+if (!outdoorSource.includes('const interiorRearZ = rearZ + 1.72')) fail("floor slabs must stop at the recessed loggia back edge");
 if (!outdoorSource.includes('Lodžie / betonová podlaha')) fail("recessed concrete loggias are missing");
 if (!outdoorSource.includes('Střecha / atika přední')) fail("main building roof parapet is missing");
 if (!outdoorSource.includes('Schodiště / dolní rameno / stupeň')) fail("stair flights and treads are missing");
@@ -112,7 +116,8 @@ if (!outdoorSource.includes('Sídliště / travnatý pozemek')) fail("outdoor te
 if (!outdoorSource.includes('navigationCore()')) fail("upper floor slabs must reserve the central stair core opening");
 if (!outdoorSource.includes('Lodžie / prosklené dveře')) fail("loggias must have glazed low-sill doors");
 if (!outdoorSource.includes('const walkGaps = front')) fail("facade collision gaps must match the physical entrances and loggia doors");
-if (!mainSource.includes('0.08, 320')) fail("camera far plane must include the outdoor panorama sphere");
+if (!mainSource.includes('0.08, 320')) fail("camera far plane must retain a stable open-world view");
+if (mainSource.includes('new THREE.SphereGeometry(160, 64, 40)')) fail("city panorama geometry must be absent from the building-free scene");
 if (!playerSource.includes('player.elevation + 1.68')) fail("camera height must follow the actual foot elevation, including stair traversal");
 
 const worldSource = await readFile(path.join(root, "src/game/world.js"), "utf8");
