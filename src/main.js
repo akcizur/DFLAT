@@ -3,6 +3,7 @@ import { createMainBuildingWorld } from "./game/main-building.js";
 import { createPlayerController } from "./game/player.js";
 import { createUI } from "./game/ui.js";
 import { bindInput } from "./game/input.js";
+import { applyEnvironment, sampleEnvironment } from "./game/environment.js";
 
 const mount = document.getElementById("game");
 const scene = new THREE.Scene();
@@ -235,6 +236,38 @@ bindInput({ renderer, state, controller, ui });
 setLoadingProgress(84, "KONTROLUJI SCÉNU", "Ověřuji vstupní body a připravuji první snímek.", "VALIDATION");
 
 const clockStart = performance.now();
+
+// Reuse one small particle buffer for outdoor rain. No rain is drawn indoors.
+const WEATHER_PARTICLE_COUNT = LOW_POWER ? 100 : 260;
+const rainPositions = new Float32Array(WEATHER_PARTICLE_COUNT * 6);
+let rainSeed = 0xDF1A7;
+function weatherRandom() {
+  rainSeed = (Math.imul(rainSeed, 1664525) + 1013904223) >>> 0;
+  return rainSeed / 0x100000000;
+}
+for (let i = 0; i < WEATHER_PARTICLE_COUNT; i++) {
+  const o = i * 6;
+  const x = (weatherRandom() - 0.5) * 24;
+  const y = 1 + weatherRandom() * 15;
+  const z = (weatherRandom() - 0.5) * 24;
+  rainPositions[o] = x; rainPositions[o + 1] = y; rainPositions[o + 2] = z;
+  rainPositions[o + 3] = x - 0.035; rainPositions[o + 4] = y - 0.24; rainPositions[o + 5] = z;
+}
+const rainGeometry = new THREE.BufferGeometry();
+const rainAttribute = new THREE.BufferAttribute(rainPositions, 3);
+rainAttribute.setUsage(THREE.DynamicDrawUsage);
+rainGeometry.setAttribute("position", rainAttribute);
+const rainMaterial = new THREE.LineBasicMaterial({
+  color: 0xb9cbd3, transparent: true, opacity: 0, depthWrite: false,
+  blending: THREE.NormalBlending, toneMapped: false
+});
+const rainMesh = new THREE.LineSegments(rainGeometry, rainMaterial);
+rainMesh.name = "Environment / rainfall";
+rainMesh.frustumCulled = false;
+rainMesh.renderOrder = 2;
+rainMesh.visible = false;
+scene.add(rainMesh);
+
 const SIMULATION_HZ = 60;
 const SIMULATION_STEP_MS = 1000 / SIMULATION_HZ;
 const SCENE_RENDER_HZ = 60;
@@ -261,6 +294,39 @@ const shimmerMaterials = (() => {
 
 function updateSimulation(deltaSeconds, nowMs) {
   const nearest = controller.update(deltaSeconds);
+  const environment = sampleEnvironment((nowMs - clockStart) / 1000);
+  state.environment = environment;
+  applyEnvironment({ THREE, scene, hemisphere: globalHemisphere, sun: globalSun, panorama, environment });
+
+  const playerX = controller.player.x;
+  const playerZ = controller.player.z;
+  const outsideFootprint = playerX < -9.1 || playerX > 9.1 || playerZ > -15.9 || playerZ < -28.1;
+  const onOpenLoggia = [-3.6, 3.6].some(x =>
+    Math.abs(playerX - x) < 1.68 && playerZ < -26.65 && playerZ > -28.18
+  );
+  const rainVisible = environment.precipitation > 0.025 && (outsideFootprint || onOpenLoggia);
+  rainMesh.visible = rainVisible;
+  rainMaterial.opacity = environment.precipitation * 0.52;
+  rainMesh.position.set(playerX, controller.player.elevation, playerZ);
+  if (rainVisible) {
+    const dropsPerSecond = 9 + environment.precipitation * 24;
+    for (let i = 0; i < WEATHER_PARTICLE_COUNT; i++) {
+      const o = i * 6;
+      rainPositions[o + 1] -= dropsPerSecond * deltaSeconds;
+      rainPositions[o + 4] = rainPositions[o + 1] - 0.24;
+      rainPositions[o] += environment.wind * deltaSeconds;
+      rainPositions[o + 3] = rainPositions[o] - 0.035;
+      if (rainPositions[o + 1] < 0.25) {
+        rainPositions[o] = (weatherRandom() - 0.5) * 24;
+        rainPositions[o + 1] = 10 + weatherRandom() * 10;
+        rainPositions[o + 2] = (weatherRandom() - 0.5) * 24;
+        rainPositions[o + 3] = rainPositions[o] - 0.035;
+        rainPositions[o + 4] = rainPositions[o + 1] - 0.24;
+        rainPositions[o + 5] = rainPositions[o + 2];
+      }
+    }
+    rainGeometry.attributes.position.needsUpdate = true;
+  }
   for (const door of world.doorAnimations) {
     const target = door.targetOpen ? 1 : 0;
     door.progress += (target - door.progress) * (1 - Math.exp(-deltaSeconds * 5.5));
@@ -286,7 +352,7 @@ function updateSimulation(deltaSeconds, nowMs) {
     item.object.rotation.y = 0.45 + Math.sin(nowMs * 0.001) * 0.18;
   }
   ui.setInteraction(nearest, state);
-  ui.tick(nowMs, clockStart);
+  ui.tick(nowMs, clockStart, environment);
 }
 
 function animate(now) {
