@@ -59,7 +59,7 @@ test("stair treads, landing and top-floor roof hatch share exact endpoints", () 
   assert.match(source, /const landingWidth = liftLeft - landingStartX/);
   assert.match(source, /const landingDepth = Math\.abs\(stair\.firstZ - stair\.secondZ\) \+ stairTreadDepth/);
   assert.match(source, /const ladderZ = hatchZ/);
-  assert.match(source, /const ladderBottomY = \(floors - 1\) \* floorHeight \+ 0\.01/);
+  assert.match(source, /const ladderBottomY = \\(floors - 1\\) \\* floorHeight/);
 });
 
 test("roof machinery bottoms align with the roof datum", () => {
