@@ -258,7 +258,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui, showBuilding 
   function navigationCore() { return core; }
 
   // Surroundings evoke a Czech normalisation-era estate, without competing with the hero building.
-  box("Sídliště / travnatý pozemek", 0, -0.12, -22, 240, 0.22, 240, materials.grass);
+  box("Sídliště / travnatý pozemek", 0, -0.12, -22, 2000, 0.22, 2000, materials.grass);
   box("Sídliště / asfaltová komunikace", 0, 0.012, 2.7, 220, 0.035, 8.2, materials.asphalt);
   box("Sídliště / chodník", 0, 0.025, -2.05, 220, 0.05, 1.55, materials.pavement);
   box("Sídliště / přístupový chodník", 0, 0.018, -8, 3.8, 0.036, 10, materials.pavement);
@@ -272,7 +272,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui, showBuilding 
       colliders, interactables, meshesToAnimate, doorAnimations, meshes,
       navigation: {
         floorHeight, floors: 1,
-        footprint: { minX: -120, maxX: 120, minZ: -142, maxZ: 98, rearZ: -142, frontZ: 98 },
+        footprint: { minX: -1000, maxX: 1000, minZ: -1022, maxZ: 978, rearZ: -1022, frontZ: 978 },
         coreOpening: { minX: 10000, maxX: 10001, minZ: 10000, maxZ: 10001 },
         stairs: {
           lowX: 10000, highX: 10001, firstZ: 10000, secondZ: 10002, steps: 8,
