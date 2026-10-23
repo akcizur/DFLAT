@@ -37,9 +37,11 @@ export function bindInput({ renderer, state, controller, ui }) {
     keysDown.Space = false;
   }
   function startGame() {
-    if (state.started) return;
+    // The menu remains visible only once the initial frame and startup resources are ready.
+    if (state.started || !state.ready) return;
     clearMovement();
     state.started = true;
+    document.getElementById("hud")?.setAttribute("aria-hidden", "false");
     const startScreen = document.getElementById("startScreen");
     startScreen.classList.add("transition-out");
     state.paused = false;
