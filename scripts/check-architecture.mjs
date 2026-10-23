@@ -19,6 +19,7 @@ const required = [
   "src/game/materials.js",
   "src/game/world.js",
   "src/game/main-building.js",
+  "src/game/environment.js",
   "src/game/player.js",
   "src/game/ui.js",
   "src/game/input.js",
