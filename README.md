@@ -32,6 +32,7 @@ bun run preview
 - **Direct rendering:** no screen-wide CRT, VHS, PS1, blur or post-processing effects.
 - **Stable simulation:** movement updates target 60 Hz and rendering is capped at 60 FPS.
 - **Dynamic environment:** an accelerated day/night clock, continuously blended daylight, four weather states (clear, overcast, rain and mist), rain particles and weather-aware fog/light changes.
+- **Stable building base:** the playable ground slab sits just above the terrain; the foundation is a four-sided perimeter ring, avoiding coplanar faces that can make the floor flicker.
 - **Input:** keyboard, mouse, touch and Gamepad API support remain enabled; fullscreen is available in the HUD.
 
 ## Runtime coordinate export
