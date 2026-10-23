@@ -84,8 +84,13 @@ test("applying a new time state smoothly updates sky, fog, and sun without scene
   const skyReference = scene.background;
   const dawnIntensity = sun.intensity;
   applyEnvironment({ THREE, scene, hemisphere, sun, panorama: { mesh: null }, environment: sampleEnvironment(50) });
+  const middayIntensity = sun.intensity;
   assert.equal(scene.background, skyReference, "the sky color object should be reused between frames");
-  assert.ok(sun.intensity > dawnIntensity, "daylight should brighten the directional light");
+  assert.ok(middayIntensity > dawnIntensity, "daylight should brighten the directional light");
+  assert.ok(sun.position.y > 0, "the sun should be above the horizon at midday");
+  applyEnvironment({ THREE, scene, hemisphere, sun, panorama: { mesh: null }, environment: sampleEnvironment(170) });
+  assert.ok(sun.position.y < 0, "the sun should move below the horizon at night");
+  assert.ok(sun.intensity < middayIntensity, "night should dim direct sunlight");
   assert.ok(Number.isFinite(scene.fog.density) && scene.fog.density > 0);
   assert.ok(Number.isFinite(hemisphere.intensity) && hemisphere.intensity >= 0);
 });
