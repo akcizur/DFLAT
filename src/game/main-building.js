@@ -167,7 +167,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     const ladderZ = hatchZ;
     // The ladder starts directly on the top-floor connector beside the last
     // stair tread and passes through the hatch centered on that arrival point.
-    const ladderBottomY = (floors - 1) * floorHeight + 0.01;
+    const ladderBottomY = (floors - 1) * floorHeight;
     const ladderTopY = roofY - 0.12;
     const ladderHeight = ladderTopY - ladderBottomY;
     const ladderCenterY = (ladderTopY + ladderBottomY) / 2;
