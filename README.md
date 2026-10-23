@@ -1,6 +1,6 @@
 # DFLAT — Main Building
 
-A compact first-person, low-poly exploration scene built with Three.js, Vite and Bun. The active game starts outdoors on an intentionally sparse map: one eight-storey Czech/Slovak socialist-era apartment block, a road, sidewalks and a short entrance path. There is no playable apartment interior, furniture, keys or scripted mission in the current scene.
+A compact first-person, low-poly exploration scene built with Three.js, Vite and Bun. The active game starts outdoors on an intentionally sparse map: one eight-storey Czech/Slovak socialist-era apartment block, a road, sidewalks and a short entrance path. The building includes repeated floor slabs, a common corridor, apartment entry openings, switchback stairs and an elevator shaft with a visible ground-floor cabin.
 
 The building is generated from native Three.js box geometry at runtime, so the live game does not need GLB/GLTF/FBX assets. The separate Blender scripts in `tools/` remain editable architectural modelling tools and are not loaded by the browser game.
 
@@ -25,7 +25,9 @@ bun run preview
 ## Map and rendering
 
 - **Empty outdoor map:** open terrain, one main building, a single approach path and a road. No surrounding buildings, vehicles or furniture.
-- **Main building:** eight storeys, repeating concrete façade bands, panel joints, low-poly windows, open balconies, roof parapet and a ground-floor entrance canopy.
+- **Main building:** eight storeys with wall sections around actual window/entrance openings, repeated concrete façade bands, low-poly windows, balconies and roof parapet.
+- **Interior circulation:** upper slabs have a core void, switchback flights and landings repeat between levels, apartment entries open from the common corridor, and the lift shaft has doors on all eight floors.
+- **Vertical navigation:** use `E` near the stairs or elevator to move between storeys; the HUD displays the active floor.
 - **Pixel-grid WebGL:** the scene renders into a compact canvas and scales with nearest-neighbour sampling. Antialiasing is disabled.
 - **Direct rendering:** no screen-wide CRT, VHS, PS1, blur or post-processing effects.
 - **Stable simulation:** movement updates target 60 Hz and rendering is capped at 60 FPS.

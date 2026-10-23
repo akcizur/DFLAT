@@ -17,8 +17,9 @@ export function createUI() {
 
   function updateObjective(state) {
     if (state.mainBuildingScene) {
-      objectiveText.textContent = "Volná mapa. Před tebou stojí hlavní budova.";
-      inventoryText.textContent = "LOKACE: HLAVNÍ BUDOVA";
+      const floor = Math.max(0, Math.min(7, Number(state.currentFloor) || 0));
+      objectiveText.textContent = "Hlavní budova. Prozkoumej podlaží, schodiště a výtah.";
+      inventoryText.textContent = "PODLAŽÍ: " + (floor + 1) + " / 8";
       return;
     }
     if (state.emptyMap) {
