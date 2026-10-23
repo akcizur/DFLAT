@@ -60,11 +60,10 @@ test("the stairwell provides three floor transitions and the building has no lif
 
 test("each storey has both recessed loggia doorways and the central luxfer stair window", () => {
   const { world } = makeWorld();
+  const anchors = new Map(world.getCoordinateData().anchors.map(anchor => [anchor.id, anchor]));
   for (let floor = 0; floor < PANELAK_LAYOUT.totalFloors; floor++) {
     for (const x of [-3.6, 3.6]) {
-      const doorway = world.anchors?.find(anchor =>
-        anchor.id === "loggia-door-f" + floor + "-x" + (x < 0 ? "L" : "R")
-      );
+      const doorway = anchors.get("loggia-door-f" + floor + "-x" + (x < 0 ? "L" : "R"));
       assert.ok(doorway, "missing loggia doorway anchor for floor " + floor + " at x=" + x);
     }
   }
