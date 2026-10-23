@@ -35,7 +35,7 @@ try {
 
   await page.goto("http://127.0.0.1:4173/?smoke=1", { waitUntil: "networkidle", timeout: 30000 });
   await page.waitForSelector("#screenCanvas", { timeout: 10000 });
-  await page.waitForTimeout(1200);
+  await page.waitForSelector("#loadingScreen[hidden]", { timeout: 10000 });
 
   const beforeStart = await page.evaluate(() => ({
     webgl: (() => {
