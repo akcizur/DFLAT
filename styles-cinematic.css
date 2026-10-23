@@ -923,12 +923,15 @@
   min-height: 100dvh;
 }
 #startScreen.nexus-menu .nexus-monitor {
-  position: relative;
-  left: auto;
-  right: auto;
+  position: fixed !important;
+  left: 50vw !important;
+  top: 50dvh !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translate(-50%, -50%) !important;
   justify-self: center;
   align-self: center;
-  margin: 0 auto;
+  margin: 0 !important;
   width: min(880px, calc(100vw - 32px));
   max-height: min(86vh, 720px);
   max-height: min(86dvh, 720px);
