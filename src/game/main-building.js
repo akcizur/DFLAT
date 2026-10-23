@@ -121,7 +121,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
     const roofHatch = {
       // Center the hatch above the top flight arrival, not above the
       // intermediate landing. The latter is half a storey below the roof.
-      minX: -3.925, maxX: -2.875,
+      minX: -3.93, maxX: -2.8875,
       minZ: -23.625, maxZ: -22.575
     };
     const hatchWidth = roofHatch.maxX - roofHatch.minX;
