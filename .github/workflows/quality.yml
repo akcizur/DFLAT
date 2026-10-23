@@ -22,6 +22,12 @@ jobs:
         run: bun install
       - name: Check Blender generator Python syntax
         run: python -m py_compile tools/generate_socialist_block_17.py tools/generate_t06b_panelak_v2.py
+      - name: Install Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+      - name: Generate the active T06B V2 model and geometry manifest
+        run: blender --background --python tools/generate_t06b_panelak_v2.py
       - name: Check JavaScript syntax
         run: bun run check:syntax
       - name: Run geometry and navigation regression tests
