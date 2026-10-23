@@ -24,6 +24,7 @@ const required = [
   "src/game/input.js",
   "tools/export-building-coordinates.mjs",
   "tools/generate_socialist_block_17.py",
+  "tools/generate_t06b_panelak_v2.py",
   "tools/VP_OS_Building_Architecture_v4.py"
 ];
 
@@ -147,6 +148,12 @@ if (!blenderGenerator.includes('text_curve.body = "VCHOD 01"') || !blenderGenera
 if (!blenderGenerator.includes("def _create_scene_preview(") || !blenderGenerator.includes("camera_data.type = \"ORTHO\"")) fail("Generator must create a useful architectural preview camera");
 if (!blenderGenerator.includes("scene.render.resolution_y = 1600") || !blenderGenerator.includes("camera_data.ortho_scale = 26.0") || !blenderGenerator.includes("Large warm key light")) fail("Generator must frame the 8-storey model in its portrait preview and configure architectural lighting");
 if (!blenderGenerator.includes('principled.inputs["Base Color"].default_value = rgba')) fail("Generated materials must use their configured colors in rendered output");
+const t06bGenerator = await readFile(path.join(root, "tools/generate_t06b_panelak_v2.py"), "utf8");
+if (!t06bGenerator.includes("MODULE = 3.6") || !t06bGenerator.includes("MODULE_COUNT = 5") || !t06bGenerator.includes("WIDTH = MODULE * MODULE_COUNT")) fail("T06B V2 must use a five-module 18 m section");
+if (!t06bGenerator.includes("FLOORS = 4") || !t06bGenerator.includes("BASEMENT_HEIGHT = 2.6") || !t06bGenerator.includes('scene["lift"] = False')) fail("T06B V2 must define four above-ground storeys plus cellar, without a lift");
+if (!t06bGenerator.includes("Staircase | luxfer glass block") || !t06bGenerator.includes("Loggia | heavy concrete slab") || !t06bGenerator.includes("Flat | bathroom-WC divider")) fail("T06B V2 is missing key period-appropriate facade or apartment-core details");
+if (!t06bGenerator.includes('scene["design_status"] = "visualisation concept; not for construction"')) fail("T06B V2 must identify the model as a visualisation concept, not certified construction documentation");
+
 const v4Generator = await readFile(path.join(root, "tools/VP_OS_Building_Architecture_v4.py"), "utf8");
 if (!v4Generator.includes("H_CLR, H_STR, SLAB, FAC = 2615, 2800, 150, 300")) fail("VP-OS v4 storey and slab dimensions are missing");
 if (!v4Generator.includes("arr.count = 15")) fail("VP-OS v4 must repeat 15 typical floors");
