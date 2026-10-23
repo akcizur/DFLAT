@@ -276,16 +276,25 @@ for floor in range(FLOORS):
             box(f"Flat {side} | {label} | level {floor} finish", (cx, y+0.035, cz),
                 (sx, 0.05, sz), mat)
         # Room dividers; door gaps are left around the central hall by segmented walls.
-        # The outer and inner modules are joined by a door into the central hall.
-        hall_z0, hall_z1 = -1.72, 0.58
-        for z0, z1 in ((FRONT_Z+0.14, hall_z0), (hall_z1, REAR_Z-0.14)):
+        # The outer and inner modules are joined by a conventional 0.88 m doorway.
+        entry_z0, entry_z1 = -1.01, -0.13
+        for z0, z1 in ((FRONT_Z+0.14, entry_z0), (entry_z1, REAR_Z-0.14)):
             if z1 > z0:
                 box("Apartment partition | module boundary", (side*5.4, y+1.25, (z0+z1)/2),
                     (WALL, 2.5, z1-z0), cream)
-        box("Apartment partition | boundary door lintel", (side*5.4, y+2.20, (hall_z0+hall_z1)/2),
-            (WALL, 0.60, hall_z1-hall_z0), cream)
+        box("Apartment partition | boundary door lintel", (side*5.4, y+2.20, (entry_z0+entry_z1)/2),
+            (WALL, 0.60, entry_z1-entry_z0), cream)
         box("Apartment hall | lino", (outer, y+0.035, -0.57), (3.42, 0.05, 2.25), lino)
-        # Cross walls include door openings aligned toward the hall side of the flat.
+
+        # Close both walls facing the central stair, leaving only the apartment door.
+        for z0, z1 in ((FRONT_Z+0.14, entry_z0), (entry_z1, REAR_Z-0.14)):
+            if z1 > z0:
+                box("Central stair | flat separation wall", (side*1.8, y+1.25, (z0+z1)/2),
+                    (WALL, 2.5, z1-z0), cream)
+        box("Central stair | entry lintel", (side*1.8, y+2.20, (entry_z0+entry_z1)/2),
+            (WALL, 0.60, entry_z1-entry_z0), cream)
+
+        # Cross walls have real gaps for room doors rather than sealed-off display boxes.
         for z in (-1.95, 0.80):
             doorway_x = inner-side*1.12
             for x0, x1 in sorted(((inner-1.71, doorway_x-0.48), (doorway_x+0.48, inner+1.71))):
@@ -294,11 +303,23 @@ for floor in range(FLOORS):
                         (x1-x0, 2.5, WALL), cream)
             box("Apartment partition | room door lintel", (doorway_x, y+2.20, z),
                 (0.96, 0.60, WALL), cream)
-        # B7-style service core: bath and WC occupy distinct, non-overlapping rooms.
-        box("Flat | B7 bathroom floor", (inner, y+0.08, -0.42), (2.05, 0.10, 2.05), cream)
-        box("Flat | bathtub", (inner+side*0.40, y+0.45, -0.65), (0.72, 0.18, 1.50), frame)
-        box("Flat | toilet pan", (inner-side*0.52, y+0.28, -0.28), (0.42, 0.42, 0.62), cream)
-        # Two separate apartment entry leaves face the communal central stair module.
+
+        # B7-style service zone. Bath and WC are separated by a full-height partition
+        # with a standard narrow doorway; the toilet is no longer in the bathtub zone.
+        wc_z0, wc_z1 = -0.74, -0.10
+        box("Flat | B7 service-core floor", (inner, y+0.08, -0.42), (2.05, 0.10, 2.05), cream)
+        for z0, z1 in ((-1.445, wc_z0), (wc_z1, 0.605)):
+            if z1 > z0:
+                box("Flat | bathroom-WC divider", (inner, y+1.05, (z0+z1)/2),
+                    (WALL, 2.10, z1-z0), cream)
+        box("Flat | bathroom-WC door lintel", (inner, y+2.00, (wc_z0+wc_z1)/2),
+            (WALL, 0.20, wc_z1-wc_z0), cream)
+        bath_cx = inner+side*0.48
+        wc_cx = inner-side*0.48
+        box("Flat | bathtub", (bath_cx, y+0.45, -0.65), (0.72, 0.18, 1.50), frame)
+        box("Flat | toilet pan", (wc_cx, y+0.28, -0.28), (0.42, 0.42, 0.62), cream)
+
+        # Two apartment entrance leaves face the communal central stair.
         box("Flat entrance | door leaf", (side*1.84, y+1.05, -0.57), (0.06, 2.10, 0.88), door)
 
 # End panels with restrained vertical seams and downpipes.
@@ -351,7 +372,20 @@ scene.camera = camera
 scene.render.image_settings.file_format = "PNG"
 scene.render.filepath = "//T06B_Panelak_V2_preview.png"
 
+# Areas are the nominal room-footprint schedule used by this visualisation.
+# Clear/net construction areas require a dimensioned drawing and professional review.
+import json
+room_schedule = {
+    "children_room_m2": round(3.42*3.0, 2),
+    "kitchen_m2": round(3.42*3.5, 2),
+    "bedroom_m2": round(3.42*4.35, 2),
+    "living_room_m2": round(3.42*4.65, 2),
+    "hall_m2": round(3.42*2.25, 2),
+    "bathroom_wc_zone_m2": round(2.05*2.05, 2),
+}
 # Store the intended dimensional design as scene metadata for downstream checks.
+scene["room_area_schedule_m2"] = json.dumps(room_schedule, sort_keys=True)
+scene["nominal_room_schedule_sum_m2"] = round(sum(room_schedule.values()), 2)
 scene["typology"] = "T06B-inspired five-module section"
 scene["module_width_m"] = MODULE
 scene["section_width_m"] = WIDTH
