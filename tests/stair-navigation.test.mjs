@@ -114,3 +114,17 @@ test("teleport-based floor changes still reset foot elevation and the jump state
   assert.equal(controller.player.jumpHeight, 0);
   assert.equal(state.currentFloor, 3);
 });
+
+
+test("the upper stair flight exits into the corridor without a support gap", () => {
+  const { controller, state } = makeController({
+    x: navigation.stairs.lowX, z: navigation.stairs.secondZ,
+    elevation: navigation.floorHeight, floor: 1
+  });
+
+  walk(controller, "KeyS", 35);
+  assert.ok(controller.player.z > navigation.coreOpening.maxZ + 0.12);
+  assert.ok(Math.abs(controller.player.elevation - navigation.floorHeight) < 0.03);
+  assert.equal(controller.player.floor, 1);
+  assert.equal(state.currentFloor, 1);
+});

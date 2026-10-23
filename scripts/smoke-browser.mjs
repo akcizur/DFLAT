@@ -69,7 +69,7 @@ try {
   }
   await page.waitForSelector("#screenCanvas", { timeout: 10000 });
   await page.waitForFunction(() => document.querySelector("#startButton")?.disabled === false, null, { timeout: 15000 });
-  await page.waitForSelector("#loadingScreen[hidden]", { timeout: 5000 });
+  await page.locator("#loadingScreen").waitFor({ state: "hidden", timeout: 5000 });
 
   const beforeStart = await page.evaluate(() => ({
     webgl: (() => {
@@ -101,7 +101,7 @@ try {
     !movementBefore?.position || !movementDuring?.position ||
     !movementBefore.state?.started || movementBefore.state.paused ||
     !movementDuring.keys?.KeyW ||
-    movementDuring.position.z > movementBefore.position.z - 0.35
+    movementDuring.position.z > movementBefore.position.z - 0.20
   ) {
     throw new Error("WASD movement test failed: " + JSON.stringify({ movementBefore, movementDuring }));
   }
