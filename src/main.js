@@ -231,6 +231,10 @@ if (t06bModelRoot) {
   addLocalCollider(8.925, 9.075, -6.075, 6.075);
 
   const rearWallSegments = [[-9, -5.2], [-2.0, 2.0], [5.2, 9]];
+  const loggiaWidth = 3.2;
+  const loggiaDepth = 1.25;
+  const rearZ = 6.0;
+  const loggiaBackZ = rearZ-loggiaDepth;
   const entryZ0 = -1.74, entryZ1 = -0.86;
   for (let floor = 0; floor < 4; floor++) {
     // Only the ground floor has a walk-through exterior door; luxfer panels
@@ -241,7 +245,20 @@ if (t06bModelRoot) {
     }
     // The rear wall is open across each 3.2 m recessed loggia doorway.
     for (const [left, right] of rearWallSegments) {
-      addLocalCollider(left, right, 5.925, 6.075, floor);
+      addLocalCollider(left, right, rearZ-0.075, rearZ+0.075, floor);
+    }
+
+    // The side returns and railing are physical barriers: the player may enter
+    // a loggia through its central sliding-door gap, but cannot walk through its
+    // concrete cheeks or straight over the oxide-red railing.
+    for (const cx of [-3.6, 3.6]) {
+      for (const side of [-1, 1]) {
+        const sideX = cx + side*(loggiaWidth/2-0.15/2);
+        addLocalCollider(sideX-0.075, sideX+0.075, loggiaBackZ-0.075, rearZ+0.075, floor);
+      }
+      const railWidth = loggiaWidth-0.20;
+      const railZ = rearZ-0.09;
+      addLocalCollider(cx-railWidth/2, cx+railWidth/2, railZ-0.065/2, railZ+0.065/2, floor);
     }
 
     // Apartment/core walls retain aligned 0.88 m doorways.
