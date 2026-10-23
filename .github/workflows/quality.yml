@@ -24,6 +24,8 @@ jobs:
         run: python -m py_compile tools/generate_socialist_block_17.py
       - name: Check JavaScript syntax
         run: bun run check:syntax
+      - name: Run geometry and navigation regression tests
+        run: bun run test
       - name: Check project architecture
         run: bun run check
       - name: Build production site

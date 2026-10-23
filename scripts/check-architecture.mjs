@@ -22,6 +22,7 @@ const required = [
   "src/game/player.js",
   "src/game/ui.js",
   "src/game/input.js",
+  "tools/export-building-coordinates.mjs",
   "tools/generate_socialist_block_17.py",
   "tools/VP_OS_Building_Architecture_v4.py"
 ];
@@ -40,6 +41,8 @@ for (const relativePath of required) {
 }
 
 const html = await readFile(path.join(root, "index.html"), "utf8");
+if (!html.includes('id="loadingScreen"') || !html.includes('id="loadingProgressBar"')) fail("a loading screen with progress must exist");
+if (!html.includes('id="startButton"')) fail("the main menu must provide a Start action");
 if (!/href="\.\/styles\.css(?:\?v=\d+)?"/.test(html)) fail("index.html must load styles.css");
 if (!/src="\.\/src\/main\.js\?v=\d+"/.test(html)) fail("index.html must load src/main.js with a cache-busting version");
 if (!html.includes('type="importmap"') || !html.includes('"three": "./vendor/three.module.min.js"')) {
@@ -49,11 +52,13 @@ if (/<style(?:\s|>)/i.test(html)) fail("inline CSS remains in index.html");
 if (/<script\b(?![^>]*\bsrc=)(?![^>]*\btype=["']importmap["'])[^>]*>/i.test(html)) fail("inline JavaScript remains in index.html");
 
 const packageJson = JSON.parse(await readFile(path.join(root, "package.json"), "utf8"));
-if (packageJson.scripts?.build !== "vite build") fail("package.json must provide the Vite production build");
+if (!packageJson.scripts?.build?.includes("vite build")) fail("package.json must provide the Vite production build");
+if (!packageJson.scripts?.build?.includes("tools/export-building-coordinates.mjs")) fail("production build must export and validate runtime building coordinates");
 if (packageJson.dependencies?.three !== "0.169.0") fail("Three.js must be installed locally at the tested game-compatible version");
 if (packageJson.devDependencies?.vite !== "6.4.5") fail("Vite must be installed as a local dev dependency at version 6.4.5");
 
 const mainSource = await readFile(path.join(root, "src/main.js"), "utf8");
+if (!mainSource.includes("function finishStartupWhenReady()") || !mainSource.includes("state.ready = true")) fail("the Start menu must wait for the first frame and required resources");
 if (/from\s+["']https?:\/\//i.test(mainSource)) fail("runtime modules must be bundled locally; remove CDN imports");
 if (!mainSource.includes("createMainBuildingWorld({ THREE, scene, state, ui })")) fail("gameplay must boot into the main-building outdoor map and interior interactions");
 if (!mainSource.includes("const SIMULATION_HZ = 60")) fail("game simulation must target 60 Hz");
@@ -72,6 +77,7 @@ if (/body\s*\{[^}]*image-rendering:\s*pixelated/s.test(baseStylesSource)) fail("
 if (!/canvas\s*\{[^}]*image-rendering:\s*pixelated/s.test(baseStylesSource)) fail("scene canvas must use nearest-neighbour pixel scaling");
 if (baseStylesSource.includes("#pixelDisplayCanvas") || cinematicStylesSource.includes("#pixelDisplayCanvas")) fail("obsolete effect presentation canvas styles remain");
 const inputSource = await readFile(path.join(root, "src/game/input.js"), "utf8");
+if (!inputSource.includes("state.started || !state.ready")) fail("Start must not activate the game before scene readiness");
 if (!inputSource.includes('window.addEventListener("keydown", onKeyDown, { capture: true })')) fail("keyboard input must be handled during the capture phase");
 if (!inputSource.includes('} else clearSource("gamepad");')) fail("gamepad polling must not clear keyboard/touch movement input when no gamepad is connected");
 if (!inputSource.includes('ui.showToast("Ovladač odpojen.");\n    clearSource("gamepad");')) fail("disconnecting a gamepad must only clear gamepad movement");
@@ -82,6 +88,11 @@ const uiSource = await readFile(path.join(root, "src/game/ui.js"), "utf8");
 if (!uiSource.includes('"Hlavní budova. Prozkoumej podlaží, schodiště a výtah."')) fail("HUD must describe building floors, stairs and elevator");
 if (!mainSource.includes('object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone())')) fail("mesh UV2 channels are required for baked light maps");
 
+const coordinateExporter = await readFile(path.join(root, "tools/export-building-coordinates.mjs"), "utf8");
+if (!coordinateExporter.includes("world.getCoordinateData()") || !coordinateExporter.includes("world.exportCoordinateCSV()")) fail("coordinate export must come from actual runtime geometry");
+if (!coordinateExporter.includes("main-building-vertices.json") || !coordinateExporter.includes("main-building-vertices.csv")) fail("coordinate export must generate JSON and CSV artefacts");
+if (!coordinateExporter.includes("balcony-door-f0-c2") || !coordinateExporter.includes("state.onElevatorMoved")) fail("coordinate export must validate balcony doors and elevator floor travel");
+
 const outdoorSource = await readFile(path.join(root, "src/game/main-building.js"), "utf8");
 if (!outdoorSource.includes('Fasáda / prefabrikovaný betonový panel')) fail("main building facade panel geometry is missing");
 if (!outdoorSource.includes('Hlavní budova / střešní atika přední')) fail("main building roof parapet is missing");
@@ -91,6 +102,8 @@ if (!outdoorSource.includes('Podlaží / vstupní chodba')) fail("multi-storey f
 if (!outdoorSource.includes('id: "elevator"') || !outdoorSource.includes('id: "stairs"')) fail("stairs and elevator interactions are missing");
 if (!outdoorSource.includes('Mapa / terén')) fail("empty outdoor terrain is missing");
 if (!outdoorSource.includes('coreOpening')) fail("upper floor slabs must reserve a stair/elevator core opening");
+if (!outdoorSource.includes('Balkonové dveře / otevřené levé křídlo')) fail("balconies must have real low-sill open doorways");
+if (!outdoorSource.includes('frontPassages')) fail("front facade collision gaps must match all physical entrances");
 if (!mainSource.includes('0.08, 320')) fail("camera far plane must include the outdoor panorama sphere");
 if (!playerSource.includes('player.elevation + 1.68')) fail("camera height must follow the actual foot elevation, including stair traversal");
 

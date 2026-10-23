@@ -33,6 +33,28 @@ bun run preview
 - **Stable simulation:** movement updates target 60 Hz and rendering is capped at 60 FPS.
 - **Input:** keyboard, mouse, touch and Gamepad API support remain enabled; fullscreen is available in the HUD.
 
+## Runtime coordinate export
+
+Every production build exports the coordinates of the actual Three.js scene, not a parallel handwritten model. The exporter measures geometry created by `src/game/main-building.js` and validates important dimensions, named points, collision openings, stairs and elevator travel.
+
+Generated files:
+
+- `public/data/main-building-vertices.json`: complete object bounds and corners, named architectural points, world/local coordinate convention, interaction points and collision volumes.
+- `public/data/main-building-vertices.csv`: object, vertex/corner and semantic-anchor records suitable for spreadsheet or GIS-style inspection.
+
+Coordinates are in metres. The world origin is `(0, 0, 0)`; the building origin is `(0, 0, -22)`. The X axis crosses the front facade, Y is vertical, and Z is depth. The front facade is at `Z=-16`, rear facade at `Z=-28`. Building-local coordinates are converted with `x_local=x_world`, `y_local=y_world`, `z_local=z_world+22`.
+
+The current runtime design defines an 8-storey block, 28 m wide and 12 m deep, with a 2.8 m floor-to-floor pitch and nominal roof datum at `Y=22.4` m. These are implementation dimensions, not a survey of a named real building. Separate Blender generators remain independent of the browser scene.
+
+To regenerate coordinate files directly:
+
+```sh
+bun install
+node tools/export-building-coordinates.mjs
+```
+
+The files are produced automatically by `bun run build`.
+
 ## GitHub Pages
 
 The deployment workflow builds the static site into `dist/` and deploys to [akcizur.github.io/DFLAT](https://akcizur.github.io/DFLAT/). For the first deployment, select **GitHub Actions** under **Repository Settings → Pages → Build and deployment → Source**. The Vite base path is `/DFLAT/` in GitHub Actions and `/` during local development.

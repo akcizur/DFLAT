@@ -13,11 +13,11 @@ const mainSource = readFileSync(path.join(root, "src/main.js"), "utf8");
 const navigation = {
   floorHeight: 2.8,
   floors: 8,
-  coreOpening: { minX: -3.8, maxX: 3.8, minZ: -26.0, maxZ: -22.35 },
+  coreOpening: { minX: -3.8, maxX: 3.8, minZ: -26.0, maxZ: -22.52 },
   stairs: {
     lowX: -3.2, highX: -0.8, firstZ: -25.1, secondZ: -23.1, steps: 8,
     stepRise: 0.175, stepRun: 0.3, treadDepth: 1.16, treadOverlap: 0.025,
-    landingWidth: 1.28, landingDepth: 3.1,
+    landingWidth: 1.28, landingDepth: 3.16,
     landingCenterX: -0.16, landingCenterZ: -24.1
   }
 };
