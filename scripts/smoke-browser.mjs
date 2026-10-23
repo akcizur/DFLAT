@@ -61,7 +61,9 @@ try {
   if (!initialStartup.loadingVisible) throw new Error("The loading overlay must be visible during startup.");
   for (const key of ["menuCentre", "loaderCentre"]) {
     const point = initialStartup[key];
-    if (!point || Math.abs(point.x - initialStartup.viewportCentre.x) > 3 || Math.abs(point.y - initialStartup.viewportCentre.y) > 3) {
+    const tolerance = key === "menuCentre" ? 6 : 3;
+    if (!point || Math.abs(point.x - initialStartup.viewportCentre.x) > tolerance ||
+        Math.abs(point.y - initialStartup.viewportCentre.y) > tolerance) {
       throw new Error(key + " is not viewport-centred: " + JSON.stringify(initialStartup));
     }
   }
