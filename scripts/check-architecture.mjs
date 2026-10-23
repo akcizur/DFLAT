@@ -19,6 +19,8 @@ const required = [
   "src/game/materials.js",
   "src/game/world.js",
   "src/game/main-building.js",
+  "src/game/panelak-config.js",
+  "src/game/environment.js",
   "src/game/player.js",
   "src/game/ui.js",
   "src/game/input.js",
@@ -85,25 +87,31 @@ if (!inputSource.includes("clearMovement();\n    state.started = true;")) fail("
 const playerSource = await readFile(path.join(root, "src/game/player.js"), "utf8");
 if (!playerSource.includes("z: 9.2")) fail("player must spawn outdoors facing the main building");
 const uiSource = await readFile(path.join(root, "src/game/ui.js"), "utf8");
-if (!uiSource.includes('"Hlavní budova. Prozkoumej podlaží, schodiště a výtah."')) fail("HUD must describe building floors, stairs and elevator");
+if (!uiSource.includes('"Panelák T06B. Projdi čtyři nadzemní podlaží po schodišti."')) fail("HUD must describe the four-storey no-lift T06B building");
+if (!uiSource.includes('environment?.timeLabel')) fail("HUD must display the live accelerated in-game clock");
+if (!uiSource.includes('environment?.weatherLabel')) fail("HUD must display the current weather transition");
 if (!mainSource.includes('object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone())')) fail("mesh UV2 channels are required for baked light maps");
 
 const coordinateExporter = await readFile(path.join(root, "tools/export-building-coordinates.mjs"), "utf8");
 if (!coordinateExporter.includes("world.getCoordinateData()") || !coordinateExporter.includes("world.exportCoordinateCSV()")) fail("coordinate export must come from actual runtime geometry");
 if (!coordinateExporter.includes("main-building-vertices.json") || !coordinateExporter.includes("main-building-vertices.csv")) fail("coordinate export must generate JSON and CSV artefacts");
-if (!coordinateExporter.includes("balcony-door-f0-c2") || !coordinateExporter.includes("state.onElevatorMoved")) fail("coordinate export must validate balcony doors and elevator floor travel");
+if (!coordinateExporter.includes("loggia-door-f0-xL") || !coordinateExporter.includes("hallAndWetCoreDepth")) fail("coordinate export must validate T06B loggia doors and reconciled room dimensions");
 
 const outdoorSource = await readFile(path.join(root, "src/game/main-building.js"), "utf8");
-if (!outdoorSource.includes('Fasáda / prefabrikovaný betonový panel')) fail("main building facade panel geometry is missing");
-if (!outdoorSource.includes('Hlavní budova / střešní atika přední')) fail("main building roof parapet is missing");
+if (!outdoorSource.includes('Fasáda / břízolitový panel')) fail("břízolit facade panel geometry is missing");
+if (!outdoorSource.includes('const moduleWidth = PANELAK_LAYOUT.moduleWidth')) fail("runtime geometry must use the central five-module layout config");
+if (!outdoorSource.includes('Podlaha / přízemí')) fail("ground-floor slab is missing");
+if (!outdoorSource.includes('y + 0.02, buildingZ')) fail("ground-floor slab must be separated from the terrain to prevent z-fighting");
+if (!outdoorSource.includes('Lodžie / betonová podlaha')) fail("recessed concrete loggias are missing");
+if (!outdoorSource.includes('Střecha / atika přední')) fail("main building roof parapet is missing");
 if (!outdoorSource.includes('Schodiště / dolní rameno / stupeň')) fail("stair flights and treads are missing");
-if (!outdoorSource.includes('Výtah / levá šachta')) fail("elevator shaft geometry is missing");
-if (!outdoorSource.includes('Podlaží / vstupní chodba')) fail("multi-storey floor slabs are missing");
-if (!outdoorSource.includes('id: "elevator"') || !outdoorSource.includes('id: "stairs"')) fail("stairs and elevator interactions are missing");
-if (!outdoorSource.includes('Mapa / terén')) fail("empty outdoor terrain is missing");
-if (!outdoorSource.includes('coreOpening')) fail("upper floor slabs must reserve a stair/elevator core opening");
-if (!outdoorSource.includes('Balkonové dveře / otevřené levé křídlo')) fail("balconies must have real low-sill open doorways");
-if (!outdoorSource.includes('frontPassages')) fail("front facade collision gaps must match all physical entrances");
+if (outdoorSource.includes('Výtah / levá šachta') || outdoorSource.includes('id: "elevator"')) fail("four-storey T06B section must not contain an elevator");
+if (!outdoorSource.includes('Stropní panel / levý trakt')) fail("multi-storey floor slabs are missing");
+if (!outdoorSource.includes('id: "stairs"')) fail("stair interaction is missing");
+if (!outdoorSource.includes('Sídliště / travnatý pozemek')) fail("outdoor terrain is missing");
+if (!outdoorSource.includes('navigationCore()')) fail("upper floor slabs must reserve the central stair core opening");
+if (!outdoorSource.includes('Lodžie / prosklené dveře')) fail("loggias must have glazed low-sill doors");
+if (!outdoorSource.includes('const walkGaps = front')) fail("facade collision gaps must match the physical entrances and loggia doors");
 if (!mainSource.includes('0.08, 320')) fail("camera far plane must include the outdoor panorama sphere");
 if (!playerSource.includes('player.elevation + 1.68')) fail("camera height must follow the actual foot elevation, including stair traversal");
 
