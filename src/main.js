@@ -1,13 +1,13 @@
 import * as THREE from "three";
 import { createMaterials } from "./game/materials.js";
-import { createApartment } from "./game/world.js";
+import { createMainBuildingWorld } from "./game/main-building.js";
 import { createPlayerController } from "./game/player.js";
 import { createUI } from "./game/ui.js";
 import { bindInput } from "./game/input.js";
 
 const mount = document.getElementById("game");
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x25231f);
+scene.background = new THREE.Color(0x858b8e);
 
 const panorama = { mesh: null };
 new THREE.TextureLoader().load(
@@ -20,15 +20,15 @@ new THREE.TextureLoader().load(
       map: texture, side: THREE.BackSide, fog: false,
       depthWrite: false, toneMapped: false
     });
-    panorama.mesh = new THREE.Mesh(new THREE.SphereGeometry(48, 48, 32), skyMaterial);
-    panorama.mesh.name = "HQ sky image background";
+    panorama.mesh = new THREE.Mesh(new THREE.SphereGeometry(160, 64, 40), skyMaterial);
+    panorama.mesh.name = "Outdoor city panorama";
     panorama.mesh.renderOrder = -1000;
     scene.add(panorama.mesh);
   },
   undefined,
   error => console.error("The Flat: assets/bg-scene-hq.png sky background failed to load.", error)
 );
-scene.fog = new THREE.FogExp2(0x34343b, 0.038);
+scene.fog = new THREE.FogExp2(0x858b8e, 0.0022);
 
 // Global fill lights keep the scene readable even if local room lighting is unavailable.
 const globalHemisphere = new THREE.HemisphereLight(0xdce8ff, 0x625648, 1.15);
@@ -81,13 +81,13 @@ resize();
 
 const state = {
   hasKeys: false, doorOpen: false, finished: false, started: false,
-  paused: false, balconyDoorOpen: false, emptyMap: false
+  paused: false, balconyDoorOpen: false, emptyMap: true, mainBuildingScene: true
 };
 const ui = createUI();
 const { M, mat } = createMaterials(THREE);
-const world = createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui });
+const world = createMainBuildingWorld({ THREE, scene });
 
-// Restore the full playable apartment and all original interactions.
+// The outdoor map has no interior mission, furniture, or scripted interactables.
 
 scene.traverse(object => {
   if (object.isMesh && object.geometry?.attributes?.uv && !object.geometry.attributes.uv2) {
