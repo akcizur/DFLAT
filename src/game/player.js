@@ -16,6 +16,7 @@ export function createPlayerController({ camera, colliders, interactables, state
   function canMove(nx, nz) {
     const r = player.radius;
     for (const c of colliders) {
+      if (Number.isInteger(c.floor) && c.floor !== player.floor) continue;
       if (nx + r > c.minX && nx - r < c.maxX && nz + r > c.minZ && nz - r < c.maxZ) return false;
     }
     return true;
