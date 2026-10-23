@@ -5,5 +5,5 @@ if (bootScreen) {
   const dismissBoot = () => bootScreen.remove();
   bootScreen.addEventListener("pointerdown", dismissBoot, { once: true });
   window.addEventListener("keydown", dismissBoot, { once: true, capture: true });
-  window.setTimeout(dismissBoot, 1650);
+  window.setTimeout(dismissBoot, 280);
 }
