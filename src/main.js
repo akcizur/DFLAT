@@ -56,43 +56,10 @@ function finishStartupWhenReady() {
 
 setLoadingProgress(12, "ZAPÍNÁM ENGINE", "Inicializuji 3D vykreslování.", "INITIALIZING");
 
+// No city panorama: a blank sky keeps this map completely free of buildings.
 const panorama = { mesh: null };
-const panoramaFallbackTimer = window.setTimeout(() => {
-  if (panoramaResolved) return;
-  panoramaResolved = true;
-  setLoadingProgress(78, "DOKONČUJI SVĚT", "Pozadí se načítá na pozadí.", "FALLBACK");
-  finishStartupWhenReady();
-}, 5500);
-new THREE.TextureLoader().load(
-  new URL("../assets/bg-scene-hq.png", import.meta.url).href,
-  texture => {
-    window.clearTimeout(panoramaFallbackTimer);
-    if (!panoramaResolved) {
-      panoramaResolved = true;
-      setLoadingProgress(72, "NAČÍTÁM OKOLÍ", "Dokončuji panoramatické pozadí.", "ASSETS");
-    }
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.ClampToEdgeWrapping;
-    const skyMaterial = new THREE.MeshBasicMaterial({
-      map: texture, side: THREE.BackSide, fog: false,
-      depthWrite: false, toneMapped: false
-    });
-    panorama.mesh = new THREE.Mesh(new THREE.SphereGeometry(160, 64, 40), skyMaterial);
-    panorama.mesh.name = "Outdoor city panorama";
-    panorama.mesh.renderOrder = -1000;
-    scene.add(panorama.mesh);
-    finishStartupWhenReady();
-  },
-  undefined,
-  error => {
-    window.clearTimeout(panoramaFallbackTimer);
-    panoramaResolved = true;
-    console.error("The Flat: assets/bg-scene-hq.png sky background failed to load.", error);
-    setLoadingProgress(78, "SVĚT PŘIPRAVEN", "Používám záložní pozadí.", "FALLBACK");
-    finishStartupWhenReady();
-  }
-);
+panoramaResolved = true;
+setLoadingProgress(20, "OTEVŘENÁ KRAJINA", "Bez budov, s dynamickým denním cyklem a počasím.", "OPEN WORLD");
 scene.fog = new THREE.FogExp2(0x858b8e, 0.0022);
 
 // Global fill lights keep the scene readable even if local room lighting is unavailable.
@@ -147,12 +114,12 @@ resize();
 
 const state = {
   hasKeys: false, doorOpen: false, finished: false, started: false,
-  paused: false, balconyDoorOpen: false, emptyMap: true, mainBuildingScene: true, currentFloor: 0,
+  paused: false, balconyDoorOpen: false, emptyMap: true, mainBuildingScene: false, currentFloor: 0,
   ready: false
 };
 const ui = createUI();
-const world = createMainBuildingWorld({ THREE, scene, state, ui });
-setLoadingProgress(59, "STAVÍM HLAVNÍ BUDOVU", "Čtyřpodlažní sekce T06B, lodžie a schodiště.", "GEOMETRY");
+const world = createMainBuildingWorld({ THREE, scene, state, ui, showBuilding: false });
+setLoadingProgress(59, "PŘIPRAVUJI VOLNOU MAPU", "Pouze terén, silnice a chodníky.", "OPEN WORLD");
 
 // The outdoor map has no interior mission, furniture, or scripted interactables.
 
@@ -253,16 +220,8 @@ function updateSimulation(deltaSeconds, nowMs) {
   applyEnvironment({ THREE, scene, hemisphere: globalHemisphere, sun: globalSun, panorama, environment });
   const playerX = controller.player.x;
   const playerZ = controller.player.z;
-  const outsideFootprint = playerX < world.navigation.footprint.minX - 0.1 ||
-    playerX > world.navigation.footprint.maxX + 0.1 ||
-    playerZ > world.navigation.footprint.frontZ + 0.1 ||
-    playerZ < world.navigation.footprint.rearZ - 0.1;
-  const onOpenLoggia = [-3.6, 3.6].some(x =>
-    Math.abs(playerX - x) < 1.30 &&
-    playerZ < world.navigation.footprint.rearZ + 1.78 &&
-    playerZ > world.navigation.footprint.rearZ - 0.20
-  );
-  const rainVisible = environment.precipitation > 0.025 && (outsideFootprint || onOpenLoggia);
+  // There is no roof or building shelter in this map, so precipitation is visible everywhere.
+  const rainVisible = environment.precipitation > 0.025;
   rainMesh.visible = rainVisible;
   rainMaterial.opacity = environment.precipitation * 0.52;
   rainMesh.position.set(playerX, controller.player.elevation, playerZ);
