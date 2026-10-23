@@ -49,7 +49,8 @@ if (/<style(?:\s|>)/i.test(html)) fail("inline CSS remains in index.html");
 if (/<script\b(?![^>]*\bsrc=)(?![^>]*\btype=["']importmap["'])[^>]*>/i.test(html)) fail("inline JavaScript remains in index.html");
 
 const packageJson = JSON.parse(await readFile(path.join(root, "package.json"), "utf8"));
-if (packageJson.scripts?.build !== "vite build") fail("package.json must provide the Vite production build");
+if (!packageJson.scripts?.build?.includes("vite build")) fail("package.json must provide the Vite production build");
+if (!packageJson.scripts?.build?.includes("tools/export-building-coordinates.mjs")) fail("production build must export validated 3D building coordinates");
 if (packageJson.dependencies?.three !== "0.169.0") fail("Three.js must be installed locally at the tested game-compatible version");
 if (packageJson.devDependencies?.vite !== "6.4.5") fail("Vite must be installed as a local dev dependency at version 6.4.5");
 
@@ -81,6 +82,13 @@ if (!playerSource.includes("z: 9.2")) fail("player must spawn outdoors facing th
 const uiSource = await readFile(path.join(root, "src/game/ui.js"), "utf8");
 if (!uiSource.includes('"Hlavní budova. Prozkoumej podlaží, schodiště a výtah."')) fail("HUD must describe building floors, stairs and elevator");
 if (!mainSource.includes('object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone())')) fail("mesh UV2 channels are required for baked light maps");
+
+const coordinateExporter = await readFile(path.join(root, "tools/export-building-coordinates.mjs"), "utf8");
+if (!coordinateExporter.includes("uniqueCornerPointCount") || !coordinateExporter.includes("main-building-vertices.json") || !coordinateExporter.includes("main-building-vertices.csv")) {
+  fail("main building coordinate exporter must produce a JSON manifest and a CSV vertex table");
+}
+if (!coordinateExporter.includes("state.onElevatorMoved(2)")) fail("coordinate checks must verify elevator movement by floor");
+if (!coordinateExporter.includes("Approach path must meet the entrance platform")) fail("coordinate checks must validate the entry path/platform joint");
 
 const outdoorSource = await readFile(path.join(root, "src/game/main-building.js"), "utf8");
 if (!outdoorSource.includes('Fasáda / prefabrikovaný betonový panel')) fail("main building facade panel geometry is missing");
