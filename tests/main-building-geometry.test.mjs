@@ -42,7 +42,25 @@ test("stairs connect the eight occupied levels without a ninth roof flight", () 
   assert.equal(8 - 1, 7, "eight floor datums require seven inter-floor stair runs");
 });
 
-test("roof machinery bottoms align with the roof datum", () => {
+
+test("the stair core is enclosed by concrete walls with separate flight-end door openings", () => {
+  assert.match(source, /const stairWallThickness = 0\.14/);
+  assert.match(source, /const stairDoorHeight = 2\.12/);
+  assert.match(source, /const openings = \[stair\.firstZ, stair\.secondZ\]/);
+  assert.match(source, /Schodiště \/ stěna jádra/);
+  assert.match(source, /Schodiště \/ nadpraží otvoru/);
+  assert.match(source, /Schodiště \/ stěna jádra u výtahu/);
+  assert.match(source, /box\("Schodiště \/ podesta podlaží"/);
+});
+
+test("stair treads, landing and top-floor roof hatch share exact endpoints", () => {
+  assert.match(source, /const landingStartX = stair\.highX \+ stairTreadOverlap \/ 2/);
+  assert.match(source, /const landingWidth = liftLeft - landingStartX/);
+  assert.match(source, /const landingDepth = Math\.abs\(stair\.firstZ - stair\.secondZ\) \+ stairTreadDepth/);
+  assert.match(source, /const ladderZ = hatchZ/);
+  assert.match(source, /const ladderBottomY = \(floors - 1\) \* floorHeight \+ 0\.01/);
+});
+\ntest("roof machinery bottoms align with the roof datum", () => {
   const roofY = 8 * 2.8;
   const machineRoomBottom = roofY + 0.59 - 1.18 / 2;
   const ventBottom = roofY + 0.55 - 1.1 / 2;
