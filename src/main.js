@@ -35,6 +35,13 @@ function finishStartupWhenReady() {
   if (startupComplete || !firstSceneFrame || !panoramaResolved) return;
   startupComplete = true;
   state.ready = true;
+  const startButton = document.getElementById("startButton");
+  if (startButton) {
+    startButton.disabled = false;
+    startButton.setAttribute("aria-disabled", "false");
+    const enterLabel = startButton.querySelector(".nexus-enter");
+    if (enterLabel) enterLabel.textContent = "ENTER ↵";
+  }
   setLoadingProgress(100, "SVĚT JE PŘIPRAVEN", "Vstup do hlavní budovy.", "READY");
   if (!loadingScreen) return;
   window.setTimeout(() => {
