@@ -205,7 +205,7 @@ export function createMainBuildingWorld({ THREE, scene, state, ui }) {
   function makeFloorSlab(floor) {
     const y = floor * floorHeight - 0.08;
     if (floor === 0) {
-      box("Podlaha / přízemí", 0, y, buildingZ, width, 0.16, depth, materials.floor);
+      box("Podlaha / přízemí", 0, y + 0.02, buildingZ, width, 0.16, depth, materials.floor);
       return;
     }
     const core = navigationCore();
