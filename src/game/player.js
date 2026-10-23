@@ -1,14 +1,14 @@
 // First-person movement, collision handling, proximity and camera synchronization.
 export function createPlayerController({ camera, colliders, interactables, state, ui, navigation = null }) {
   const FLOOR_HEIGHT = navigation?.floorHeight ?? 2.8;
-  const FLOOR_COUNT = navigation?.floors ?? 8;
+  const FLOOR_COUNT = navigation?.floors ?? 4;
   const MAX_FLOOR = FLOOR_COUNT - 1;
-  const coreOpening = navigation?.coreOpening ?? { minX: -3.8, maxX: 3.8, minZ: -26.0, maxZ: -22.52 };
+  const coreOpening = navigation?.coreOpening ?? { minX: -1.8, maxX: 1.8, minZ: -25.88, maxZ: -21.22 };
   const stair = navigation?.stairs ?? {
-    lowX: -3.2, highX: -0.8, firstZ: -25.1, secondZ: -23.1, steps: 8,
-    stepRise: FLOOR_HEIGHT / 16, stepRun: 0.3, treadDepth: 1.16, treadOverlap: 0.025,
-    landingWidth: 1.28, landingDepth: 3.16,
-    landingCenterX: -0.16, landingCenterZ: -24.1
+    lowX: -1.5, highX: 0.5, firstZ: -25.3, secondZ: -21.8, steps: 8,
+    stepRise: FLOOR_HEIGHT / 16, stepRun: 0.25, treadDepth: 1.16, treadOverlap: 0.025,
+    landingWidth: 1.1, landingDepth: 4.66,
+    landingCenterX: 1.05, landingCenterZ: -23.55
   };
   const MAX_STEP_HEIGHT = stair.stepRise + 0.045;
   const WALK_SPEED = 3.6;
