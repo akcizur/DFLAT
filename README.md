@@ -37,7 +37,7 @@ bun run preview
 
 ## Runtime coordinate export
 
-Every production build exports the coordinates of the actual Three.js scene, not a parallel handwritten model. The exporter measures geometry created by `src/game/main-building.js` and validates the five-module footprint, four floor datums, room-area budget, loggia openings and stairs.
+The production build also exports a separate optional architectural test model. `tools/export-building-coordinates.mjs` calls the geometry generator with its default `showBuilding: true` setting and validates the five-module footprint, four floor datums, room-area budget, loggia openings and stairs. These export artifacts do not mean that a building is shown during gameplay; the browser runtime explicitly uses `showBuilding: false`.
 
 Generated files:
 
