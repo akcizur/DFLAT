@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#080502" />
   <title>DFLAT — Main Building</title>
-  <link rel="stylesheet" href="./styles.css?v=14" />
-  <link rel="stylesheet" href="./styles-cinematic.css?v=10" />
+  <link rel="stylesheet" href="./styles.css?v=15" />
+  <link rel="stylesheet" href="./styles-cinematic.css?v=11" />
   <script type="importmap">
     {
       "imports": {
@@ -53,6 +53,18 @@
       <div>WORLD INIT ............ <span class="boot-dots">...</span></div>
     </div>
     <div class="boot-footer">SYSTEM READY // HANDING OFF TO REALITY</div>
+  </div>
+  <div class="loading-screen" id="loadingScreen" role="status" aria-live="polite" aria-atomic="true" aria-label="Načítání hry">
+    <div class="loading-panel">
+      <div class="loading-mark" aria-hidden="true">DF<span>_</span></div>
+      <div class="loading-kicker">DFLAT SYSTEM / WORLD BOOT</div>
+      <h2 id="loadingTitle">PŘIPRAVUJI SVĚT</h2>
+      <p id="loadingDetail">Inicializuji vykreslování a hlavní budovu.</p>
+      <div class="loading-progress" role="progressbar" aria-label="Průběh načítání" aria-valuemin="0" aria-valuemax="100" aria-valuenow="8" id="loadingProgress">
+        <span id="loadingProgressBar" style="width:8%"></span>
+      </div>
+      <div class="loading-meta"><span id="loadingPhase">INITIALIZING</span><span id="loadingPercent">08%</span></div>
+    </div>
   </div>
   <script src="./boot.js"></script>
 
@@ -112,7 +124,7 @@
   </div>
 
   <script src="./src/boot-debug.js?v=1"></script>
-  <script type="module" src="./src/main.js?v=15"></script>
+  <script type="module" src="./src/main.js?v=16"></script>
 </body>
 
 </html>
