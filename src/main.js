@@ -148,7 +148,13 @@ if (new URLSearchParams(location.search).get("smoke") === "1") {
     value: {
       playerPosition: () => ({ x: controller.player.x, z: controller.player.z }),
       keysDown: () => ({ ...controller.keysDown }),
-      gameState: () => ({ started: state.started, paused: state.paused })
+      meshNames: () => {
+        const names = [];
+        scene.traverse(object => { if (object.isMesh) names.push(object.name); });
+        return names;
+      },
+      environment: () => state.environment ? { ...state.environment } : null,
+      gameState: () => ({ started: state.started, paused: state.paused, buildingVisible: world.meshes.some(mesh => /Fasáda|Lodžie|Suterén|Schodiště|Hlavní budova/.test(mesh.name) && scene.children.includes(mesh)) })
     }
   });
 }
