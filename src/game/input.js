@@ -28,7 +28,14 @@ export function bindInput({ renderer, state, controller, ui }) {
     keysDown[code] = Boolean(sources.keyboard[code] || sources.touch[code] || sources.gamepad[code]);
   }
   function clearSource(source) { for (const code of movementCodes) setKey(code, false, source); }
-  function clearMovement() { clearSource("keyboard"); clearSource("touch"); clearSource("gamepad"); }
+  function clearMovement() {
+    clearSource("keyboard");
+    clearSource("touch");
+    clearSource("gamepad");
+    keysDown.ShiftLeft = false;
+    keysDown.ShiftRight = false;
+    keysDown.Space = false;
+  }
   function startGame() {
     if (state.started) return;
     clearMovement();
@@ -88,6 +95,12 @@ export function bindInput({ renderer, state, controller, ui }) {
   });
 
   function onKeyDown(event) {
+    if (event.code === "Space") {
+      event.preventDefault();
+      if (!event.repeat && state.started && !state.paused) controller.jump?.();
+      return;
+    }
+
     const isMovementKey = movementCodes.includes(event.code);
     if (isMovementKey) {
       event.preventDefault();
@@ -96,7 +109,7 @@ export function bindInput({ renderer, state, controller, ui }) {
       setKey(event.code, state.started && !state.paused);
       return;
     }
-    if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.code)) event.preventDefault();
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.code)) event.preventDefault();
     if (event.code === "Escape" && state.started && !state.finished) {
       if (document.fullscreenElement) { document.exitFullscreen(); return; }
       togglePause(); return;
