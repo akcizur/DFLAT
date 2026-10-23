@@ -54,6 +54,15 @@ if (packageJson.dependencies?.three !== "0.169.0") fail("Three.js must be instal
 if (packageJson.devDependencies?.vite !== "6.4.5") fail("Vite must be installed as a local dev dependency at version 6.4.5");
 
 const mainSource = await readFile(path.join(root, "src/main.js"), "utf8");
+if (!html.includes('id="loadingScreen"') || !html.includes('id="loadingProgressBar"')) fail("a visible loading screen with progress must be present");
+if (!html.includes('id="startButton" disabled aria-disabled="true"')) fail("Start must be disabled until the loading flow completes");
+if (!mainSource.includes("function finishStartupWhenReady()") || !mainSource.includes("state.ready = true")) fail("Start must wait for the panorama and first rendered scene frame");
+if (!mainSource.includes("firstSceneFrame") || !mainSource.includes("panoramaResolved")) fail("loading completion must wait for real startup milestones");
+const startupInputSource = await readFile(path.join(root, "src/game/input.js"), "utf8");
+if (!startupInputSource.includes("if (state.started || !state.ready) return;")) fail("keyboard and gamepad Start activation must be blocked until ready");
+const startupStylesSource = await readFile(path.join(root, "styles-cinematic.css"), "utf8");
+if (!startupStylesSource.includes("place-items: center") || !startupStylesSource.includes(".loading-panel")) fail("the start menu and loading panel must be centred");
+if (!startupStylesSource.includes("z-index: 30")) fail("loading overlay must cover the menu until startup completes");
 if (/from\s+["']https?:\/\//i.test(mainSource)) fail("runtime modules must be bundled locally; remove CDN imports");
 if (!mainSource.includes("createMainBuildingWorld({ THREE, scene, state, ui })")) fail("gameplay must boot into the main-building outdoor map and interior interactions");
 if (!mainSource.includes("const SIMULATION_HZ = 60")) fail("game simulation must target 60 Hz");

@@ -33,9 +33,41 @@ try {
     if (message.type() === "error") consoleErrors.push(message.text());
   });
 
-  await page.goto("http://127.0.0.1:4173/?smoke=1", { waitUntil: "networkidle", timeout: 30000 });
+  await page.route("**/assets/bg-scene-hq*", async route => {
+    await new Promise(resolve => setTimeout(resolve, 1200));
+    await route.continue();
+  });
+  await page.goto("http://127.0.0.1:4173/?smoke=1", { waitUntil: "domcontentloaded", timeout: 30000 });
+  await page.waitForSelector("#loadingScreen", { state: "visible", timeout: 10000 });
+
+  const initialStartup = await page.evaluate(() => {
+    const start = document.querySelector("#startButton");
+    const loading = document.querySelector("#loadingScreen");
+    const menu = document.querySelector("#startScreen .nexus-monitor");
+    const panel = document.querySelector("#loadingScreen .loading-panel");
+    const centre = element => {
+      const rect = element.getBoundingClientRect();
+      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    };
+    return {
+      startDisabled: Boolean(start?.disabled),
+      loadingVisible: Boolean(loading && !loading.hidden),
+      menuCentre: menu ? centre(menu) : null,
+      loaderCentre: panel ? centre(panel) : null,
+      viewportCentre: { x: innerWidth / 2, y: innerHeight / 2 }
+    };
+  });
+  if (!initialStartup.startDisabled) throw new Error("Start must remain disabled while the world is loading.");
+  if (!initialStartup.loadingVisible) throw new Error("The loading overlay must be visible during startup.");
+  for (const key of ["menuCentre", "loaderCentre"]) {
+    const point = initialStartup[key];
+    if (!point || Math.abs(point.x - initialStartup.viewportCentre.x) > 3 || Math.abs(point.y - initialStartup.viewportCentre.y) > 3) {
+      throw new Error(key + " is not viewport-centred: " + JSON.stringify(initialStartup));
+    }
+  }
   await page.waitForSelector("#screenCanvas", { timeout: 10000 });
-  await page.waitForTimeout(1200);
+  await page.waitForFunction(() => document.querySelector("#startButton")?.disabled === false, null, { timeout: 15000 });
+  await page.waitForSelector("#loadingScreen[hidden]", { timeout: 5000 });
 
   const beforeStart = await page.evaluate(() => ({
     webgl: (() => {
@@ -43,6 +75,7 @@ try {
       return Boolean(canvas?.getContext("webgl2") || canvas?.getContext("webgl"));
     })(),
     renderCanvas: Boolean(document.querySelector("#screenCanvas")),
+    startEnabled: document.querySelector("#startButton")?.disabled === false,
     debugText: document.querySelector("#boot-debug")?.textContent || ""
   }));
   if (!beforeStart.webgl) throw new Error("WebGL context could not be created.");

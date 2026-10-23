@@ -37,7 +37,7 @@ export function bindInput({ renderer, state, controller, ui }) {
     keysDown.Space = false;
   }
   function startGame() {
-    if (state.started) return;
+    if (state.started || !state.ready) return;
     clearMovement();
     state.started = true;
     const startScreen = document.getElementById("startScreen");
