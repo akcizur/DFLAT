@@ -18,6 +18,7 @@ const required = [
   "src/boot-debug.js",
   "src/game/materials.js",
   "src/game/world.js",
+  "src/game/main-building.js",
   "src/game/player.js",
   "src/game/ui.js",
   "src/game/input.js",
@@ -54,7 +55,7 @@ if (packageJson.devDependencies?.vite !== "6.4.5") fail("Vite must be installed 
 
 const mainSource = await readFile(path.join(root, "src/main.js"), "utf8");
 if (/from\s+["']https?:\/\//i.test(mainSource)) fail("runtime modules must be bundled locally; remove CDN imports");
-if (!mainSource.includes("createApartment({ THREE, scene, M, mat, LOW_POWER, state, ui })") && !mainSource.includes("createEmptyApartment({ THREE, scene, M })")) fail("gameplay must boot into a supported apartment scene");
+if (!mainSource.includes("createMainBuildingWorld({ THREE, scene })")) fail("gameplay must boot into the main-building outdoor map");
 if (!mainSource.includes("const SIMULATION_HZ = 60")) fail("game simulation must target 60 Hz");
 if (!mainSource.includes("const SCENE_RENDER_HZ = 60")) fail("scene rendering must target 60 FPS");
 if (!mainSource.includes("renderer.render(scene, camera)")) fail("scene must render directly without a compositor");
@@ -76,10 +77,17 @@ if (!inputSource.includes('} else clearSource("gamepad");')) fail("gamepad polli
 if (!inputSource.includes('ui.showToast("Ovladač odpojen.");\n    clearSource("gamepad");')) fail("disconnecting a gamepad must only clear gamepad movement");
 if (!inputSource.includes("clearMovement();\n    state.started = true;")) fail("movement input must be reset when a new game starts");
 const playerSource = await readFile(path.join(root, "src/game/player.js"), "utf8");
-if (!playerSource.includes("z: 4.95")) fail("player must spawn inside the apartment");
+if (!playerSource.includes("z: 9.2")) fail("player must spawn outdoors facing the main building");
 const uiSource = await readFile(path.join(root, "src/game/ui.js"), "utf8");
-if (!uiSource.includes('"Prozkoumej byt. Najdi klíče."')) fail("default objective must target the playable apartment");
+if (!uiSource.includes('"Volná mapa. Před tebou stojí hlavní budova."')) fail("default objective must describe the empty outdoor map");
 if (!mainSource.includes('object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone())')) fail("mesh UV2 channels are required for baked light maps");
+
+const outdoorSource = await readFile(path.join(root, "src/game/main-building.js"), "utf8");
+if (!outdoorSource.includes('Hlavní budova / železobetonový skelet')) fail("main building geometry is missing");
+if (!outdoorSource.includes('Hlavní budova / střešní atika přední')) fail("main building roof parapet is missing");
+if (!outdoorSource.includes('Balkon / svislé zábradlí')) fail("main building balconies are missing");
+if (!outdoorSource.includes('Mapa / terén')) fail("empty outdoor terrain is missing");
+if (!outdoorSource.includes('colliders.push')) fail("main building must block player movement through its footprint");
 
 const worldSource = await readFile(path.join(root, "src/game/world.js"), "utf8");
 if (!worldSource.includes("export function createEmptyApartment")) fail("playable empty-apartment map shell is required");

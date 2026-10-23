@@ -1,7 +1,7 @@
 // First-person movement, collision handling, proximity and camera synchronization.
 export function createPlayerController({ camera, colliders, interactables, state, ui }) {
-  // Spawn just inside the apartment entrance, facing into the playable interior.
-  const player = { x: 0, z: 4.95, yaw: Math.PI * 0.02, pitch: -0.04, speed: 2.65, radius: 0.29 };
+  // Spawn on the open ground, facing the main building across the approach road.
+  const player = { x: 0, z: 9.2, yaw: Math.PI * 0.02, pitch: -0.04, speed: 2.65, radius: 0.29 };
   camera.position.set(player.x, 1.68, player.z);
   camera.rotation.order = "YXZ";
   let walkTime = 0;
@@ -44,7 +44,7 @@ export function createPlayerController({ camera, colliders, interactables, state
   function doInteract() {
     const item = nearestInteractable();
     if (!item) {
-      ui.showToast("Nic zajímavého na dosah.");
+      ui.showToast(state.mainBuildingScene ? "Volná mapa / hlavní budova." : "Nic zajímavého na dosah.");
       return;
     }
     item.action();

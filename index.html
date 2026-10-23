@@ -5,7 +5,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#080502" />
-  <title>The Flat — hra o jednom bytě</title>
+  <title>DFLAT — Main Building</title>
   <link rel="stylesheet" href="./styles.css?v=14" />
   <link rel="stylesheet" href="./styles-cinematic.css?v=10" />
   <script type="importmap">
@@ -21,18 +21,18 @@
   <div id="game"></div>
   <div class="hud" id="hud" aria-hidden="true">
     <div class="topline">
-      <div class="brand">THE FLAT<span>EPIZODA 01 / BYT 3B</span></div>
+      <div class="brand">THE FLAT<span>HLAVNÍ BUDOVA / VENKOVNÍ MAPA</span></div>
       <div class="status" id="clock">21:07<br>ÚTERÝ</div>
     </div>
     <div class="objective"><b>ÚKOL</b>
-      <div id="objectiveText">Prozkoumej byt. Najdi klíče.</div>
-      <div id="inventoryText" style="margin-top:7px">KLÍČE: —</div>
+      <div id="objectiveText">Volná mapa. Před tebou stojí hlavní budova.</div>
+      <div id="inventoryText" style="margin-top:7px">LOKACE: HLAVNÍ BUDOVA</div>
     </div>
     <div class="crosshair"></div>
     <div class="interaction" id="interaction"><b>E</b> — interagovat</div>
     <div class="bottomline">
-      <div class="hint">WASD / POHYB&nbsp; · &nbsp;MYŠ / ROZHLÉDNUTÍ&nbsp; · &nbsp;E / AKCE&nbsp; · &nbsp;GAMEPAD: LS / POHYB, RS / POHLED</div>
-      <div class="right">MALÝ BYT. DLOUHÝ VEČER.<br>VERZE 0.1 — HRAJ PO SVÉM.</div>
+      <div class="hint">WASD / POHYB&nbsp; · &nbsp;MYŠ / ROZHLÉDNUTÍ&nbsp; · &nbsp;ESC / PAUZA&nbsp; · &nbsp;GAMEPAD: LS / POHYB, RS / POHLED</div>
+      <div class="right">PRÁZDNÁ MAPA. JEDNA HLAVNÍ BUDOVA.<br>VERZE 0.1 — HRAJ PO SVÉM.</div>
     </div>
   </div>
   <div class="toast" id="toast"></div>
@@ -40,7 +40,7 @@
     <div class="virtual-stick" id="moveStick" aria-label="Pohybová páčka"><span class="stick-ring"></span><span class="stick-knob" id="moveKnob"></span></div>
   </div>
   <div id="touchLookZone" aria-label="Tažením otáčej kamerou"></div>
-  <button class="touch-action" id="touchAction" aria-label="Interakce">INTERAKCE</button>
+  <button class="touch-action" id="touchAction" aria-label="Stav mapy">MAPA</button>
   <button class="pause-button" id="pauseButton" aria-label="Pauza" title="Pauza">Ⅱ</button>
   <button class="fullscreen-button" id="fullscreenButton" aria-label="Celá obrazovka" title="Celá obrazovka">⛶</button>
 
@@ -62,7 +62,7 @@
         <section class="nexus-glass">
           <header class="nexus-topbar">
             <span class="nexus-brand"><i aria-hidden="true"></i> DFLAT / TERMINAL 04</span>
-            <span class="nexus-status"><span><i class="nexus-led"></i>ONLINE</span><span>EP. 01 / BYT 3B</span></span>
+            <span class="nexus-status"><span><i class="nexus-led"></i>ONLINE</span><span>MAIN BUILDING / OUTDOOR MAP</span></span>
           </header>
           <div class="nexus-content">
             <div class="nexus-art" aria-hidden="true">
@@ -84,11 +84,11 @@
             </div>
             <nav class="nexus-menu" aria-label="Hlavní menu">
               <div class="nexus-eyebrow">SYSTEM MENU / 01</div>
-              <h1>THE<br>FLAT<span>_</span></h1>
-              <p class="nexus-subtitle">MALÝ BYT. DLOUHÝ VEČER.</p>
+              <h1>DFLAT<span>_</span></h1>
+              <p class="nexus-subtitle">PRÁZDNÁ MAPA. JEDNA HLAVNÍ BUDOVA.</p>
               <button type="button" class="cmd nexus-command" id="startButton"><span class="nexus-chevron">&gt;</span><span>START GAME</span><span class="nexus-enter">ENTER ↵</span></button>
-              <div class="nexus-menu-note">EPISODE 01 / BYT 3B</div>
-              <div class="nexus-controls"><span>WASD <b>MOVE</b></span><span>MOUSE <b>LOOK</b></span><span>E <b>INTERACT</b></span><span>ESC <b>PAUSE</b></span><span>PAD <b>LEFT STICK / MOVE</b></span><span>PAD <b>RIGHT STICK / LOOK</b></span><span>A <b>INTERACT</b></span><span>B <b>PAUSE</b></span></div>
+              <div class="nexus-menu-note">OUTDOOR MAP / MAIN BUILDING</div>
+              <div class="nexus-controls"><span>WASD <b>MOVE</b></span><span>MOUSE <b>LOOK</b></span><span>ESC <b>PAUSE</b></span><span>PAD <b>LEFT STICK / MOVE</b></span><span>PAD <b>RIGHT STICK / LOOK</b></span><span>B <b>PAUSE</b></span></div>
             </nav>
           </div>
           <footer class="nexus-footer">
