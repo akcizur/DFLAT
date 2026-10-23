@@ -31,10 +31,33 @@ def material(name, color, roughness=0.85, metallic=0.0):
     mat = bpy.data.materials.new(name)
     mat.diffuse_color = (*color, 1)
     mat.use_nodes = True
-    p = mat.node_tree.nodes.get("Principled BSDF")
+    nodes = mat.node_tree.nodes
+    links = mat.node_tree.links
+    p = nodes.get("Principled BSDF")
     p.inputs["Base Color"].default_value = (*color, 1)
     p.inputs["Roughness"].default_value = roughness
     p.inputs["Metallic"].default_value = metallic
+    # Břízolit and precast concrete need a fine mineral grain, not a clean plastic finish.
+    if any(tag in name.lower() for tag in ("břízolit", "precast concrete", "prefabricated concrete", "dirty charcoal concrete")):
+        noise = nodes.new("ShaderNodeTexNoise")
+        noise.name = "Fine aggregate | mineral grain"
+        noise.inputs["Scale"].default_value = 28.0
+        noise.inputs["Detail"].default_value = 3.0
+        noise.inputs["Roughness"].default_value = 0.72
+        ramp = nodes.new("ShaderNodeValToRGB")
+        ramp.name = "Weathered concrete tonal variation"
+        ramp.color_ramp.elements[0].position = 0.22
+        ramp.color_ramp.elements[0].color = (color[0]*0.70, color[1]*0.70, color[2]*0.70, 1)
+        ramp.color_ramp.elements[1].position = 0.78
+        ramp.color_ramp.elements[1].color = (min(1.0, color[0]*1.18), min(1.0, color[1]*1.18), min(1.0, color[2]*1.18), 1)
+        bump = nodes.new("ShaderNodeBump")
+        bump.name = "Fine aggregate relief"
+        bump.inputs["Strength"].default_value = 0.12
+        bump.inputs["Distance"].default_value = 0.025
+        links.new(noise.outputs["Fac"], ramp.inputs["Fac"])
+        links.new(ramp.outputs["Color"], p.inputs["Base Color"])
+        links.new(noise.outputs["Fac"], bump.inputs["Height"])
+        links.new(bump.outputs["Normal"], p.inputs["Normal"])
     return mat
 
 def box(name, loc, size, mat, bevel=0.0):
@@ -53,7 +76,7 @@ def box(name, loc, size, mat, bevel=0.0):
         obj.modifiers.new("Weighted corner normals", "WEIGHTED_NORMAL")
     return obj
 
-def text_label(name, body, loc, size, mat, rotation=(math.pi/2, 0, 0)):
+def text_label(name, body, loc, size, mat, rotation=(0, math.pi, 0)):
     curve = bpy.data.curves.new(name, "FONT")
     curve.body = body
     curve.size = size
@@ -62,6 +85,8 @@ def text_label(name, body, loc, size, mat, rotation=(math.pi/2, 0, 0)):
     bpy.context.collection.objects.link(obj)
     obj.location = loc
     obj.rotation_euler = rotation
+    # Counter the half-turn about vertical so the plaque faces outward without mirrored lettering.
+    obj.scale.x = -1
     obj.data.materials.append(mat)
     return obj
 
@@ -198,6 +223,12 @@ for floor in range(FLOORS):
     facade_floor(floor, FRONT_Z, south=False)
     facade_floor(floor, REAR_Z, south=True)
     y = floor * FLOOR_HEIGHT
+    # Fine vertical panel seams land between the five structural module bays.
+    for x in (-5.4, -1.8, 1.8, 5.4):
+        box("Front | vertical precast joint", (x, y+1.40, FRONT_Z-0.18),
+            (0.035, 2.64, 0.05), dark_concrete)
+        box("Rear | vertical precast joint", (x, y+1.40, REAR_Z+0.18),
+            (0.035, 2.64, 0.05), dark_concrete)
     # Panel joints and coarse belt course at each storey.
     box("Horizontal prefabrication joint", (0, y+FLOOR_HEIGHT-0.045, FRONT_Z-0.17),
         (WIDTH, 0.055, 0.06), dark_concrete)
@@ -224,8 +255,10 @@ for side in (-1, 1):
     box("Entry door | narrow wired-glass pane", (side*0.84, 1.58, FRONT_Z-0.58),
         (0.025, 0.88, 0.48), lux)
 box("Entrance canopy | exposed concrete", (0, 2.65, FRONT_Z-0.90), (3.25, 0.18, 1.35), dark_concrete)
+box("Municipal entry plaque | faded red enamel", (0, 3.00, FRONT_Z-0.18), (2.05, 0.35, 0.08), red)
 box("Old intercom | metal plate", (1.02, 1.42, FRONT_Z-0.25), (0.20, 0.38, 0.045), metal)
-text_label("House number plate", "VCHOD 01", (-0.63, 2.88, FRONT_Z-0.30), 0.20, cream)
+text_label("House number plate", "VCHOD 01", (-0.62, 2.94, FRONT_Z-0.24), 0.20, cream)
+text_label("Housing-estate authority plate", "SPRAVA DOMU / 1974", (-0.73, 1.88, FRONT_Z-0.20), 0.105, cream)
 
 # Four module-aligned recessed loggias, stacked in four repeated levels.
 for floor in range(FLOORS):
@@ -408,6 +441,12 @@ os.makedirs(data_dir, exist_ok=True)
 blend_path = os.path.join(repo_root, "T06B_Panelak_V2.blend")
 glb_path = os.path.join(model_dir, "t06b-panelak-v2.glb")
 source_manifest_path = os.path.join(data_dir, "t06b-panelak-v2.json")
+# Convert sign lettering to mesh geometry so it survives GLB export.
+for text_object in [obj for obj in scene.objects if obj.type == "FONT"]:
+    bpy.ops.object.select_all(action="DESELECT")
+    text_object.select_set(True)
+    bpy.context.view_layer.objects.active = text_object
+    bpy.ops.object.convert(target="MESH")
 mesh_objects = [obj for obj in scene.objects if obj.type == "MESH"]
 depsgraph = bpy.context.evaluated_depsgraph_get()
 object_records = []
