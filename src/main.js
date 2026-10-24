@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { createEmptyWorld } from "./game/main-building.js";
+import { createEmptyWorld } from "./game/empty-world.js";
 import { createPlayerController } from "./game/player.js";
 import { createUI } from "./game/ui.js";
 import { bindInput } from "./game/input.js";
