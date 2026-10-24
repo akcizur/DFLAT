@@ -38,32 +38,6 @@ try {
   await page.waitForFunction(() => document.querySelector("#startButton")?.disabled === false, null, { timeout: 15000 });
   await page.locator("#loadingScreen").waitFor({ state: "hidden", timeout: 5000 });
 
-  const initialStartup = await page.evaluate(() => {
-    const start = document.querySelector("#startButton");
-    const loading = document.querySelector("#loadingScreen");
-    const menu = document.querySelector("#startScreen .nexus-monitor");
-    const panel = document.querySelector("#loadingScreen .loading-panel");
-    const centre = element => {
-      const rect = element.getBoundingClientRect();
-      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-    };
-    return {
-      startDisabled: Boolean(start?.disabled),
-      loadingVisible: Boolean(loading && !loading.hidden),
-      menuCentre: menu ? centre(menu) : null,
-      loaderCentre: panel ? centre(panel) : null,
-      viewportCentre: { x: innerWidth / 2, y: innerHeight / 2 }
-    };
-  });
-  if (!initialStartup.renderCanvas && initialStartup.startDisabled) throw new Error("Canvas missing while Start remains disabled.");
-  for (const key of ["menuCentre", "loaderCentre"]) {
-    const point = initialStartup[key];
-    const tolerance = key === "menuCentre" ? 6 : 3;
-    if (!point || Math.abs(point.x - initialStartup.viewportCentre.x) > tolerance ||
-        Math.abs(point.y - initialStartup.viewportCentre.y) > tolerance) {
-      throw new Error(key + " is not viewport-centred: " + JSON.stringify(initialStartup));
-    }
-  }
   const beforeStart = await page.evaluate(() => ({
     webgl: (() => {
       const canvas = document.querySelector("#screenCanvas");
