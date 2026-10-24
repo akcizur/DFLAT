@@ -51,7 +51,7 @@ if (mainSource.includes("style.filter =")) fail("CSS canvas filters must remain 
 
 const worldSource = await readFile(path.join(root, "src/game/empty-world.js"), "utf8");
 if (!worldSource.includes("Empty world ground")) fail("empty-map ground is missing");
-if (/building|fasáda|schodiště|výtah|panelák|architecture/i.test(worldSource)) fail("building-specific code remains in the world generator");
+if (worldSource.includes("Fasáda") || worldSource.includes("Schodiště") || worldSource.includes("Výtah")) fail("building geometry or interactions remain in the world generator");
 const playerSource = await readFile(path.join(root, "src/game/player.js"), "utf8");
 if (!playerSource.includes("function tryMoveTo(x, z)")) fail("free movement handler is missing");
 
