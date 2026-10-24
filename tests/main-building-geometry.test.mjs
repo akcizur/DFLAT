@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createEmptyWorld } from "../src/game/main-building.js";
+import { createEmptyWorld } from "../src/game/empty-world.js";
 
 test("world generator creates only an empty flat ground plane", () => {
   const scene = { children: [], add(object) { this.children.push(object); } };
