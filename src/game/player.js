@@ -7,7 +7,7 @@ export function createPlayerController({ camera, colliders, interactables, state
   const GRAVITY = 18.5;
   const movementCodes = ["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
   const player = {
-    x: 0, z: 9.2, floor: 0, elevation: 0, onStairs: false,
+    x: 0, z: 9.2, elevation: 0,
     yaw: Math.PI * 0.02, pitch: -0.04,
     speed: WALK_SPEED, radius: 0.29, jumpHeight: 0
   };
@@ -43,8 +43,6 @@ export function createPlayerController({ camera, colliders, interactables, state
     player.x = x;
     player.z = z;
     player.elevation = 0;
-    player.floor = 0;
-    player.onStairs = false;
     return true;
   }
 
@@ -170,12 +168,8 @@ export function createPlayerController({ camera, colliders, interactables, state
     return true;
   }
 
-  function goToFloor() {
-    ui.showToast("Prázdná mapa: nejsou zde žádná podlaží.");
-  }
-
   return {
-    player, keysDown, doInteract, update, syncCamera, goToFloor, jump,
+    player, keysDown, doInteract, update, syncCamera, jump,
     get isGrounded() { return player.jumpHeight === 0 && jumpVelocity <= 0; },
     get navigationHeight() { return player.elevation; }
   };
