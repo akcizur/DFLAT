@@ -1,6 +1,8 @@
-# DFLAT — Empty Map
+# DFLAT | Empty Map
 
-A first-person, low-poly free-roam prototype built with Three.js, Vite and Bun. The active scene is intentionally empty: a large flat ground plane, open sky, and no buildings, apartments, roads, architectural props, or imported environment models.
+A first-person low-poly free-roam prototype built with Three.js, Vite and Bun.
+
+The active gameplay scene is an open, empty map: a flat ground plane and an open background. The active scene generator contains no building geometry, apartment interiors, stairs, elevators, roads, architectural props, imported environment models or city-backdrop objects. First-person movement, jumping and camera controls remain enabled.
 
 ## Run locally
 
@@ -14,27 +16,21 @@ bun run dev
 ```sh
 bun run check:syntax
 bun run check
+bun run test
 bun run build
 bun run preview
 ```
 
-## Scene
-
-- Empty outdoor world with a flat ground plane.
-- No building or apartment geometry.
-- No city panorama or architectural background.
-- First-person movement, keyboard, mouse, touch and gamepad controls remain enabled.
-- Low-resolution pixel-grid rendering remains enabled.
-- No CRT/VHS post-processing effects.
-
-## GitHub Pages
-
-The deployment workflow builds the static site into `dist/` and deploys to [DFLAT on GitHub Pages](https://akcizur.github.io/DFLAT/). Set Pages source to **GitHub Actions** in repository settings.
-
 ## Controls
 
 - `W A S D` / arrow keys: move
+- `Shift`: run
+- `Space`: jump
 - Mouse: look around
 - `Esc`: pause or resume
-- Touch screens: on-screen movement/look controls
+- Touch screens: on-screen movement and look controls
 - Gamepad: left stick to move, right stick to look
+
+## GitHub Pages
+
+The deployment workflow builds the static site into `dist/`. Set the Pages source to **GitHub Actions** in repository settings.
