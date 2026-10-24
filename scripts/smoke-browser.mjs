@@ -33,10 +33,6 @@ try {
     if (message.type() === "error") consoleErrors.push(message.text());
   });
 
-  await page.route("**/assets/bg-scene-hq*", async route => {
-    await new Promise(resolve => setTimeout(resolve, 1200));
-    await route.continue();
-  });
   await page.goto("http://127.0.0.1:4173/?smoke=1", { waitUntil: "domcontentloaded", timeout: 30000 });
   await page.waitForSelector("#loadingScreen", { state: "visible", timeout: 10000 });
 
@@ -57,7 +53,7 @@ try {
       viewportCentre: { x: innerWidth / 2, y: innerHeight / 2 }
     };
   });
-  if (!initialStartup.startDisabled) throw new Error("Start must remain disabled while the world is loading.");
+  if (!initialStartup.startDisabled) throw new Error("Start must remain disabled while the empty map is loading.");
   if (!initialStartup.loadingVisible) throw new Error("The loading overlay must be visible during startup.");
   for (const key of ["menuCentre", "loaderCentre"]) {
     const point = initialStartup[key];
@@ -103,7 +99,7 @@ try {
     !movementDuring.keys?.KeyW ||
     movementDuring.position.z > movementBefore.position.z - 0.20
   ) {
-    throw new Error("WASD movement test failed: " + JSON.stringify({ movementBefore, movementDuring }));
+    throw new Error("WASD movement failed: " + JSON.stringify({ movementBefore, movementDuring }));
   }
   await page.waitForTimeout(400);
 
