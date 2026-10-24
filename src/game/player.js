@@ -148,7 +148,6 @@ export function createPlayerController({ camera, colliders, interactables, state
       bodySpeed = deltaTime > 0
         ? Math.hypot(player.x - previousX, player.z - previousZ) / deltaTime
         : 0;
-      stairPitchTarget = 0;
 
       // Lightweight vertical physics for a short, responsive jump. The floor stays authoritative.
       if (player.jumpHeight > 0 || jumpVelocity > 0) {
