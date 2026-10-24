@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { createMainBuildingWorld } from "./game/main-building.js";
+import { createEmptyWorld } from "./game/main-building.js";
 import { createPlayerController } from "./game/player.js";
 import { createUI } from "./game/ui.js";
 import { bindInput } from "./game/input.js";
@@ -102,7 +102,7 @@ const state = {
   currentFloor: 0, ready: false
 };
 const ui = createUI();
-const world = createMainBuildingWorld({ THREE, scene });
+const world = createEmptyWorld({ THREE, scene });
 setLoadingProgress(59, "PŘIPRAVUJI PRÁZDNOU MAPU", "Bez budov a architektonických objektů.", "EMPTY WORLD");
 const controller = createPlayerController({
   camera, colliders: world.colliders, interactables: world.interactables,
