@@ -1,16 +1,6 @@
 // First-person movement, collision handling, proximity and camera synchronization.
 export function createPlayerController({ camera, colliders, interactables, state, ui, navigation = null }) {
-  const FLOOR_HEIGHT = 0;
-  const FLOOR_COUNT = 1;
-  const MAX_FLOOR = 0;
-  const coreOpening = navigation?.coreOpening ?? { minX: -3.8, maxX: 3.8, minZ: -26.0, maxZ: -22.35 };
-  const stair = navigation?.stairs ?? {
-    lowX: -3.2, highX: -0.8, firstZ: -25.1, secondZ: -23.1, steps: 8,
-    stepRise: FLOOR_HEIGHT / 16, stepRun: 0.3, treadDepth: 1.16, treadOverlap: 0.025,
-    landingWidth: 1.28, landingDepth: 3.1,
-    landingCenterX: -0.16, landingCenterZ: -24.1
-  };
-  const MAX_STEP_HEIGHT = stair.stepRise + 0.045;
+
   const WALK_SPEED = 3.6;
   const RUN_MULTIPLIER = 1.8;
   const JUMP_SPEED = 5.4;
@@ -34,8 +24,7 @@ export function createPlayerController({ camera, colliders, interactables, state
   let isRunning = false;
   let bodyLean = 0;
   let bodyRoll = 0;
-  let stairPitch = 0;
-  let stairPitchTarget = 0;
+
   let cameraX = player.x, cameraY = 1.68, cameraZ = player.z;
 
   const keysDown = Object.create(null);
@@ -81,7 +70,7 @@ export function createPlayerController({ camera, colliders, interactables, state
   function doInteract() {
     const item = nearestInteractable();
     if (!item) {
-      ui.showToast(state.mainBuildingScene ? "Volná mapa / hlavní budova." : "Nic zajímavého na dosah.");
+      ui.showToast("Prázdná mapa. Nic k interakci.");
       return;
     }
     item.action();
@@ -105,7 +94,7 @@ export function createPlayerController({ camera, colliders, interactables, state
     const targetRoll = desiredMoving ? -strafeIntent * (isRunning ? 0.042 : 0.026) : 0;
     bodyLean += (targetLean - bodyLean) * settle;
     bodyRoll += (targetRoll - bodyRoll) * settle;
-    stairPitch += (stairPitchTarget - stairPitch) * (1 - Math.exp(-deltaTime * 4.5));
+
 
     // Slow breathing remains visible when idle. Steps are firmer when running,
     // while the camera follows real foot elevation rather than snapping by floor.
@@ -127,19 +116,17 @@ export function createPlayerController({ camera, colliders, interactables, state
     cameraYaw += yawDelta;
     cameraPitch += (player.pitch - cameraPitch);
     camera.rotation.y = cameraYaw;
-    camera.rotation.x = Math.max(-1.35, Math.min(1.35, cameraPitch + bodyLean * 0.60 + stairPitch));
+    camera.rotation.x = Math.max(-1.35, Math.min(1.35, cameraPitch + bodyLean * 0.60));
     camera.rotation.z = bodyRoll;
   }
 
   function update(deltaTime) {
     const previousX = player.x;
     const previousZ = player.z;
-    const previousElevation = player.elevation;
     forwardIntent = 0;
     strafeIntent = 0;
     isRunning = false;
     bodySpeed = 0;
-    stairPitchTarget = 0;
 
     if (state.started && !state.paused) {
       let forward = 0;
@@ -161,10 +148,7 @@ export function createPlayerController({ camera, colliders, interactables, state
       bodySpeed = deltaTime > 0
         ? Math.hypot(player.x - previousX, player.z - previousZ) / deltaTime
         : 0;
-      const elevationDelta = player.elevation - previousElevation;
-      stairPitchTarget = player.onStairs && Math.abs(elevationDelta) > 0.001
-        ? (elevationDelta > 0 ? -0.018 : 0.014)
-        : 0;
+      stairPitchTarget = 0;
 
       // Lightweight vertical physics for a short, responsive jump. The floor stays authoritative.
       if (player.jumpHeight > 0 || jumpVelocity > 0) {
