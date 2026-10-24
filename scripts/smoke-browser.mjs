@@ -34,9 +34,7 @@ try {
   });
 
   await page.goto("http://127.0.0.1:4173/?smoke=1", { waitUntil: "domcontentloaded", timeout: 30000 });
-  await page.waitForSelector("#screenCanvas", { timeout: 10000 });
-  await page.waitForFunction(() => document.querySelector("#startButton")?.disabled === false, null, { timeout: 15000 });
-  await page.locator("#loadingScreen").waitFor({ state: "hidden", timeout: 5000 });
+  await page.waitForSelector("#loadingScreen", { state: "visible", timeout: 10000 });
 
   const initialStartup = await page.evaluate(() => {
     const start = document.querySelector("#startButton");
@@ -55,7 +53,8 @@ try {
       viewportCentre: { x: innerWidth / 2, y: innerHeight / 2 }
     };
   });
-  if (!initialStartup.loadingVisible && initialStartup.startDisabled) throw new Error("Loading state is inconsistent: no overlay while Start remains disabled.");
+  if (!initialStartup.startDisabled) throw new Error("Start must remain disabled during initial loading.");
+  if (!initialStartup.loadingVisible) throw new Error("Loading overlay should be visible on first startup.");
   for (const key of ["menuCentre", "loaderCentre"]) {
     const point = initialStartup[key];
     const tolerance = key === "menuCentre" ? 6 : 3;
@@ -64,6 +63,10 @@ try {
       throw new Error(key + " is not viewport-centred: " + JSON.stringify(initialStartup));
     }
   }
+  await page.waitForSelector("#screenCanvas", { timeout: 10000 });
+  await page.waitForFunction(() => document.querySelector("#startButton")?.disabled === false, null, { timeout: 15000 });
+  await page.locator("#loadingScreen").waitFor({ state: "hidden", timeout: 5000 });
+
   const beforeStart = await page.evaluate(() => ({
     webgl: (() => {
       const canvas = document.querySelector("#screenCanvas");
