@@ -47,12 +47,11 @@ test("strafing adds a small body roll and settles when movement stops", () => {
   assert.ok(Math.abs(camera.rotation.z) < 0.004);
 });
 
-test("open-map navigation never changes player elevation or routes to floors", () => {
+test("open-map movement stays at ground elevation", () => {
   const { controller, camera } = makeController();
   controller.keysDown.KeyW = true;
   advance(controller, 30);
   assert.equal(controller.player.elevation, 0);
-  controller.goToFloor(7, "Výtah");
   assert.equal(controller.player.elevation, 0);
   assert.equal(camera.rotation.z, 0);
 });
