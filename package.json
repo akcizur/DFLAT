@@ -2,13 +2,13 @@
   "name": "the-flat-dflat",
   "private": true,
   "type": "module",
-  "description": "Static Three.js first-person apartment game",
+  "description": "Static Three.js first-person empty-map exploration game",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "check": "node scripts/check-architecture.mjs",
-    "check:syntax": "node --check src/main.js && node --check src/game/materials.js && node --check src/game/world.js && node --check src/game/main-building.js && node --check src/game/player.js && node --check src/game/ui.js && node --check src/game/input.js && node --check scripts/check-architecture.mjs",
+    "check:syntax": "node --check src/main.js && node --check src/game/empty-world.js && node --check src/game/player.js && node --check src/game/ui.js && node --check src/game/input.js && node --check scripts/check-architecture.mjs",
     "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {

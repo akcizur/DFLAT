@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { createMainBuildingWorld } from "./game/main-building.js";
+import { createEmptyWorld } from "./game/empty-world.js";
 import { createPlayerController } from "./game/player.js";
 import { createUI } from "./game/ui.js";
 import { bindInput } from "./game/input.js";
@@ -7,10 +7,8 @@ import { bindInput } from "./game/input.js";
 const mount = document.getElementById("game");
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x858b8e);
-
 const loadingScreen = document.getElementById("loadingScreen");
 let firstSceneFrame = false;
-let panoramaResolved = false;
 let startupComplete = false;
 let highestLoadingProgress = 8;
 
@@ -32,7 +30,7 @@ function setLoadingProgress(value, title, detail, phase = title) {
 }
 
 function finishStartupWhenReady() {
-  if (startupComplete || !firstSceneFrame || !panoramaResolved) return;
+  if (startupComplete || !firstSceneFrame) return;
   startupComplete = true;
   state.ready = true;
   const startButton = document.getElementById("startButton");
@@ -42,7 +40,7 @@ function finishStartupWhenReady() {
     const enterLabel = startButton.querySelector(".nexus-enter");
     if (enterLabel) enterLabel.textContent = "ENTER ↵";
   }
-  setLoadingProgress(100, "SVĚT JE PŘIPRAVEN", "Vstup do prázdné mapy.", "READY");
+  setLoadingProgress(100, "PRÁZDNÁ MAPA JE PŘIPRAVENA", "Žádné budovy. Jen volný prostor.", "READY");
   if (!loadingScreen) return;
   window.setTimeout(() => {
     loadingScreen.classList.add("loading-exit");
@@ -55,13 +53,7 @@ function finishStartupWhenReady() {
 }
 
 setLoadingProgress(12, "ZAPÍNÁM ENGINE", "Inicializuji 3D vykreslování.", "INITIALIZING");
-
-// Empty map: deliberately no city panorama or building backdrop.
-const panorama = { mesh: null };
-panoramaResolved = true;
 scene.fog = new THREE.FogExp2(0x858b8e, 0.0022);
-
-// Global fill lights keep the scene readable even if local room lighting is unavailable.
 const globalHemisphere = new THREE.HemisphereLight(0xdce8ff, 0x625648, 1.15);
 globalHemisphere.name = "Global fill / hemisphere";
 scene.add(globalHemisphere);
@@ -92,18 +84,11 @@ setLoadingProgress(34, "VYKRESLOVAČ PŘIPRAVEN", "Připravuji prázdnou mapu.",
 function resize() {
   const displayWidth = Math.max(1, innerWidth);
   const displayHeight = Math.max(1, innerHeight);
-  const PIXEL_SCALE = LOW_POWER ? 3.6 : 3.2;
-  const width = Math.max(240, Math.floor(displayWidth / PIXEL_SCALE));
-  const height = Math.max(135, Math.floor(displayHeight / PIXEL_SCALE));
-  renderer.setSize(width, height, false);
+  const pixelScale = LOW_POWER ? 3.6 : 3.2;
+  renderer.setSize(Math.max(240, Math.floor(displayWidth / pixelScale)), Math.max(135, Math.floor(displayHeight / pixelScale)), false);
   Object.assign(renderer.domElement.style, {
-    position: "absolute",
-    inset: "0",
-    display: "block",
-    width: "100%",
-    height: "100%",
-    zIndex: "1",
-    imageRendering: "pixelated"
+    position: "absolute", inset: "0", display: "block", width: "100%", height: "100%",
+    zIndex: "1", imageRendering: "pixelated"
   });
   camera.aspect = displayWidth / displayHeight;
   camera.updateProjectionMatrix();
@@ -113,34 +98,17 @@ resize();
 
 const state = {
   hasKeys: false, doorOpen: false, finished: false, started: false,
-  paused: false, balconyDoorOpen: false, emptyMap: true, mainBuildingScene: true, currentFloor: 0,
-  ready: false
+  paused: false, balconyDoorOpen: false, emptyMap: true, mainBuildingScene: false,
+  currentFloor: 0, ready: false
 };
 const ui = createUI();
-const world = createMainBuildingWorld({ THREE, scene, state, ui });
-setLoadingProgress(59, "STAVÍM HLAVNÍ BUDOVU", "Podlaží, balkony, schodiště a výtah.", "GEOMETRY");
-
-// The outdoor map has no interior mission, furniture, or scripted interactables.
-
-scene.traverse(object => {
-  if (object.isMesh && object.geometry?.attributes?.uv && !object.geometry.attributes.uv2) {
-    object.geometry.setAttribute("uv2", object.geometry.attributes.uv.clone());
-  }
-  if (object.isLight && object.castShadow) {
-    object.shadow.mapSize.set(LOW_POWER ? 192 : 384, LOW_POWER ? 192 : 384);
-    object.shadow.bias = -0.00035;
-    object.shadow.normalBias = 0.025;
-    object.shadow.radius = 0;
-  }
-});
-
+const world = createEmptyWorld({ THREE, scene });
+setLoadingProgress(59, "PŘIPRAVUJI PRÁZDNOU MAPU", "Bez budov a architektonických objektů.", "EMPTY WORLD");
 const controller = createPlayerController({
   camera, colliders: world.colliders, interactables: world.interactables,
   navigation: world.navigation, state, ui
 });
-state.changeFloor = (floor, method = "Výtah") => {
-  controller.goToFloor(floor, method);
-};
+state.changeFloor = () => ui.showToast("Prázdná mapa: nejsou zde žádná podlaží.");
 if (new URLSearchParams(location.search).get("smoke") === "1") {
   Object.defineProperty(window, "__DFLAT_SMOKE__", {
     configurable: true,
@@ -152,59 +120,18 @@ if (new URLSearchParams(location.search).get("smoke") === "1") {
   });
 }
 bindInput({ renderer, state, controller, ui });
-setLoadingProgress(84, "KONTROLUJI SCÉNU", "Ověřuji vstupní body a připravuji první snímek.", "VALIDATION");
+setLoadingProgress(84, "KONTROLUJI SCÉNU", "Připravuji první snímek.", "VALIDATION");
 
 const clockStart = performance.now();
-const SIMULATION_HZ = 60;
-const SIMULATION_STEP_MS = 1000 / SIMULATION_HZ;
-const SCENE_RENDER_HZ = 60;
-const SCENE_RENDER_INTERVAL_MS = 1000 / SCENE_RENDER_HZ;
+const simulationStepMs = 1000 / 60;
+const sceneRenderIntervalMs = 1000 / 60;
 let previousTime = 0;
 let simulationTime = clockStart;
 let simulationAccumulator = 0;
 let nextSceneRenderAt = 0;
 
-const shimmerMaterials = (() => {
-  const mats = new Set();
-  scene.traverse(object => {
-    if (!object.isMesh || object.name === "HQ sky image background") return;
-    for (const material of (Array.isArray(object.material) ? object.material : [object.material])) {
-      if (material?.color && material.emissive && !mats.has(material)) {
-        mats.add(material);
-        material.userData.baseEmissiveIntensity = material.emissiveIntensity;
-        material.userData.shimmerPhase = (object.id % 17) * 0.37;
-      }
-    }
-  });
-  return [...mats];
-})();
-
 function updateSimulation(deltaSeconds, nowMs) {
   const nearest = controller.update(deltaSeconds);
-  for (const door of world.doorAnimations) {
-    const target = door.targetOpen ? 1 : 0;
-    door.progress += (target - door.progress) * (1 - Math.exp(-deltaSeconds * 5.5));
-    if (Math.abs(target - door.progress) < 0.002) door.progress = target;
-    const eased = door.progress * door.progress * (3 - 2 * door.progress);
-    door.pivot.rotation.y = door.closedRotation + (door.openRotation - door.closedRotation) * eased;
-    if (!door.targetOpen && door.progress < 0.9 && door.closedBounds) {
-      Object.assign(door.collider, door.closedBounds);
-    } else if (door.targetOpen) {
-      door.collider.minX = 30;
-      door.collider.maxX = 31;
-    }
-  }
-  const shimmer = 0.012 + Math.sin(nowMs * 0.0017) * 0.004;
-  for (const material of shimmerMaterials) {
-    const phase = material.userData.shimmerPhase || 0;
-    material.emissiveIntensity =
-      (material.userData.baseEmissiveIntensity || 0) +
-      shimmer * (0.5 + 0.5 * Math.sin(nowMs * 0.0022 + phase));
-  }
-  for (const item of world.meshesToAnimate) {
-    item.object.position.y = item.baseY + Math.sin(nowMs * 0.002 + item.phase) * 0.045;
-    item.object.rotation.y = 0.45 + Math.sin(nowMs * 0.001) * 0.18;
-  }
   ui.setInteraction(nearest, state);
   ui.tick(nowMs, clockStart);
 }
@@ -216,19 +143,16 @@ function animate(now) {
     simulationTime = now;
     nextSceneRenderAt = now;
   }
-  const elapsed = Math.min(now - previousTime, 100);
+  simulationAccumulator += Math.min(now - previousTime, 100);
   previousTime = now;
-  simulationAccumulator += elapsed;
   let steps = 0;
-  while (simulationAccumulator >= SIMULATION_STEP_MS && steps < 5) {
-    simulationTime += SIMULATION_STEP_MS;
-    updateSimulation(SIMULATION_STEP_MS / 1000, simulationTime);
-    simulationAccumulator -= SIMULATION_STEP_MS;
+  while (simulationAccumulator >= simulationStepMs && steps < 5) {
+    simulationTime += simulationStepMs;
+    updateSimulation(simulationStepMs / 1000, simulationTime);
+    simulationAccumulator -= simulationStepMs;
     steps += 1;
   }
-  if (steps === 5 && simulationAccumulator >= SIMULATION_STEP_MS) {
-    simulationAccumulator %= SIMULATION_STEP_MS;
-  }
+  if (steps === 5 && simulationAccumulator >= simulationStepMs) simulationAccumulator %= simulationStepMs;
   if (now >= nextSceneRenderAt) {
     renderer.render(scene, camera);
     if (!firstSceneFrame) {
@@ -236,9 +160,8 @@ function animate(now) {
       setLoadingProgress(92, "PRVNÍ SNÍMEK HOTOV", "Dokončuji poslední kontroly.", "FIRST FRAME");
       finishStartupWhenReady();
     }
-    nextSceneRenderAt = now + SCENE_RENDER_INTERVAL_MS;
+    nextSceneRenderAt = now + sceneRenderIntervalMs;
   }
 }
-
 ui.updateObjective(state);
 requestAnimationFrame(animate);

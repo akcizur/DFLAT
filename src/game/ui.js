@@ -16,15 +16,9 @@ export function createUI() {
   }
 
   function updateObjective(state) {
-    if (state.mainBuildingScene) {
-      const floor = Math.max(0, Math.min(7, Number(state.currentFloor) || 0));
-      objectiveText.textContent = "Hlavní budova. Prozkoumej podlaží, schodiště a výtah.";
-      inventoryText.textContent = "PODLAŽÍ: " + (floor + 1) + " / 8";
-      return;
-    }
     if (state.emptyMap) {
-      objectiveText.textContent = "Holobyt: zatím bez nábytku a úkolů.";
-      inventoryText.textContent = "MAPA: HOLOBYT";
+      objectiveText.textContent = "Prázdná mapa. Prozkoumej otevřený prostor.";
+      inventoryText.textContent = "SVĚT: BEZ BUDOV";
       return;
     }
     if (state.finished) {
