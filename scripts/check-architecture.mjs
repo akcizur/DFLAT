@@ -41,7 +41,7 @@ if (!mainSource.includes("firstSceneFrame")) fail("first rendered frame must gat
 const inputSource = await readFile(path.join(root, "src/game/input.js"), "utf8");
 if (!inputSource.includes("if (state.started || !state.ready) return;")) fail("start must be blocked until the scene is ready");
 if (/from\s+["']https?:\/\//i.test(mainSource)) fail("runtime must not import modules from a CDN");
-if (!mainSource.includes("createMainBuildingWorld({ THREE, scene })")) fail("empty world generator must be loaded");
+if (!mainSource.includes("createEmptyWorld({ THREE, scene })")) fail("empty world generator must be loaded");
 if (!mainSource.includes("emptyMap: true")) fail("state must identify the empty map");
 if (!mainSource.includes("renderer.render(scene, camera)")) fail("the scene must render directly");
 if (!mainSource.includes("preserveDrawingBuffer: true")) fail("frame buffer must remain available for smoke checks");
