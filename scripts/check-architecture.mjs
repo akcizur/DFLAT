@@ -7,7 +7,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const required = [
   "package.json", "vite.config.js", "index.html", "vendor/three.module.min.js",
   "vendor/THREE-LICENSE.txt", "styles.css", "styles-cinematic.css",
-  "src/main.js", "src/boot-debug.js", "src/game/main-building.js",
+  "src/main.js", "src/boot-debug.js", "src/game/empty-world.js",
   "src/game/player.js", "src/game/ui.js", "src/game/input.js"
 ];
 
@@ -49,7 +49,7 @@ if (!mainSource.includes('imageRendering: "pixelated"')) fail("low-res pixel ren
 if (mainSource.includes("createPixelPostProcess") || mainSource.includes("postFx.")) fail("post-processing must remain removed");
 if (mainSource.includes("style.filter =")) fail("CSS canvas filters must remain removed");
 
-const worldSource = await readFile(path.join(root, "src/game/main-building.js"), "utf8");
+const worldSource = await readFile(path.join(root, "src/game/empty-world.js"), "utf8");
 if (!worldSource.includes("Empty world ground")) fail("empty-map ground is missing");
 if (worldSource.includes("Fasáda") || worldSource.includes("Schodiště") || worldSource.includes("Výtah")) fail("building geometry or interactions remain in the world generator");
 const playerSource = await readFile(path.join(root, "src/game/player.js"), "utf8");
