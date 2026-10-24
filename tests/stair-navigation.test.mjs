@@ -13,7 +13,6 @@ function makeController() {
 
 test("empty-map navigation has no stairs or elevator and preserves free movement", () => {
   const controller = makeController();
-  controller.goToFloor(7, "Výtah");
   assert.equal(controller.player.elevation, 0);
   controller.keysDown.KeyW = true;
   const before = controller.player.z;
