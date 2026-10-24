@@ -1,7 +1,7 @@
 // DFLAT empty-world generator.
 // No building, architecture, road, furniture, prop, imported environment model,
 // or city panorama exists in the active gameplay scene.
-export function createMainBuildingWorld({ THREE, scene }) {
+export function createEmptyWorld({ THREE, scene }) {
   const groundMaterial = new THREE.MeshBasicMaterial({ color: 0x77786d });
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), groundMaterial);
   ground.name = "Empty world ground";
