@@ -42,7 +42,7 @@ function finishStartupWhenReady() {
     const enterLabel = startButton.querySelector(".nexus-enter");
     if (enterLabel) enterLabel.textContent = "ENTER ↵";
   }
-  setLoadingProgress(100, "SVĚT JE PŘIPRAVEN", "Vstup do hlavní budovy.", "READY");
+  setLoadingProgress(100, "SVĚT JE PŘIPRAVEN", "Vstup do prázdné mapy.", "READY");
   if (!loadingScreen) return;
   window.setTimeout(() => {
     loadingScreen.classList.add("loading-exit");
@@ -56,43 +56,9 @@ function finishStartupWhenReady() {
 
 setLoadingProgress(12, "ZAPÍNÁM ENGINE", "Inicializuji 3D vykreslování.", "INITIALIZING");
 
+// Empty map: deliberately no city panorama or building backdrop.
 const panorama = { mesh: null };
-const panoramaFallbackTimer = window.setTimeout(() => {
-  if (panoramaResolved) return;
-  panoramaResolved = true;
-  setLoadingProgress(78, "DOKONČUJI SVĚT", "Pozadí se načítá na pozadí.", "FALLBACK");
-  finishStartupWhenReady();
-}, 5500);
-new THREE.TextureLoader().load(
-  new URL("../assets/bg-scene-hq.png", import.meta.url).href,
-  texture => {
-    window.clearTimeout(panoramaFallbackTimer);
-    if (!panoramaResolved) {
-      panoramaResolved = true;
-      setLoadingProgress(72, "NAČÍTÁM OKOLÍ", "Dokončuji panoramatické pozadí.", "ASSETS");
-    }
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.ClampToEdgeWrapping;
-    const skyMaterial = new THREE.MeshBasicMaterial({
-      map: texture, side: THREE.BackSide, fog: false,
-      depthWrite: false, toneMapped: false
-    });
-    panorama.mesh = new THREE.Mesh(new THREE.SphereGeometry(160, 64, 40), skyMaterial);
-    panorama.mesh.name = "Outdoor city panorama";
-    panorama.mesh.renderOrder = -1000;
-    scene.add(panorama.mesh);
-    finishStartupWhenReady();
-  },
-  undefined,
-  error => {
-    window.clearTimeout(panoramaFallbackTimer);
-    panoramaResolved = true;
-    console.error("The Flat: assets/bg-scene-hq.png sky background failed to load.", error);
-    setLoadingProgress(78, "SVĚT PŘIPRAVEN", "Používám záložní pozadí.", "FALLBACK");
-    finishStartupWhenReady();
-  }
-);
+panoramaResolved = true;
 scene.fog = new THREE.FogExp2(0x858b8e, 0.0022);
 
 // Global fill lights keep the scene readable even if local room lighting is unavailable.
@@ -121,7 +87,7 @@ renderer.shadowMap.autoUpdate = true;
 renderer.domElement.id = "screenCanvas";
 renderer.domElement.tabIndex = 0;
 mount.appendChild(renderer.domElement);
-setLoadingProgress(34, "VYKRESLOVAČ PŘIPRAVEN", "Připravuji terén a hlavní budovu.", "RENDERER");
+setLoadingProgress(34, "VYKRESLOVAČ PŘIPRAVEN", "Připravuji prázdnou mapu.", "RENDERER");
 
 function resize() {
   const displayWidth = Math.max(1, innerWidth);

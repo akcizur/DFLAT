@@ -21,18 +21,18 @@
   <div id="game"></div>
   <div class="hud" id="hud" aria-hidden="true">
     <div class="topline">
-      <div class="brand">THE FLAT<span>HLAVNÍ BUDOVA / VENKOVNÍ MAPA</span></div>
+      <div class="brand">THE FLAT<span>PRÁZDNÁ MAPA</span></div>
       <div class="status" id="clock">21:07<br>ÚTERÝ</div>
     </div>
     <div class="objective"><b>ÚKOL</b>
-      <div id="objectiveText">Volná mapa. Před tebou stojí hlavní budova.</div>
-      <div id="inventoryText" style="margin-top:7px">LOKACE: HLAVNÍ BUDOVA</div>
+      <div id="objectiveText">Volná prázdná mapa.</div>
+      <div id="inventoryText" style="margin-top:7px">LOKACE: PRÁZDNÁ MAPA</div>
     </div>
     <div class="crosshair"></div>
     <div class="interaction" id="interaction"><b>E</b> — interagovat</div>
     <div class="bottomline">
       <div class="hint">WASD / POHYB&nbsp; · &nbsp;SHIFT / BĚH&nbsp; · &nbsp;SPACE / SKOK&nbsp; · &nbsp;MYŠ / ROZHLÉDNUTÍ&nbsp; · &nbsp;ESC / PAUZA</div>
-      <div class="right">PRÁZDNÁ MAPA. JEDNA HLAVNÍ BUDOVA.<br>VERZE 0.1 — HRAJ PO SVÉM.</div>
+      <div class="right">PRÁZDNÁ MAPA<br>VERZE 0.1 — HRAJ PO SVÉM.</div>
     </div>
   </div>
   <div class="toast" id="toast"></div>
@@ -59,7 +59,7 @@
       <div class="loading-mark" aria-hidden="true">DF<span>_</span></div>
       <div class="loading-kicker">DFLAT SYSTEM / WORLD BOOT</div>
       <h2 id="loadingTitle">PŘIPRAVUJI SVĚT</h2>
-      <p id="loadingDetail">Inicializuji vykreslování a hlavní budovu.</p>
+      <p id="loadingDetail">Inicializuji prázdnou mapu.</p>
       <div class="loading-progress" id="loadingProgress" role="progressbar" aria-label="Průběh načítání" aria-valuemin="0" aria-valuemax="100" aria-valuenow="8">
         <span id="loadingProgressBar" style="width:8%"></span>
       </div>
@@ -74,7 +74,7 @@
         <section class="nexus-glass">
           <header class="nexus-topbar">
             <span class="nexus-brand"><i aria-hidden="true"></i> DFLAT / TERMINAL 04</span>
-            <span class="nexus-status"><span><i class="nexus-led"></i>ONLINE</span><span>MAIN BUILDING / OUTDOOR MAP</span></span>
+            <span class="nexus-status"><span><i class="nexus-led"></i>ONLINE</span><span>EMPTY MAP</span></span>
           </header>
           <div class="nexus-content">
             <div class="nexus-art" aria-hidden="true">
@@ -97,9 +97,9 @@
             <nav class="nexus-menu" aria-label="Hlavní menu">
               <div class="nexus-eyebrow">SYSTEM MENU / 01</div>
               <h1>DFLAT<span>_</span></h1>
-              <p class="nexus-subtitle">PRÁZDNÁ MAPA. JEDNA HLAVNÍ BUDOVA.</p>
+              <p class="nexus-subtitle">PRÁZDNÁ MAPA</p>
               <button type="button" class="cmd nexus-command" id="startButton" disabled aria-disabled="true"><span class="nexus-chevron">&gt;</span><span>START GAME</span><span class="nexus-enter">WAIT…</span></button>
-              <div class="nexus-menu-note">OUTDOOR MAP / MAIN BUILDING</div>
+              <div class="nexus-menu-note">EMPTY MAP / FREE ROAM</div>
               <div class="nexus-controls"><span>WASD <b>MOVE</b></span><span>SHIFT <b>RUN</b></span><span>SPACE <b>JUMP</b></span><span>MOUSE <b>LOOK</b></span><span>ESC <b>PAUSE</b></span><span>PAD <b>LEFT STICK / MOVE</b></span><span>PAD <b>RIGHT STICK / LOOK</b></span><span>B <b>PAUSE</b></span></div>
             </nav>
           </div>
