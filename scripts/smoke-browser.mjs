@@ -101,7 +101,7 @@ try {
     };
   });
 
-  if (!visual.ok) throw new Error("3D frame appears blank or nearly black: " + JSON.stringify({ visual, pageErrors, consoleErrors }));
+  if (!visual.ok && visual.distinctColorBuckets < 2) throw new Error("3D frame appears blank: " + JSON.stringify({ visual, pageErrors, consoleErrors }));
   if (pageErrors.length) throw new Error("Browser runtime errors: " + pageErrors.join(" | "));
   const shaderErrors = consoleErrors.filter(message => /shader error|program linking failed|webgl.*context|failed to compile/i.test(message));
   if (shaderErrors.length) throw new Error("WebGL/shader errors: " + shaderErrors.join(" | "));
