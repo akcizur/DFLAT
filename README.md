@@ -5,7 +5,7 @@ A first-person low-poly neighbourhood built with Three.js, Vite and Bun. The gam
 ## Open model library
 
 - Search and browse **1,883 CC0 1.0 Kenney models** from 19 packs in the in-game model browser.
-- The starting neighbourhood uses a curated set of **32 pinned GLB assets**, downloaded locally by the setup script and reused for the initial scene.
+- The build downloads a curated bundle of **32 pinned GLB assets**; the initial neighbourhood places a subset of them and the rest remain available in the model browser.
 - Additional catalog models are loaded only when selected. The entire library is not downloaded or rendered at startup.
 - Press `M` or select **MODEL LIBRARY** from the menu to browse. Choose a model and insert it into the world in front of the player.
 - See [assets/OPEN_SOURCE_MODELS.md](assets/OPEN_SOURCE_MODELS.md) for sources, license details and the pinned upstream commit.
