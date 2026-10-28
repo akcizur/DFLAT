@@ -22,6 +22,8 @@ function targetHeight(model) {
 export function createModelLibrary({ THREE, scene, camera, state, ui, world }) {
   const overlay = document.getElementById("modelLibraryScreen");
   const openButton = document.getElementById("modelLibraryButton");
+  const menuButton = document.getElementById("modelLibraryMenuButton");
+  const openButtons = [openButton, menuButton].filter(Boolean);
   const closeButton = document.getElementById("modelLibraryClose");
   const searchInput = document.getElementById("modelLibrarySearch");
   const packSelect = document.getElementById("modelLibraryPack");
@@ -41,13 +43,15 @@ export function createModelLibrary({ THREE, scene, camera, state, ui, world }) {
   let page = 0;
   let previousPaused = false;
   let busy = false;
+  let lastTrigger = openButton;
 
-  function open() {
+  function open(trigger = openButton) {
+    lastTrigger = trigger || openButton;
     previousPaused = state.paused;
     if (state.started) state.paused = true;
     overlay.hidden = false;
     overlay.setAttribute("aria-hidden", "false");
-    openButton?.setAttribute("aria-expanded", "true");
+    for (const button of openButtons) button.setAttribute("aria-expanded", "true");
     document.body.classList.add("model-library-open");
     if (!models.length) loadCatalog();
     else searchInput?.focus({ preventScroll: true });
@@ -56,13 +60,15 @@ export function createModelLibrary({ THREE, scene, camera, state, ui, world }) {
   function close() {
     overlay.hidden = true;
     overlay.setAttribute("aria-hidden", "true");
-    openButton?.setAttribute("aria-expanded", "false");
+    for (const button of openButtons) button.setAttribute("aria-expanded", "false");
     document.body.classList.remove("model-library-open");
     if (state.started) state.paused = previousPaused;
-    openButton?.focus({ preventScroll: true });
+    lastTrigger?.focus({ preventScroll: true });
   }
 
-  openButton?.addEventListener("click", () => overlay.hidden ? open() : close());
+  for (const button of openButtons) {
+    button.addEventListener("click", () => overlay.hidden ? open(button) : close());
+  }
   closeButton?.addEventListener("click", close);
   searchInput?.addEventListener("input", () => { page = 0; renderGrid(); });
   packSelect?.addEventListener("change", () => { page = 0; renderGrid(); });
