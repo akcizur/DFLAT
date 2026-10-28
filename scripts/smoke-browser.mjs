@@ -110,7 +110,7 @@ try {
   await page.locator("#modelLibraryScreen").waitFor({ state: "visible", timeout: 5000 });
   await page.waitForFunction(() => {
     const count = document.querySelector("#modelLibraryCount")?.textContent || "";
-    return Number(count.replace(/\\D/g, "")) >= 1883;
+    return Number(count.replace(/[^0-9]/g, "") >= 1883;
   }, null, { timeout: 20000 });
   await page.locator("#modelLibrarySearch").fill("building-type-a");
   const modelCard = page.locator("#modelLibraryGrid .model-card").filter({ hasText: "Building type a" }).first();
