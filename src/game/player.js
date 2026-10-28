@@ -101,15 +101,23 @@ export function createPlayerController({ camera, colliders, interactables, state
     const bobAmplitude = isRunning ? 0.017 : 0.010;
     const bob = Math.sin(walkTime * 1.65) * bobAmplitude * walkBlend;
     const sway = Math.sin(walkTime * 0.5) * 0.0035 * walkBlend;
-    const targetX = player.x + Math.cos(player.yaw) * sway;
-    const targetY = player.elevation + 1.68 + player.jumpHeight + breathing + bob;
-    const targetZ = player.z - Math.sin(player.yaw) * sway;
+    const thirdPerson = cameraMode === "third";
+    const cameraDistance = state.vehicleMode ? 6.5 : 4.2;
+    const targetX = thirdPerson ? player.x + Math.sin(player.yaw) * cameraDistance : player.x + Math.cos(player.yaw) * sway;
+    const targetY = player.elevation + (thirdPerson ? (state.vehicleType === "flying" ? 3.8 : 2.8) : 1.68 + player.jumpHeight + breathing + bob);
+    const targetZ = thirdPerson ? player.z + Math.cos(player.yaw) * cameraDistance : player.z - Math.sin(player.yaw) * sway;
     cameraX += (targetX - cameraX) * blend;
     cameraY += (targetY - cameraY) * blend;
     cameraZ += (targetZ - cameraZ) * blend;
     camera.position.set(cameraX, cameraY, cameraZ);
 
     camera.rotation.order = "YXZ";
+    if (thirdPerson) {
+      camera.lookAt(player.x, player.elevation + (state.vehicleMode ? 0.8 : 1.2), player.z);
+      cameraYaw = camera.rotation.y;
+      cameraPitch = camera.rotation.x;
+      return;
+    }
     let yawDelta = player.yaw - cameraYaw;
     yawDelta = Math.atan2(Math.sin(yawDelta), Math.cos(yawDelta));
     cameraYaw += yawDelta;
@@ -149,8 +157,14 @@ export function createPlayerController({ camera, colliders, interactables, state
         ? Math.hypot(player.x - previousX, player.z - previousZ) / deltaTime
         : 0;
 
+      if (state.vehicleMode) {
+        if (state.vehicleType === "car") player.elevation = 0;
+        else if (state.vehicleType === "hover") player.elevation += (2.3 - player.elevation) * (1 - Math.exp(-deltaTime * 2.8));
+        if (keysDown.ControlLeft || keysDown.ControlRight) player.elevation = Math.max(0.5, player.elevation - 7 * deltaTime);
+      }
+
       // Lightweight vertical physics for a short, responsive jump. The floor stays authoritative.
-      if (player.jumpHeight > 0 || jumpVelocity > 0) {
+      if (!state.vehicleMode && (player.jumpHeight > 0 || jumpVelocity > 0)) {
         jumpVelocity -= GRAVITY * deltaTime;
         player.jumpHeight += jumpVelocity * deltaTime;
         if (player.jumpHeight <= 0) {
@@ -165,13 +179,27 @@ export function createPlayerController({ camera, colliders, interactables, state
   }
 
   function jump() {
-    if (!state.started || state.paused || player.jumpHeight > 0 || jumpVelocity > 0) return false;
+    if (!state.started || state.paused) return false;
+    if (state.vehicleMode) {
+      if (state.vehicleType === "flying") { player.elevation = Math.min(16, player.elevation + 2.5); return true; }
+      if (state.vehicleType === "hover") { player.elevation = Math.min(4.5, player.elevation + 1.2); return true; }
+      return false;
+    }
+    if (player.jumpHeight > 0 || jumpVelocity > 0) return false;
     jumpVelocity = JUMP_SPEED;
     return true;
   }
 
+  function toggleCameraMode() {
+    cameraMode = cameraMode === "first" ? "third" : "first";
+    state.cameraMode = cameraMode;
+    syncCamera(1 / 60);
+    return cameraMode;
+  }
+
   return {
-    player, keysDown, doInteract, update, syncCamera, jump,
+    player, keysDown, doInteract, update, syncCamera, jump, toggleCameraMode,
+    get cameraMode() { return cameraMode; },
     get isGrounded() { return player.jumpHeight === 0 && jumpVelocity <= 0; },
     get navigationHeight() { return player.elevation; }
   };
