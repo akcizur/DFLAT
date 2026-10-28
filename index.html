@@ -5,7 +5,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#080502" />
-  <title>DFLAT — Empty Map</title>
+  <title>DFLAT — Open Model World</title>
   <link rel="stylesheet" href="./styles.css?v=15" />
   <link rel="stylesheet" href="./styles-cinematic.css?v=15" />
   <script type="importmap">
@@ -21,18 +21,18 @@
   <div id="game"></div>
   <div class="hud" id="hud" aria-hidden="true">
     <div class="topline">
-      <div class="brand">THE FLAT<span>PRÁZDNÁ MAPA</span></div>
+      <div class="brand">THE FLAT<span>OPEN MODEL WORLD</span></div>
       <div class="status" id="clock">21:07<br>ÚTERÝ</div>
     </div>
     <div class="objective"><b>ÚKOL</b>
-      <div id="objectiveText">Volná prázdná mapa.</div>
-      <div id="inventoryText" style="margin-top:7px">LOKACE: PRÁZDNÁ MAPA</div>
+      <div id="objectiveText">Prozkoumej otevřenou čtvrť.</div>
+      <div id="inventoryText" style="margin-top:7px">KNIHOVNA: 1 883 CC0 MODELŮ</div>
     </div>
     <div class="crosshair"></div>
     <div class="interaction" id="interaction"><b>E</b> — interagovat</div>
     <div class="bottomline">
-      <div class="hint">WASD / POHYB&nbsp; · &nbsp;SHIFT / BĚH&nbsp; · &nbsp;SPACE / SKOK&nbsp; · &nbsp;MYŠ / ROZHLÉDNUTÍ&nbsp; · &nbsp;ESC / PAUZA</div>
-      <div class="right">PRÁZDNÁ MAPA<br>VERZE 0.1 — HRAJ PO SVÉM.</div>
+      <div class="hint">WASD / POHYB&nbsp; · &nbsp;SHIFT / BĚH&nbsp; · &nbsp;SPACE / SKOK&nbsp; · &nbsp;MYŠ / POHLED&nbsp; · &nbsp;M / MODELY&nbsp; · &nbsp;ESC / PAUZA</div>
+      <div class="right">OPEN MODEL WORLD<br>1 883 CC0 MODELS — FREE ROAM.</div>
     </div>
   </div>
   <div class="toast" id="toast"></div>
@@ -43,6 +43,7 @@
   <button class="touch-action" id="touchAction" aria-label="Stav mapy">MAPA</button>
   <button class="pause-button" id="pauseButton" aria-label="Pauza" title="Pauza">Ⅱ</button>
   <button class="fullscreen-button" id="fullscreenButton" aria-label="Celá obrazovka" title="Celá obrazovka">⛶</button>
+  <button class="model-library-toggle" id="modelLibraryButton" type="button" aria-controls="modelLibraryScreen" aria-expanded="false"><span>MODELY</span><small>1 883 CC0</small></button>
 
   <div class="boot-screen" id="bootScreen" aria-label="BIOS boot intro">
     <div class="bios">
@@ -59,7 +60,7 @@
       <div class="loading-mark" aria-hidden="true">DF<span>_</span></div>
       <div class="loading-kicker">DFLAT SYSTEM / WORLD BOOT</div>
       <h2 id="loadingTitle">PŘIPRAVUJI SVĚT</h2>
-      <p id="loadingDetail">Inicializuji prázdnou mapu.</p>
+      <p id="loadingDetail">Připravuji otevřený svět a CC0 modely.</p>
       <div class="loading-progress" id="loadingProgress" role="progressbar" aria-label="Průběh načítání" aria-valuemin="0" aria-valuemax="100" aria-valuenow="8">
         <span id="loadingProgressBar" style="width:8%"></span>
       </div>
@@ -74,7 +75,7 @@
         <section class="nexus-glass">
           <header class="nexus-topbar">
             <span class="nexus-brand"><i aria-hidden="true"></i> DFLAT / TERMINAL 04</span>
-            <span class="nexus-status"><span><i class="nexus-led"></i>ONLINE</span><span>EMPTY MAP</span></span>
+            <span class="nexus-status"><span><i class="nexus-led"></i>ONLINE</span><span>OPEN MODEL WORLD</span></span>
           </header>
           <div class="nexus-content">
             <div class="nexus-art" aria-hidden="true">
@@ -97,9 +98,10 @@
             <nav class="nexus-menu" aria-label="Hlavní menu">
               <div class="nexus-eyebrow">SYSTEM MENU / 01</div>
               <h1>DFLAT<span>_</span></h1>
-              <p class="nexus-subtitle">PRÁZDNÁ MAPA</p>
+              <p class="nexus-subtitle">OTEVŘENÝ LOW-POLY SVĚT</p>
               <button type="button" class="cmd nexus-command" id="startButton" disabled aria-disabled="true"><span class="nexus-chevron">&gt;</span><span>START GAME</span><span class="nexus-enter">WAIT…</span></button>
-              <div class="nexus-menu-note">EMPTY MAP / FREE ROAM</div>
+              <button type="button" class="cmd nexus-command nexus-command-secondary" id="modelLibraryMenuButton" aria-controls="modelLibraryScreen"><span class="nexus-chevron">+</span><span>MODEL LIBRARY</span><span class="nexus-enter">1,883 CC0</span></button>
+              <div class="nexus-menu-note">CC0 MODEL LIBRARY / FREE ROAM</div>
               <div class="nexus-controls"><span>WASD <b>MOVE</b></span><span>SHIFT <b>RUN</b></span><span>SPACE <b>JUMP</b></span><span>MOUSE <b>LOOK</b></span><span>ESC <b>PAUSE</b></span><span>PAD <b>LEFT STICK / MOVE</b></span><span>PAD <b>RIGHT STICK / LOOK</b></span><span>B <b>PAUSE</b></span></div>
             </nav>
           </div>
@@ -122,6 +124,38 @@
       <div class="dim">ESC / ENTER TO CONTINUE</div>
     </div>
   </div>
+
+
+  <section class="model-library" id="modelLibraryScreen" hidden aria-hidden="true" aria-label="Open source model library">
+    <header class="model-library-header">
+      <div>
+        <p class="model-library-kicker">DFLAT ASSET SYSTEM / CC0-1.0</p>
+        <h2>MODEL LIBRARY <span>1,883 OPEN MODELS</span></h2>
+        <p class="model-library-intro">Search the Kenney GLB catalog. Models are loaded only when selected.</p>
+      </div>
+      <button type="button" class="model-library-close" id="modelLibraryClose" aria-label="Close model library">×</button>
+    </header>
+    <div class="model-library-toolbar">
+      <label class="model-library-field" for="modelLibrarySearch">HLEDAT MODELY
+        <input id="modelLibrarySearch" type="search" placeholder="Např. tree, building, car, chair…" autocomplete="off" spellcheck="false">
+      </label>
+      <label class="model-library-field" for="modelLibraryPack">KOLEKCE
+        <select id="modelLibraryPack"><option value="">Všechny kolekce</option></select>
+      </label>
+      <div class="model-library-status" id="modelLibraryStatus" role="status" aria-live="polite">Připravuji katalog…</div>
+    </div>
+    <div class="model-library-grid" id="modelLibraryGrid" role="list" aria-label="CC0 models"></div>
+    <button type="button" class="model-library-more" id="modelLibraryMore" hidden>NAČÍST DALŠÍ</button>
+    <footer class="model-library-footer">
+      <div class="model-library-selected">
+        <span>VYBRANÝ MODEL</span>
+        <strong id="modelLibrarySelectedTitle">Žádný vybraný model</strong>
+        <small id="modelLibrarySelectedMeta">Vyber model z katalogu.</small>
+      </div>
+      <button type="button" class="model-library-place" id="modelLibraryPlace" disabled>VLOŽIT DO SVĚTA</button>
+    </footer>
+    <p class="model-library-attribution">Models by Kenney · CC0 1.0 · attribution appreciated, not required · <a href="https://kenney.nl/" target="_blank" rel="noreferrer">kenney.nl</a></p>
+  </section>
 
   <script src="./src/boot-debug.js?v=1"></script>
   <script type="module" src="./src/main.js?v=15"></script>
