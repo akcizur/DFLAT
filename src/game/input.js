@@ -110,12 +110,23 @@ export function bindInput({ renderer, state, controller, ui }) {
       return;
     }
     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.code)) event.preventDefault();
+    const modelLibrary = document.getElementById("modelLibraryScreen");
+    if (event.code === "Escape" && modelLibrary && !modelLibrary.hidden) {
+      event.preventDefault();
+      document.getElementById("modelLibraryClose")?.click();
+      return;
+    }
     if (event.code === "Escape" && state.started && !state.finished) {
       if (document.fullscreenElement) { document.exitFullscreen(); return; }
       togglePause(); return;
     }
     if (event.code === "Enter" && ui.isStartVisible()) { event.preventDefault(); startGame(); return; }
     if (event.code === "Enter" && state.paused) { event.preventDefault(); resumeGame(); return; }
+    if (event.code === "KeyM" && !event.repeat) {
+      event.preventDefault();
+      document.getElementById("modelLibraryButton")?.click();
+      return;
+    }
     setKey(event.code, true);
     if (event.code === "KeyE" && !event.repeat && state.started && !state.paused) doInteract();
   }
