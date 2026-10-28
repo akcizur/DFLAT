@@ -102,6 +102,23 @@ try {
   });
 
   if (!visual.ok && visual.distinctColorBuckets < 2) throw new Error("3D frame appears blank: " + JSON.stringify({ visual, pageErrors, consoleErrors }));
+
+  // Exercise the catalog end-to-end: query all CC0 entries, find a model shipped locally,
+  // and place it into the live world. This catches missing controls, catalog/CORS errors,
+  // bad manifests and failures in the GLB loading path.
+  await page.locator("#modelLibraryButton").click();
+  await page.locator("#modelLibraryScreen").waitFor({ state: "visible", timeout: 5000 });
+  await page.waitForFunction(() => {
+    const count = document.querySelector("#modelLibraryCount")?.textContent || "";
+    return Number(count.replace(/[^0-9]/g, "")) >= 1883;
+  }, null, { timeout: 20000 });
+  await page.locator("#modelLibrarySearch").fill("building-type-a");
+  const modelCard = page.locator("#modelLibraryGrid .model-card").filter({ hasText: "Building type a" }).first();
+  await modelCard.waitFor({ state: "visible", timeout: 10000 });
+  await modelCard.click();
+  await page.locator("#modelLibraryPlace").click();
+  await page.locator("#modelLibraryScreen").waitFor({ state: "hidden", timeout: 10000 });
+
   if (pageErrors.length) throw new Error("Browser runtime errors: " + pageErrors.join(" | "));
   const shaderErrors = consoleErrors.filter(message => /shader error|program linking failed|webgl.*context|failed to compile/i.test(message));
   if (shaderErrors.length) throw new Error("WebGL/shader errors: " + shaderErrors.join(" | "));

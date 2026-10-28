@@ -95,6 +95,16 @@ export function bindInput({ renderer, state, controller, ui }) {
   });
 
   function onKeyDown(event) {
+    const modelLibrary = document.getElementById("modelLibraryScreen");
+    if (event.code === "Escape" && modelLibrary && !modelLibrary.hidden) {
+      event.preventDefault();
+      document.getElementById("modelLibraryClose")?.click();
+      return;
+    }
+    const target = event.target;
+    if (target instanceof Element &&
+      (target.matches("input, textarea, select") || target.isContentEditable)) return;
+
     if (event.code === "Space") {
       event.preventDefault();
       if (!event.repeat && state.started && !state.paused) controller.jump?.();
@@ -116,6 +126,11 @@ export function bindInput({ renderer, state, controller, ui }) {
     }
     if (event.code === "Enter" && ui.isStartVisible()) { event.preventDefault(); startGame(); return; }
     if (event.code === "Enter" && state.paused) { event.preventDefault(); resumeGame(); return; }
+    if (event.code === "KeyM" && !event.repeat) {
+      event.preventDefault();
+      document.getElementById("modelLibraryButton")?.click();
+      return;
+    }
     setKey(event.code, true);
     if (event.code === "KeyE" && !event.repeat && state.started && !state.paused) doInteract();
   }

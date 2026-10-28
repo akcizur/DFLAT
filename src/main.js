@@ -1,5 +1,6 @@
 import * as THREE from "three";
-import { createEmptyWorld } from "./game/empty-world.js";
+import { createOpenWorld } from "./game/open-world.js";
+import { createModelLibrary } from "./game/model-library.js";
 import { createPlayerController } from "./game/player.js";
 import { createUI } from "./game/ui.js";
 import { bindInput } from "./game/input.js";
@@ -9,6 +10,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x858b8e);
 const loadingScreen = document.getElementById("loadingScreen");
 let firstSceneFrame = false;
+let worldReady = false;
 let startupComplete = false;
 let highestLoadingProgress = 8;
 
@@ -30,7 +32,7 @@ function setLoadingProgress(value, title, detail, phase = title) {
 }
 
 function finishStartupWhenReady() {
-  if (startupComplete || !firstSceneFrame) return;
+  if (startupComplete || !firstSceneFrame || !worldReady) return;
   startupComplete = true;
   state.ready = true;
   const startButton = document.getElementById("startButton");
@@ -40,7 +42,7 @@ function finishStartupWhenReady() {
     const enterLabel = startButton.querySelector(".nexus-enter");
     if (enterLabel) enterLabel.textContent = "ENTER ↵";
   }
-  setLoadingProgress(100, "PRÁZDNÁ MAPA JE PŘIPRAVENA", "Žádné budovy. Jen volný prostor.", "READY");
+  setLoadingProgress(100, "SVĚT JE PŘIPRAVEN", "Otevřená čtvrť a knihovna CC0 modelů jsou připraveny.", "READY");
   if (!loadingScreen) return;
   window.setTimeout(() => {
     loadingScreen.classList.add("loading-exit");
@@ -79,7 +81,7 @@ renderer.shadowMap.autoUpdate = true;
 renderer.domElement.id = "screenCanvas";
 renderer.domElement.tabIndex = 0;
 mount.appendChild(renderer.domElement);
-setLoadingProgress(34, "VYKRESLOVAČ PŘIPRAVEN", "Připravuji prázdnou mapu.", "RENDERER");
+setLoadingProgress(34, "VYKRESLOVAČ PŘIPRAVEN", "Připravuji otevřený svět.", "RENDERER");
 
 function resize() {
   const displayWidth = Math.max(1, innerWidth);
@@ -98,17 +100,36 @@ resize();
 
 const state = {
   hasKeys: false, doorOpen: false, finished: false, started: false,
-  paused: false, balconyDoorOpen: false, emptyMap: true, mainBuildingScene: false,
-  currentFloor: 0, ready: false
+  paused: false, balconyDoorOpen: false, emptyMap: false, openWorld: true,
+  mainBuildingScene: false, currentFloor: 0, ready: false
 };
 const ui = createUI();
-const world = createEmptyWorld({ THREE, scene });
-setLoadingProgress(59, "PŘIPRAVUJI PRÁZDNOU MAPU", "Bez budov a architektonických objektů.", "EMPTY WORLD");
+setLoadingProgress(45, "SKLÁDÁM OTEVŘENÝ SVĚT", "Připravuji silnice, budovy, vozidla a vegetaci.", "CC0 WORLD");
+const world = createOpenWorld({
+  THREE,
+  scene,
+  onProgress: (completed, total, modelId) => {
+    const percent = 46 + Math.round(38 * completed / Math.max(1, total));
+    setLoadingProgress(percent, "NAČÍTÁM CC0 MODELY", completed + "/" + total + " · " + modelId, "CC0 ASSETS");
+  }
+});
 const controller = createPlayerController({
   camera, colliders: world.colliders, interactables: world.interactables,
   navigation: world.navigation, state, ui
 });
-state.changeFloor = () => ui.showToast("Prázdná mapa: nejsou zde žádná podlaží.");
+createModelLibrary({ THREE, scene, camera, state, ui, world });
+state.changeFloor = () => ui.showToast("Otevřený svět: nejsou zde samostatná podlaží.");
+
+world.ready.then(result => {
+  worldReady = true;
+  setLoadingProgress(87, "MODELY PŘIPRAVENY", result.loaded + " / " + result.total + " modelových typů zpracováno.", "CC0 ASSETS");
+  finishStartupWhenReady();
+}).catch(error => {
+  console.error("Open world initialization failed:", error);
+  worldReady = true;
+  setLoadingProgress(87, "SVĚT PŘIPRAVEN S OMEZENÍM", "Některé modely nejsou dostupné; pohyb zůstává funkční.", "PARTIAL");
+  finishStartupWhenReady();
+});
 if (new URLSearchParams(location.search).get("smoke") === "1") {
   Object.defineProperty(window, "__DFLAT_SMOKE__", {
     configurable: true,
@@ -120,7 +141,7 @@ if (new URLSearchParams(location.search).get("smoke") === "1") {
   });
 }
 bindInput({ renderer, state, controller, ui });
-setLoadingProgress(84, "KONTROLUJI SCÉNU", "Připravuji první snímek.", "VALIDATION");
+setLoadingProgress(46, "KONTROLUJI SCÉNU", "Připravuji první snímek.", "VALIDATION");
 
 const clockStart = performance.now();
 const simulationStepMs = 1000 / 60;
@@ -157,7 +178,7 @@ function animate(now) {
     renderer.render(scene, camera);
     if (!firstSceneFrame) {
       firstSceneFrame = true;
-      setLoadingProgress(92, "PRVNÍ SNÍMEK HOTOV", "Dokončuji poslední kontroly.", "FIRST FRAME");
+      setLoadingProgress(worldReady ? 92 : Math.min(84, highestLoadingProgress), "PRVNÍ SNÍMEK HOTOV", worldReady ? "Dokončuji poslední kontroly." : "Čekám na dokončení načítání CC0 modelů.", worldReady ? "FIRST FRAME" : "CC0 ASSETS");
       finishStartupWhenReady();
     }
     nextSceneRenderAt = now + sceneRenderIntervalMs;

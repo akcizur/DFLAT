@@ -16,6 +16,11 @@ export function createUI() {
   }
 
   function updateObjective(state) {
+    if (state.openWorld) {
+      objectiveText.textContent = "Prozkoumej otevřenou čtvrť a její okolí.";
+      inventoryText.textContent = "KNIHOVNA: 1 883 CC0 MODELŮ";
+      return;
+    }
     if (state.emptyMap) {
       objectiveText.textContent = "Prázdná mapa. Prozkoumej otevřený prostor.";
       inventoryText.textContent = "SVĚT: BEZ BUDOV";

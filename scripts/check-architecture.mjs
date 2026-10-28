@@ -7,12 +7,13 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const required = [
   "package.json", "vite.config.js", "index.html", "vendor/three.module.min.js",
   "vendor/THREE-LICENSE.txt", "styles.css", "styles-cinematic.css",
-  "src/main.js", "src/boot-debug.js", "src/game/empty-world.js",
-  "src/game/player.js", "src/game/ui.js", "src/game/input.js"
+  "src/main.js", "src/boot-debug.js", "src/game/open-world.js",
+  "src/game/model-library.js", "src/game/player.js", "src/game/ui.js", "src/game/input.js",
+  "scripts/prepare-open-models.mjs", "scripts/smoke-browser.mjs", "assets/OPEN_SOURCE_MODELS.md"
 ];
 
 function fail(message) {
-  console.error("Empty-map check failed: " + message);
+  console.error("Project check failed: " + message);
   process.exitCode = 1;
 }
 
@@ -27,9 +28,14 @@ if (!/src="\.\/src\/main\.js\?v=\d+"/.test(html)) fail("index.html must load src
 if (!html.includes('type="importmap"') || !html.includes('"three": "./vendor/three.module.min.js"')) fail("local Three.js import map is missing");
 if (/<style(?:\s|>)/i.test(html)) fail("inline CSS remains in index.html");
 if (/<script\b(?![^>]*\bsrc=)(?![^>]*\btype=["']importmap["'])[^>]*>/i.test(html)) fail("inline JavaScript remains in index.html");
+for (const id of ["modelLibraryScreen", "modelLibraryButton", "modelLibraryMenuButton", "modelLibrarySearch", "modelLibraryPack", "modelLibraryCount", "modelLibraryGrid", "modelLibraryPlace"]) {
+  if (!html.includes('id="' + id + '"')) fail("model-library UI element is missing: " + id);
+}
 
 const packageJson = JSON.parse(await readFile(path.join(root, "package.json"), "utf8"));
-if (packageJson.scripts?.build !== "vite build") fail("Vite production build script is missing");
+if (!String(packageJson.scripts?.build || "").includes("vite build")) fail("Vite production build script is missing");
+if (!String(packageJson.scripts?.dev || "").includes("prepare-open-models.mjs")) fail("dev must prepare pinned open models before Vite starts");
+if (!String(packageJson.scripts?.build || "").includes("prepare-open-models.mjs")) fail("build must prepare pinned open models before Vite build");
 if (packageJson.dependencies?.three !== "0.169.0") fail("Three.js version changed unexpectedly");
 if (packageJson.devDependencies?.vite !== "6.4.5") fail("Vite version changed unexpectedly");
 
@@ -37,25 +43,35 @@ const mainSource = await readFile(path.join(root, "src/main.js"), "utf8");
 if (!html.includes('id="loadingScreen"') || !html.includes('id="loadingProgressBar"')) fail("loading progress UI is missing");
 if (!html.includes('id="startButton" disabled aria-disabled="true"')) fail("start button must wait for world initialization");
 if (!mainSource.includes("function finishStartupWhenReady()") || !mainSource.includes("state.ready = true")) fail("startup readiness flow is missing");
-if (!mainSource.includes("firstSceneFrame")) fail("first rendered frame must gate start");
+if (!mainSource.includes("firstSceneFrame") || !mainSource.includes("worldReady")) fail("start must wait for the first frame and the open-world assets");
 const inputSource = await readFile(path.join(root, "src/game/input.js"), "utf8");
 if (!inputSource.includes("if (state.started || !state.ready) return;")) fail("start must be blocked until the scene is ready");
+if (!inputSource.includes('event.code === "KeyM"')) fail("M must open the in-game model browser");
+if (!inputSource.includes('document.getElementById("modelLibraryClose")')) fail("Escape must close the model browser");
 if (/from\s+["']https?:\/\//i.test(mainSource)) fail("runtime must not import modules from a CDN");
-if (!mainSource.includes("createEmptyWorld({ THREE, scene })")) fail("empty world generator must be loaded");
-if (!mainSource.includes("emptyMap: true")) fail("state must identify the empty map");
+if (!mainSource.includes("createOpenWorld({")) fail("open-world generator must be loaded");
+if (!mainSource.includes("openWorld: true")) fail("state must identify the modelled open world");
+if (!mainSource.includes("createModelLibrary({")) fail("the searchable model library must be initialized");
 if (!mainSource.includes("renderer.render(scene, camera)")) fail("the scene must render directly");
 if (!mainSource.includes("preserveDrawingBuffer: true")) fail("frame buffer must remain available for smoke checks");
 if (!mainSource.includes('imageRendering: "pixelated"')) fail("low-res pixel rendering must remain enabled");
 if (mainSource.includes("createPixelPostProcess") || mainSource.includes("postFx.")) fail("post-processing must remain removed");
 if (mainSource.includes("style.filter =")) fail("CSS canvas filters must remain removed");
 
-const worldSource = await readFile(path.join(root, "src/game/empty-world.js"), "utf8");
-if (!worldSource.includes("Empty world ground")) fail("empty-map ground is missing");
-if (worldSource.includes("Fasáda") || worldSource.includes("Schodiště") || worldSource.includes("Výtah")) fail("building geometry or interactions remain in the world generator");
+const worldSource = await readFile(path.join(root, "src/game/open-world.js"), "utf8");
+if (!worldSource.includes("CC0 neighbourhood ground")) fail("world ground is missing");
+if (!worldSource.includes("WORLD_LAYOUT")) fail("the curated asset-backed world layout is missing");
+if (!worldSource.includes('fetch(APP_BASE + "models/manifest.json")')) fail("the local asset manifest must load at runtime");
+const librarySource = await readFile(path.join(root, "src/game/model-library.js"), "utf8");
+if (!librarySource.includes('fetch(SOURCE_ROOT + "/catalog.json")')) fail("the searchable upstream catalog is missing");
+if (!librarySource.includes("PAGE_SIZE = 48")) fail("the asset browser must paginate its model cards");
+const downloadSource = await readFile(path.join(root, "scripts/prepare-open-models.mjs"), "utf8");
+if (!downloadSource.includes('model.license !== "CC0-1.0"')) fail("the downloader must validate the CC0 license");
+if (!downloadSource.includes("model.size")) fail("the downloader must validate the source model size");
 const playerSource = await readFile(path.join(root, "src/game/player.js"), "utf8");
 if (!playerSource.includes("function tryMoveTo(x, z)")) fail("free movement handler is missing");
 
-for (const relativePath of required.filter(file => file.endsWith(".js"))) {
+for (const relativePath of required.filter(file => file.endsWith(".js") || file.endsWith(".mjs"))) {
   const fullPath = path.join(root, relativePath);
   const check = spawnSync(process.execPath, ["--check", fullPath], { encoding: "utf8" });
   if (check.status !== 0) fail("JavaScript syntax error in " + relativePath + ": " + (check.stderr || check.stdout).trim());
@@ -66,4 +82,4 @@ for (const relativePath of required.filter(file => file.endsWith(".js"))) {
   }
 }
 
-if (!process.exitCode) console.log("Architecture check passed: empty world, required entry points, local imports and JavaScript syntax are valid.");
+if (!process.exitCode) console.log("Project architecture check passed: local entry points, CC0 asset pipeline, open-world generator, model browser and JavaScript syntax are valid.");
