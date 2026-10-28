@@ -133,7 +133,7 @@ export function createEmptyWorld({ THREE, scene }) {
 
   // Ground extends beyond the apartment for a simple, neutral void backdrop.
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), materials.ground);
-  ground.name = "Apartment / exterior ground";
+  ground.name = "Empty world ground / exterior";
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = -0.18;
   ground.frustumCulled = false;
