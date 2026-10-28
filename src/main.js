@@ -4,6 +4,7 @@ import { createModelLibrary } from "./game/model-library.js";
 import { createPlayerController } from "./game/player.js";
 import { createUI } from "./game/ui.js";
 import { bindInput } from "./game/input.js";
+import { createCyberpunkExpansion } from "./game/cyberpunk-expansion.js";
 
 const mount = document.getElementById("game");
 const scene = new THREE.Scene();
@@ -101,7 +102,8 @@ resize();
 const state = {
   hasKeys: false, doorOpen: false, finished: false, started: false,
   paused: false, balconyDoorOpen: false, emptyMap: false, openWorld: true,
-  mainBuildingScene: false, currentFloor: 0, ready: false
+  mainBuildingScene: false, currentFloor: 0, ready: false,
+  vehicleMode: false, vehicleType: null, activeVehicleId: null, cameraMode: "first", heldObject: null
 };
 const ui = createUI();
 setLoadingProgress(45, "SKLÁDÁM OTEVŘENÝ SVĚT", "Připravuji silnice, budovy, vozidla a vegetaci.", "CC0 WORLD");
@@ -113,6 +115,7 @@ const world = createOpenWorld({
     setLoadingProgress(percent, "NAČÍTÁM CC0 MODELY", completed + "/" + total + " · " + modelId, "CC0 ASSETS");
   }
 });
+const cyberpunk = createCyberpunkExpansion({ THREE, scene, world, state, ui });
 const controller = createPlayerController({
   camera, colliders: world.colliders, interactables: world.interactables,
   navigation: world.navigation, state, ui
@@ -136,7 +139,7 @@ if (new URLSearchParams(location.search).get("smoke") === "1") {
     value: {
       playerPosition: () => ({ x: controller.player.x, z: controller.player.z }),
       keysDown: () => ({ ...controller.keysDown }),
-      gameState: () => ({ started: state.started, paused: state.paused })
+      gameState: () => ({ started: state.started, paused: state.paused, cameraMode: controller.cameraMode, vehicleMode: state.vehicleMode })
     }
   });
 }
@@ -153,6 +156,7 @@ let nextSceneRenderAt = 0;
 
 function updateSimulation(deltaSeconds, nowMs) {
   const nearest = controller.update(deltaSeconds);
+  cyberpunk.update(deltaSeconds, controller.player);
   ui.setInteraction(nearest, state);
   ui.tick(nowMs, clockStart);
 }
