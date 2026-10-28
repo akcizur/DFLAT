@@ -1,8 +1,16 @@
-# DFLAT | Empty Map
+# DFLAT | Open Model World
 
-A first-person low-poly free-roam prototype built with Three.js, Vite and Bun.
+A first-person low-poly neighbourhood built with Three.js, Vite and Bun. The game keeps the existing keyboard, mouse-look, jumping, touch and gamepad controls while using open model assets instead of the former empty map.
 
-The active gameplay scene is an open, empty map: a flat ground plane and an open background. The active scene generator contains no building geometry, apartment interiors, stairs, elevators, roads, architectural props, imported environment models or city-backdrop objects. First-person movement, jumping and camera controls remain enabled.
+## Open model library
+
+- Search and browse **1,883 CC0 1.0 Kenney models** from 19 packs in the in-game model browser.
+- The starting neighbourhood uses a curated set of **32 pinned GLB assets**, downloaded locally by the setup script and reused for the initial scene.
+- Additional catalog models are loaded only when selected. The entire library is not downloaded or rendered at startup.
+- Press `M` or select **MODEL LIBRARY** from the menu to browse. Choose a model and insert it into the world in front of the player.
+- See [assets/OPEN_SOURCE_MODELS.md](assets/OPEN_SOURCE_MODELS.md) for sources, license details and the pinned upstream commit.
+
+The model catalog and non-bundled models require an internet connection. The selected neighbourhood assets are downloaded before Vite starts or builds the app.
 
 ## Run locally
 
@@ -27,10 +35,12 @@ bun run preview
 - `Shift`: run
 - `Space`: jump
 - Mouse: look around
-- `Esc`: pause or resume
+- `E`: interact
+- `M`: open or close the model library
+- `Esc`: pause / close the model library
 - Touch screens: on-screen movement and look controls
 - Gamepad: left stick to move, right stick to look
 
 ## GitHub Pages
 
-The deployment workflow builds the static site into `dist/`. Set the Pages source to **GitHub Actions** in repository settings.
+The deployment workflow prepares the pinned CC0 assets, runs syntax/architecture/tests, builds the static site into `dist/` and publishes it through GitHub Pages. Set the Pages source to **GitHub Actions** in repository settings.
