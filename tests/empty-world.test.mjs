@@ -20,7 +20,7 @@ test("all building colliders are finite, positive and placed outside the spawn a
     assert.equal(item.collider.length, 2);
     assert.ok(item.collider.every(value => Number.isFinite(value) && value > 0));
     assert.ok(Number.isFinite(item.x) && Number.isFinite(item.z));
-    assert.ok(Math.abs(item.x) >= 8, "building must not block the central spawn corridor");
+    assert.ok(Math.hypot(item.x, item.z - 9.2) > 12, "building must not block the central spawn corridor");
   }
 });
 
