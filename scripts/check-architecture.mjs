@@ -9,7 +9,7 @@ const required = [
   "vendor/THREE-LICENSE.txt", "styles.css", "styles-cinematic.css",
   "src/main.js", "src/boot-debug.js", "src/game/open-world.js",
   "src/game/model-library.js", "src/game/player.js", "src/game/ui.js", "src/game/input.js",
-  "scripts/prepare-open-models.mjs", "assets/OPEN_SOURCE_MODELS.md"
+  "scripts/prepare-open-models.mjs", "scripts/smoke-browser.mjs", "assets/OPEN_SOURCE_MODELS.md"
 ];
 
 function fail(message) {
