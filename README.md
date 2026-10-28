@@ -1,6 +1,6 @@
-# DFLAT | Open Model World
+# DFLAT | Cyberpunk Vertical City
 
-A first-person low-poly neighbourhood built with Three.js, Vite and Bun. The game keeps the existing keyboard, mouse-look, jumping, touch and gamepad controls while using open model assets instead of the former empty map.
+A low-poly cyberpunk vertical city built additively on the existing Three.js, Vite and Bun game. The original CC0 model browser, keyboard, mouse-look, jump, touch and gamepad controls remain in place. The expansion adds neon towers, elevated skyways, smooth level lifts, object pickup/drop, switchable first/third-person cameras, street cars, hover cars and flying cars with arcade handling.
 
 ## Open model library
 
@@ -35,12 +35,16 @@ bun run preview
 - `Shift`: run
 - `Space`: jump
 - Mouse: look around
-- `E`: interact
+- `E`: interact, pick up/drop props, enter/exit vehicles, use vertical lifts
+- `V`: switch first-person / third-person camera
+- `Space`: jump on foot; gain altitude in a flying car
+- `Ctrl`: descend while flying
+- `W A S D`: arcade vehicle steering while in a vehicle
 - `M`: open or close the model library
 - `Esc`: pause / close the model library
 - Touch screens: on-screen movement and look controls
 - Gamepad: left stick to move, right stick to look
 
-## GitHub Pages
+## Cyberpunk expansion\n\nThe additive module `src/game/cyberpunk-expansion.js` generates a vertical district from lightweight procedural geometry. The city uses four level anchors (0, 5.5, 11 and 17 metres), emissive cyan/magenta accents and arcade lifts. Existing model-library assets and the original neighbourhood generator are not replaced. The `feature/cyberpunk-vertical-city` branch is intended for review and CI validation before merging.\n\n## GitHub Pages
 
 The deployment workflow prepares the pinned CC0 assets, runs syntax/architecture/tests, builds the static site into `dist/` and publishes it through GitHub Pages. Set the Pages source to **GitHub Actions** in repository settings.
