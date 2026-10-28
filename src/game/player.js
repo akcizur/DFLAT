@@ -43,7 +43,7 @@ export function createPlayerController({ camera, colliders, interactables, state
     if (!canMove(x, z)) return false;
     player.x = x;
     player.z = z;
-    if (!state.vehicleMode) player.elevation = 0;
+    if (!state.vehicleMode && !state.verticalTraversal) player.elevation = 0;
     return true;
   }
 
@@ -135,8 +135,14 @@ export function createPlayerController({ camera, colliders, interactables, state
       state.vehicleEntryPosition = null;
       cameraMode = "third";
       state.cameraMode = "third";
+      state.verticalTraversal = false;
+      state.elevationTarget = null;
     }
-    if (!state.vehicleMode) player.elevation = 0;
+    if (!state.vehicleMode && !state.verticalTraversal) player.elevation = 0;
+    if (state.verticalTraversal && Number.isFinite(state.elevationTarget)) {
+      player.elevation += (state.elevationTarget - player.elevation) * (1 - Math.exp(-deltaTime * 2.4));
+      if (Math.abs(state.elevationTarget - player.elevation) < 0.025) player.elevation = state.elevationTarget;
+    }
     const previousX = player.x;
     const previousZ = player.z;
     forwardIntent = 0;
