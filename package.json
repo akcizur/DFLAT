@@ -2,10 +2,10 @@
   "name": "the-flat-dflat",
   "private": true,
   "type": "module",
-  "description": "Static Three.js first-person empty-map exploration game",
+  "description": "First-person low-poly neighbourhood with a searchable CC0 3D model library",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "node scripts/prepare-open-models.mjs && vite",
+    "build": "node scripts/prepare-open-models.mjs && vite build",
     "preview": "vite preview",
     "check": "node scripts/check-architecture.mjs",
     "check:syntax": "node --check src/main.js && node --check src/game/empty-world.js && node --check src/game/player.js && node --check src/game/ui.js && node --check src/game/input.js && node --check scripts/check-architecture.mjs",
