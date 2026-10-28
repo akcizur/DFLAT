@@ -126,6 +126,12 @@ export function bindInput({ renderer, state, controller, ui }) {
     }
     if (event.code === "Enter" && ui.isStartVisible()) { event.preventDefault(); startGame(); return; }
     if (event.code === "Enter" && state.paused) { event.preventDefault(); resumeGame(); return; }
+    if (event.code === "KeyV" && !event.repeat && state.started && !state.paused) {
+      event.preventDefault();
+      const mode = controller.toggleCameraMode?.() || "first";
+      ui.showToast(mode === "third" ? "Pohled třetí osoby aktivní." : "Pohled první osoby aktivní.");
+      return;
+    }
     if (event.code === "KeyM" && !event.repeat) {
       event.preventDefault();
       document.getElementById("modelLibraryButton")?.click();
