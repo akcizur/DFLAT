@@ -141,7 +141,7 @@ if (new URLSearchParams(location.search).get("smoke") === "1") {
   });
 }
 bindInput({ renderer, state, controller, ui });
-setLoadingProgress(84, "KONTROLUJI SCÉNU", "Připravuji první snímek.", "VALIDATION");
+setLoadingProgress(46, "KONTROLUJI SCÉNU", "Připravuji první snímek.", "VALIDATION");
 
 const clockStart = performance.now();
 const simulationStepMs = 1000 / 60;
