@@ -95,6 +95,16 @@ export function bindInput({ renderer, state, controller, ui }) {
   });
 
   function onKeyDown(event) {
+    const modelLibrary = document.getElementById("modelLibraryScreen");
+    if (event.code === "Escape" && modelLibrary && !modelLibrary.hidden) {
+      event.preventDefault();
+      document.getElementById("modelLibraryClose")?.click();
+      return;
+    }
+    const target = event.target;
+    if (target instanceof Element &&
+      (target.matches("input, textarea, select") || target.isContentEditable)) return;
+
     if (event.code === "Space") {
       event.preventDefault();
       if (!event.repeat && state.started && !state.paused) controller.jump?.();
@@ -110,12 +120,6 @@ export function bindInput({ renderer, state, controller, ui }) {
       return;
     }
     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.code)) event.preventDefault();
-    const modelLibrary = document.getElementById("modelLibraryScreen");
-    if (event.code === "Escape" && modelLibrary && !modelLibrary.hidden) {
-      event.preventDefault();
-      document.getElementById("modelLibraryClose")?.click();
-      return;
-    }
     if (event.code === "Escape" && state.started && !state.finished) {
       if (document.fullscreenElement) { document.exitFullscreen(); return; }
       togglePause(); return;
