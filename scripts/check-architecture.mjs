@@ -8,7 +8,7 @@ const required = [
   "package.json", "vite.config.js", "index.html", "vendor/three.module.min.js",
   "vendor/THREE-LICENSE.txt", "styles.css", "styles-cinematic.css",
   "src/main.js", "src/boot-debug.js", "src/game/open-world.js",
-  "src/game/model-library.js", "src/game/player.js", "src/game/ui.js", "src/game/input.js",
+  "src/game/model-library.js", "src/game/player.js", "src/game/ui.js", "src/game/input.js", "src/game/cyberpunk-expansion.js",
   "scripts/prepare-open-models.mjs", "scripts/smoke-browser.mjs", "assets/OPEN_SOURCE_MODELS.md"
 ];
 
@@ -61,6 +61,11 @@ if (mainSource.includes("style.filter =")) fail("CSS canvas filters must remain 
 const worldSource = await readFile(path.join(root, "src/game/open-world.js"), "utf8");
 if (!worldSource.includes("CC0 neighbourhood ground")) fail("world ground is missing");
 if (!worldSource.includes("WORLD_LAYOUT")) fail("the curated asset-backed world layout is missing");
+const cyberpunkSource = await readFile(path.join(root, "src/game/cyberpunk-expansion.js"), "utf8");
+if (!cyberpunkSource.includes("CYBERPUNK_LAYERS")) fail("cyberpunk vertical levels are missing");
+if (!cyberpunkSource.includes("type: \"hover\"") || !cyberpunkSource.includes("type: \"flying\"")) fail("hover and flying vehicles are missing");
+if (!cyberpunkSource.includes("heldObject")) fail("object manipulation system is missing");
+if (!mainSource.includes("createCyberpunkExpansion(")) fail("cyberpunk expansion is not wired into the main scene");
 if (!worldSource.includes('fetch(APP_BASE + "models/manifest.json")')) fail("the local asset manifest must load at runtime");
 const librarySource = await readFile(path.join(root, "src/game/model-library.js"), "utf8");
 if (!librarySource.includes('fetch(SOURCE_ROOT + "/catalog.json")')) fail("the searchable upstream catalog is missing");
