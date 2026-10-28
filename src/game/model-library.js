@@ -90,6 +90,7 @@ export function createModelLibrary({ THREE, scene, camera, state, ui, world }) {
       localAssets = new Map((manifest.assets || []).map(asset => [asset.id, asset]));
       models = [];
       for (const pack of catalog.packs || []) {
+        if (pack.license !== "CC0-1.0") continue;
         for (const model of pack.models || []) {
           models.push({
             ...model,
@@ -107,6 +108,7 @@ export function createModelLibrary({ THREE, scene, camera, state, ui, world }) {
       allOption.textContent = "Všechny kolekce";
       packSelect.append(allOption);
       for (const pack of catalog.packs || []) {
+        if (pack.license !== "CC0-1.0") continue;
         const option = document.createElement("option");
         option.value = pack.id;
         option.textContent = pack.name + " (" + pack.models.length + ")";
@@ -201,6 +203,11 @@ export function createModelLibrary({ THREE, scene, camera, state, ui, world }) {
 
   async function placeSelected() {
     if (!selected || busy) return;
+    if (selected.license !== "CC0-1.0") {
+      status.textContent = "Tento model nemá ověřenou licenci CC0-1.0 a nebude vložen.";
+      placeButton.disabled = true;
+      return;
+    }
     busy = true;
     placeButton.disabled = true;
     placeButton.textContent = "NAČÍTÁM MODEL…";
