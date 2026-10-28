@@ -159,6 +159,26 @@ export function createCyberpunkExpansion({ THREE, scene, world, state, ui }) {
     interactables.push(item);
   }
 
+  // Smooth arcade lifts make vertical levels reachable without replacing the existing movement system.
+  const liftStops = [0, 5.5, 11, 17];
+  for (const [x, z, label] of [[-5.2, -53, "Skyway lift"], [5.2, -81, "Upper transit lift"]]) {
+    box(label + " platform", x, 0.12, z, 2.5, 0.24, 2.5, mats.dark);
+    box(label + " beacon", x, 1.25, z, 0.12, 2.3, 0.12, mats.cyan);
+    interactables.push({
+      id: "lift-" + label.toLowerCase().replace(/\\s+/g, "-"),
+      name: label + " · E / change level",
+      x, z, range: 3.4,
+      action: () => {
+        const current = Number.isFinite(state.elevationTarget) ? state.elevationTarget : 0;
+        const index = liftStops.findIndex(level => Math.abs(level - current) < 0.35);
+        const next = liftStops[(index + 1 + liftStops.length) % liftStops.length];
+        state.elevationTarget = next;
+        state.verticalTraversal = true;
+        ui.showToast(label + ": přesun na úroveň " + next.toFixed(1) + " m.");
+      }
+    });
+  }
+
   const traffic = [
     createVehicle({ x: -2.4, y: 0, z: -23, type: "car", name: "Street car", color: 0x46546c }),
     createVehicle({ x: 2.8, y: 0, z: -46, type: "car", name: "Neon taxi", color: 0x8c3b77 }),
