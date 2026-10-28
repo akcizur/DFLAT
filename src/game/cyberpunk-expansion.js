@@ -96,6 +96,7 @@ export function createCyberpunkExpansion({ THREE, scene, world, state, ui }) {
           state.vehicleMode = true;
           state.vehicleType = type;
           state.activeVehicleId = entry.id;
+          state.vehicleEntryPosition = { x: entry.x, y, z: entry.z };
           state.cameraMode = "third";
           ui.showToast(type === "car" ? "Vozidlo aktivní: WASD řízení, E vystoupit." :
             type === "hover" ? "Hover car aktivní: arkádový vznos, WASD, E vystoupit." :
@@ -103,6 +104,7 @@ export function createCyberpunkExpansion({ THREE, scene, world, state, ui }) {
         }
       }
     };
+    root.userData.vehicleId = entry.id;
     interactables.push(entry);
     return root;
   }
@@ -177,7 +179,10 @@ export function createCyberpunkExpansion({ THREE, scene, world, state, ui }) {
     for (const item of animated) item.mesh.position.y = item.baseY + Math.sin(time * 2 + item.phase) * item.amplitude;
     // Tiny hover bob, deterministic and cheap. The city remains low-poly with emissive accents.
     for (const vehicle of traffic) {
-      if (vehicle.userData.hovering) vehicle.position.y = vehicle.userData.baseY + Math.sin(time * 1.6 + vehicle.position.z) * 0.08;
+      if (state.vehicleMode && vehicle.userData.vehicleId === state.activeVehicleId) {
+        vehicle.position.set(player.x, player.elevation, player.z);
+        vehicle.rotation.y = player.yaw;
+      }
     }
   }
 
