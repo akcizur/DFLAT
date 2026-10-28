@@ -73,7 +73,7 @@ export function createEmptyWorld({ THREE, scene }) {
     const rightStart = doorCenterZ + halfDoor;
     if (leftEnd > minZ) box(name + " / left pier", x, WALL_H / 2, (minZ + leftEnd) / 2, WALL_T, WALL_H, leftEnd - minZ, materials.wall, { solid: true });
     if (maxZ > rightStart) box(name + " / right pier", x, WALL_H / 2, (rightStart + maxZ) / 2, WALL_T, WALL_H, maxZ - rightStart, materials.wall, { solid: true });
-    box(name + " / lintel", x, DOOR_H + (WALL_H - DOOR_H) / 2, doorCenterZ, WALL_T, WALL_H - DOOR_H, DOOR_W, materials.wall, { solid: true });
+    box(name + " / lintel", x, DOOR_H + (WALL_H - DOOR_H) / 2, doorCenterZ, WALL_T, WALL_H - DOOR_H, DOOR_W, materials.wall);
     const frameX = x + (x < 0 ? WALL_T / 2 : -WALL_T / 2);
     box(name + " / frame left jamb", frameX, DOOR_H / 2, doorCenterZ - halfDoor - FRAME_T / 2, WALL_T + FRAME_T, DOOR_H, FRAME_T, materials.frame);
     box(name + " / frame right jamb", frameX, DOOR_H / 2, doorCenterZ + halfDoor + FRAME_T / 2, WALL_T + FRAME_T, DOOR_H, FRAME_T, materials.frame);
@@ -91,7 +91,7 @@ export function createEmptyWorld({ THREE, scene }) {
     const rightStart = doorCenterX + halfDoor;
     if (leftEnd > minX) box(name + " / left pier", (minX + leftEnd) / 2, WALL_H / 2, z, leftEnd - minX, WALL_H, WALL_T, materials.wall, { solid: true });
     if (maxX > rightStart) box(name + " / right pier", (rightStart + maxX) / 2, WALL_H / 2, z, maxX - rightStart, WALL_H, WALL_T, materials.wall, { solid: true });
-    box(name + " / lintel", doorCenterX, DOOR_H + (WALL_H - DOOR_H) / 2, z, DOOR_W, WALL_H - DOOR_H, WALL_T, materials.wall, { solid: true });
+    box(name + " / lintel", doorCenterX, DOOR_H + (WALL_H - DOOR_H) / 2, z, DOOR_W, WALL_H - DOOR_H, WALL_T, materials.wall);
     box(name + " / frame left jamb", doorCenterX - halfDoor - FRAME_T / 2, DOOR_H / 2, z + WALL_T / 2, FRAME_T, DOOR_H, WALL_T + FRAME_T, materials.frame);
     box(name + " / frame right jamb", doorCenterX + halfDoor + FRAME_T / 2, DOOR_H / 2, z + WALL_T / 2, FRAME_T, DOOR_H, WALL_T + FRAME_T, materials.frame);
     box(name + " / frame head", doorCenterX, DOOR_H + FRAME_T / 2, z + WALL_T / 2, DOOR_W + FRAME_T * 2, FRAME_T, WALL_T + FRAME_T, materials.frame);
@@ -113,8 +113,8 @@ export function createEmptyWorld({ THREE, scene }) {
 
   // Main corridor and entry threshold.
   floorAndCeiling("Hall", -1.55, 1.55, -11, 11);
-  wallZ("Hall / left wall", -1.55, -11, 11);
-  wallZ("Hall / right wall", 1.55, -11, 11);
+  // Room corridor walls form the hallway sides; do not overlay them with solid walls,
+  // otherwise their door openings would be visually covered and physically blocked.
   wallX("Hall / back wall", -11, -1.55, 1.55);
   wallX("Hall / entry wall", 11, -1.55, 1.55, 0);
   pointLight("Hall / ceiling light", 0, WALL_H - 0.18, 0, 1.25);
