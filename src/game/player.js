@@ -128,6 +128,15 @@ export function createPlayerController({ camera, colliders, interactables, state
   }
 
   function update(deltaTime) {
+    if (state.vehicleEntryPosition) {
+      player.x = state.vehicleEntryPosition.x;
+      player.z = state.vehicleEntryPosition.z;
+      player.elevation = state.vehicleEntryPosition.y || 0;
+      state.vehicleEntryPosition = null;
+      cameraMode = "third";
+      state.cameraMode = "third";
+    }
+    if (!state.vehicleMode) player.elevation = 0;
     const previousX = player.x;
     const previousZ = player.z;
     forwardIntent = 0;
