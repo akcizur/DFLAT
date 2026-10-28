@@ -28,7 +28,7 @@ if (!/src="\.\/src\/main\.js\?v=\d+"/.test(html)) fail("index.html must load src
 if (!html.includes('type="importmap"') || !html.includes('"three": "./vendor/three.module.min.js"')) fail("local Three.js import map is missing");
 if (/<style(?:\s|>)/i.test(html)) fail("inline CSS remains in index.html");
 if (/<script\b(?![^>]*\bsrc=)(?![^>]*\btype=["']importmap["'])[^>]*>/i.test(html)) fail("inline JavaScript remains in index.html");
-for (const id of ["modelLibraryScreen", "modelLibraryButton", "modelLibraryMenuButton", "modelLibrarySearch", "modelLibraryPack", "modelLibraryGrid", "modelLibraryPlace"]) {
+for (const id of ["modelLibraryScreen", "modelLibraryButton", "modelLibraryMenuButton", "modelLibrarySearch", "modelLibraryPack", "modelLibraryCount", "modelLibraryGrid", "modelLibraryPlace"]) {
   if (!html.includes('id="' + id + '"')) fail("model-library UI element is missing: " + id);
 }
 
