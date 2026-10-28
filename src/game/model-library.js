@@ -116,6 +116,7 @@ export function createModelLibrary({ THREE, scene, camera, state, ui, world }) {
       }
       status.textContent = "Katalog načten. Modely se načítají až na vyžádání.";
       renderGrid();
+      searchInput?.focus({ preventScroll: true });
     } catch (error) {
       console.error("Open model catalog unavailable:", error);
       status.textContent = error.message || "Katalog nelze načíst. Samotná hra zůstává funkční.";
