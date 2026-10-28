@@ -46,6 +46,10 @@ export function createCyberpunkExpansion({ THREE, scene, world, state, ui }) {
     const sideX = (index % 2 ? 1 : -1) * (width / 2 + 0.11);
     box("Vertical neon spine", sideX, height * 0.52, 0, 0.09, height * 0.92, depth * 0.78, index % 2 ? mats.pink : mats.cyan, root);
     scene.add(root);
+    world.colliders.push({
+      minX: x - width / 2, maxX: x + width / 2,
+      minZ: z - depth / 2, maxZ: z + depth / 2
+    });
     return root;
   }
 
@@ -94,6 +98,8 @@ export function createCyberpunkExpansion({ THREE, scene, world, state, ui }) {
           ui.showToast("Vystoupil jsi. Pohyb pěšky obnoven.");
         } else {
           state.vehicleMode = true;
+          state.verticalTraversal = false;
+          state.elevationTarget = null;
           state.vehicleType = type;
           state.activeVehicleId = entry.id;
           state.vehicleEntryPosition = { x: entry.x, y, z: entry.z };
@@ -193,6 +199,8 @@ export function createCyberpunkExpansion({ THREE, scene, world, state, ui }) {
         const forwardX = -Math.sin(player.yaw), forwardZ = -Math.cos(player.yaw);
         item.mesh.position.set(player.x + forwardX * 1.45, player.elevation + 1.15 + player.jumpHeight, player.z + forwardZ * 1.45);
         item.mesh.rotation.y += delta * 0.35;
+        item.x = item.mesh.position.x;
+        item.z = item.mesh.position.z;
       }
     }
     const time = performance.now() * 0.001;
