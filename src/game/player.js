@@ -24,6 +24,7 @@ export function createPlayerController({ camera, colliders, interactables, state
   let isRunning = false;
   let bodyLean = 0;
   let bodyRoll = 0;
+  let cameraMode = "first";
 
   let cameraX = player.x, cameraY = 1.68, cameraZ = player.z;
 
@@ -42,7 +43,7 @@ export function createPlayerController({ camera, colliders, interactables, state
     if (!canMove(x, z)) return false;
     player.x = x;
     player.z = z;
-    player.elevation = 0;
+    if (!state.vehicleMode) player.elevation = 0;
     return true;
   }
 
@@ -139,7 +140,8 @@ export function createPlayerController({ camera, colliders, interactables, state
       forwardIntent = forward;
       strafeIntent = strafe;
       isRunning = Boolean(keysDown.ShiftLeft || keysDown.ShiftRight);
-      const moveSpeed = player.speed * (isRunning ? RUN_MULTIPLIER : 1);
+      const vehicleSpeed = state.vehicleMode ? (state.vehicleType === "car" ? 10 : state.vehicleType === "hover" ? 13 : 16) : player.speed;
+      const moveSpeed = vehicleSpeed * (state.vehicleMode ? 1 : (isRunning ? RUN_MULTIPLIER : 1));
       const dx = (-Math.sin(player.yaw) * forward + Math.cos(player.yaw) * strafe) * moveSpeed * deltaTime;
       const dz = (-Math.cos(player.yaw) * forward - Math.sin(player.yaw) * strafe) * moveSpeed * deltaTime;
       movePlayer(dx, dz);
