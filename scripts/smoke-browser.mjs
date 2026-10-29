@@ -119,6 +119,80 @@ try {
   await page.locator("#modelLibraryPlace").click();
   await page.locator("#modelLibraryScreen").waitFor({ state: "hidden", timeout: 10000 });
 
+  // Walk into the panelák through the live entrance, then traverse the hall and stairwell.
+  const interiorBefore = await page.evaluate(() => window.__DFLAT_SMOKE__?.interiorDiagnostics());
+  if (
+    !interiorBefore?.rootVisible ||
+    interiorBefore.meshCount < 40 ||
+    interiorBefore.visibleMeshCount < 40 ||
+    interiorBefore.hasCeiling
+  ) {
+    throw new Error("Panelák interior geometry is missing or hidden: " + JSON.stringify(interiorBefore));
+  }
+
+  await page.evaluate(() => {
+    window.__DFLAT_SMOKE__.setPlayerPosition(-10.9, -29, Math.PI / 2);
+    if (!window.__DFLAT_SMOKE__.interact("door-vchodove-dvere")) throw new Error("Entrance door interactable is missing");
+  });
+  await page.keyboard.down("w");
+  await page.waitForTimeout(700);
+  await page.keyboard.up("w");
+  await page.evaluate(() => {
+    const position = window.__DFLAT_SMOKE__.playerPosition();
+    window.__DFLAT_SMOKE__.setPlayerPosition(position.x, position.z, 0);
+  });
+  await page.keyboard.down("w");
+  await page.waitForTimeout(1250);
+  await page.keyboard.up("w");
+  const hallPosition = await page.evaluate(() => window.__DFLAT_SMOKE__.playerPosition());
+  if (hallPosition.x > -12.4 || hallPosition.z > -32.5) {
+    throw new Error("Player could not enter and walk down the interior hall: " + JSON.stringify(hallPosition));
+  }
+  await page.keyboard.down("a");
+  await page.waitForTimeout(1300);
+  await page.keyboard.up("a");
+  const stairApproach = await page.evaluate(() => window.__DFLAT_SMOKE__.playerPosition());
+  if (stairApproach.x > -17.7) {
+    throw new Error("Player could not cross the hall to the stairwell passage: " + JSON.stringify(stairApproach));
+  }
+  await page.keyboard.down("w");
+  await page.waitForTimeout(650);
+  await page.keyboard.up("w");
+  const stairPosition = await page.evaluate(() => window.__DFLAT_SMOKE__.playerPosition());
+  if (stairPosition.z > -35.5) {
+    throw new Error("Player is blocked by the stairwell partition: " + JSON.stringify(stairPosition));
+  }
+
+  await page.evaluate(() => {
+    window.__DFLAT_SMOKE__.setPlayerPosition(-18.2, -37.5, -Math.PI / 2);
+  });
+  await page.waitForTimeout(300);
+  const interiorVisual = await page.evaluate(() => {
+    const canvas = document.querySelector("#screenCanvas");
+    const gl = canvas?.getContext("webgl2") || canvas?.getContext("webgl");
+    if (!gl || !canvas) return { ok: false, reason: "WebGL canvas unavailable inside panelák" };
+    gl.finish();
+    const data = new Uint8Array(canvas.width * canvas.height * 4);
+    gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, data);
+    const colors = new Set();
+    let lit = 0, nonBlack = 0, samples = 0;
+    const stride = Math.max(4, Math.floor(Math.sqrt(canvas.width * canvas.height / 20000)) * 4);
+    for (let i = 0; i < data.length; i += stride) {
+      const r = data[i], g = data[i + 1], b = data[i + 2];
+      colors.add((r >> 3) + ":" + (g >> 3) + ":" + (b >> 3));
+      if (r + g + b > 30) lit++;
+      if (r + g + b > 6) nonBlack++;
+      samples++;
+    }
+    return {
+      ok: colors.size > 16 && lit > samples * 0.03 && nonBlack > samples * 0.15,
+      distinctColorBuckets: colors.size, litRatio: lit / samples, nonBlackRatio: nonBlack / samples
+    };
+  });
+  if (!interiorVisual.ok) {
+    throw new Error("Panelák interior frame is not visibly rendered: " + JSON.stringify({ interiorBefore, interiorVisual }));
+  }
+
   if (pageErrors.length) throw new Error("Browser runtime errors: " + pageErrors.join(" | "));
   const shaderErrors = consoleErrors.filter(message => /shader error|program linking failed|webgl.*context|failed to compile/i.test(message));
   if (shaderErrors.length) throw new Error("WebGL/shader errors: " + shaderErrors.join(" | "));
