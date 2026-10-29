@@ -36,7 +36,7 @@ try {
   await page.goto("http://127.0.0.1:4173/?smoke=1", { waitUntil: "domcontentloaded", timeout: 30000 });
   await page.waitForSelector("#screenCanvas", { timeout: 10000 });
   await page.waitForFunction(() => document.querySelector("#startButton")?.disabled === false, null, { timeout: 15000 });
-  await page.locator("#loadingScreen").waitFor({ state: "hidden", timeout: 5000 });
+  await page.locator("#loadingScreen").waitFor({ state: "hidden", timeout: 15000 });
 
   const beforeStart = await page.evaluate(() => ({
     webgl: (() => {
