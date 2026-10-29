@@ -144,7 +144,11 @@ try {
   const doorwayPosition = await page.evaluate(() => window.__DFLAT_SMOKE__.playerPosition());
   if (doorwayPosition.x > -12.4) {
     const diagnostics = await page.evaluate(() => window.__DFLAT_SMOKE__.interiorDiagnostics());
-    throw new Error("Player could not cross the opened entrance: " + JSON.stringify({ doorwayPosition, diagnostics }));
+    const collisionDiagnostics = await page.evaluate(position => ({
+      current: window.__DFLAT_SMOKE__.blockingCollidersAt(position.x, position.z),
+      nextStep: window.__DFLAT_SMOKE__.blockingCollidersAt(position.x - 0.08, position.z)
+    }), doorwayPosition);
+    throw new Error("Player could not cross the opened entrance: " + JSON.stringify({ doorwayPosition, diagnostics, collisionDiagnostics }));
   }
   await page.evaluate(() => {
     const position = window.__DFLAT_SMOKE__.playerPosition();
