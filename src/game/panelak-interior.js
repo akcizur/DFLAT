@@ -84,7 +84,7 @@ export function createPanelakInterior({ THREE, scene, colliders, interactables }
   const makeDoor = ({ name, x, z, width=0.88, height=2.05, depth=0.09, yaw=0, axis="x", range=2.0, message }) => {
     const pivot = new THREE.Group();
     const closedYaw = axis === "z" ? Math.PI / 2 : 0;
-    pivot.position.set(axis === "z" ? x : x-width/2, 0.1, axis === "z" ? z-width/2 : z);
+    pivot.position.set(axis === "z" ? x : x-width/2, 0.1, axis === "z" ? z+width/2 : z);
     pivot.rotation.y = closedYaw;
     pivot.name = name+" hinge";
     root.add(pivot);
@@ -94,7 +94,7 @@ export function createPanelakInterior({ THREE, scene, colliders, interactables }
     leaf.receiveShadow = true;
     leaf.name = name;
     pivot.add(leaf);
-    box(name+" handle", axis === "z" ? x+0.07 : x-width+0.12, 1.05, axis === "z" ? z-width+0.12 : z+0.07, 0.045, 0.14, 0.045, mats.metal, {castShadow:false});
+    box(name+" handle", axis === "z" ? x+0.07 : x-width+0.12, 1.05, axis === "z" ? z-width*0.28 : z+0.07, 0.045, 0.14, 0.045, mats.metal, {castShadow:false});
     const collider = axis === "z"
       ? { minX:x-depth/2-0.04, maxX:x+depth/2+0.04, minZ:z-width/2, maxZ:z+width/2, name }
       : { minX:x-width/2, maxX:x+width/2, minZ:z-depth/2-0.04, maxZ:z+depth/2+0.04, name };
