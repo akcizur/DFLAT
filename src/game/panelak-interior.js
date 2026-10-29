@@ -1,7 +1,7 @@
 // First playable panelák ground-floor interior. Coordinates are metres in the existing world.
 export const PANELAK_INTERIOR_LAYOUT = Object.freeze({
   bounds: Object.freeze({ west: -22.5, east: -11.9, north: -46.2, south: -11.8 }),
-  entrance: Object.freeze({ x: -22.38, z: -29, width: 1.64 }),
+  entrance: Object.freeze({ x: -12.02, z: -29, width: 2.5, side: "east" }),
   rooms: Object.freeze(["entrance-hall", "stairwell", "kitchen", "living-room", "bedroom", "bathroom"]),
   interactions: Object.freeze(["entrance-door", "lights"]), staticDoors: Object.freeze(["apartment", "bedroom", "bathroom"])
 });
@@ -38,15 +38,17 @@ export function createPanelakInterior({ THREE, scene, colliders, interactables }
   const west = -22.5, east = -11.9, north = -46.2, south = -11.8;
   const floorY = 0.06, wallY = 1.48, wallH = 2.84;
   box("Interior / terrazzo entrance floor", -17.2, floorY, -29, 10.2, 0.12, 33.8, mats.floor);
-  box("Interior / ceiling slab", -17.2, 2.91, -29, 10.2, 0.16, 33.8, mats.concrete, { castShadow: false });
+  // Leave the playable ground floor open at the top so the apartment layout is visible
+  // from the entrance and is easy to read while navigating the blockout.
 
-  // Exterior perimeter. The west wall has a real 1.55 m entrance opening.
-  const doorwayZ = -29, doorwayHalf = 0.82;
+  // The entrance faces the street on the east side, so it is reachable without
+  // walking around the whole block. Both wall segments leave a full door-width gap.
+  const doorwayZ = -29, doorwayHalf = 1.25;
+  box("West exterior wall", west+0.08, wallY, -29, 0.16, wallH, 33.8, mats.concrete, { collider: true });
   for (const [a,b] of [[north, doorwayZ-doorwayHalf],[doorwayZ+doorwayHalf,south]]) {
     const length = b-a;
-    box("West exterior wall", west+0.08, wallY, (a+b)/2, 0.16, wallH, length, mats.concrete, { collider: true });
+    box("East exterior wall", east-0.08, wallY, (a+b)/2, 0.16, wallH, length, mats.concrete, { collider: true });
   }
-  box("East exterior wall", east-0.08, wallY, -29, 0.16, wallH, 33.8, mats.concrete, { collider: true });
   box("North end wall", -17.2, wallY, north+0.08, 10.2, wallH, 0.16, mats.concrete, { collider: true });
   box("South end wall", -17.2, wallY, south-0.08, 10.2, wallH, 0.16, mats.concrete, { collider: true });
 
@@ -57,13 +59,13 @@ export function createPanelakInterior({ THREE, scene, colliders, interactables }
     if (gapA > leftEdge) box(name, (leftEdge+gapA)/2, wallY, z, gapA-leftEdge, wallH, 0.12, mats.plaster, { collider: true });
     if (gapB < rightEdge) box(name, (gapB+rightEdge)/2, wallY, z, rightEdge-gapB, wallH, 0.12, mats.plaster, { collider: true });
   };
-  partition(-35.2, -18.1, 1.05, "Stairwell partition");
-  partition(-23.2, -15.1, 1.0, "Apartment entry partition");
-  partition(-17.4, -15.1, 0.95, "Bedroom partition");
-  // Bathroom side walls, with an open door gap facing the small hall.
+  partition(-35.2, -18.1, 1.6, "Stairwell partition");
+  partition(-23.2, -15.1, 1.45, "Apartment entry partition");
+  partition(-17.4, -15.1, 1.35, "Bedroom partition");
+  // Bathroom side walls leave a wide, walkable door gap facing the small hall.
   box("Bathroom north wall", -14.0, wallY, -20.0, 4.0, wallH, 0.12, mats.plaster, { collider: true });
-  box("Bathroom west wall segment", -16.1, wallY, -18.9, 0.12, wallH, 1.9, mats.plaster, { collider: true });
-  box("Bathroom west wall segment", -16.1, wallY, -16.7, 0.12, wallH, 1.1, mats.plaster, { collider: true });
+  box("Bathroom west wall segment", -16.1, wallY, -19.05, 0.12, wallH, 1.6, mats.plaster, { collider: true });
+  box("Bathroom west wall segment", -16.1, wallY, -16.55, 0.12, wallH, 0.8, mats.plaster, { collider: true });
   box("Bedroom east wall", -12.05, wallY, -20.3, 0.12, wallH, 6.0, mats.plaster, { collider: true });
 
   // Stair flight and landings: repeated treads, solid stringers, and a handrail.
@@ -75,10 +77,10 @@ export function createPanelakInterior({ THREE, scene, colliders, interactables }
   box("Stair landing", -20.1, 1.95, -35.9, 3.1, 0.18, 1.55, mats.concrete);
   box("Stair handrail", -18.55, 1.10, -39.8, 0.07, 0.07, 7.2, mats.metal);
   for (let i=0;i<12;i++) box("Stair baluster", -18.55, 0.65, -43.1+i*0.58, 0.055, 0.88, 0.055, mats.metal);
-  box("Mailbox bank", -21.25, 1.35, -31.1, 0.24, 0.86, 2.1, mats.metal);
-  for (let i=0;i<8;i++) box("Mailbox door "+i, -21.11, 1.15+(i%4)*0.19, -31.75+Math.floor(i/4)*0.65, 0.035, 0.15, 0.55, mats.white);
-  box("Intercom panel", -21.12, 1.52, -28.0, 0.06, 0.52, 0.28, mats.metal);
-  box("Building notice board", -21.1, 1.5, -26.7, 0.06, 0.72, 0.9, mats.wood);
+  box("Mailbox bank", -12.65, 1.35, -31.1, 0.24, 0.86, 2.1, mats.metal);
+  for (let i=0;i<8;i++) box("Mailbox door "+i, -12.51, 1.15+(i%4)*0.19, -31.75+Math.floor(i/4)*0.65, 0.035, 0.15, 0.55, mats.white);
+  box("Intercom panel", -12.12, 1.52, -28.0, 0.06, 0.52, 0.28, mats.metal);
+  box("Building notice board", -12.12, 1.5, -26.7, 0.06, 0.72, 0.9, mats.wood);
 
   // Only the exterior entrance is animated. Interior doors are plain, fixed grey
   // models: no interaction prompt, rotation or moving-door collision.
@@ -101,7 +103,7 @@ export function createPanelakInterior({ THREE, scene, colliders, interactables }
     return leaf;
   };
   const makeEntranceDoor = () => {
-    const width = 1.5, depth = 0.08, x = west + 0.12, z = doorwayZ;
+    const width = 2.3, depth = 0.08, x = east - 0.12, z = doorwayZ;
     const pivot = new THREE.Group();
     pivot.position.set(x, 0.1, z + width/2);
     pivot.rotation.y = Math.PI / 2;
@@ -202,8 +204,8 @@ export function createPanelakInterior({ THREE, scene, colliders, interactables }
   box("Kitchen plant pot", -13.5, 0.52, -25.0, 0.32, 0.65, 0.32, mats.wood);
   box("Kitchen plant leaves", -13.5, 0.96, -25.0, 0.68, 0.52, 0.68, mats.green);
   box("Living-room radiator", -21.9, 0.58, -36.0, 0.22, 0.76, 2.1, mats.white);
-  box("Entrance mat", -22.0, 0.14, -29.0, 0.65, 0.03, 1.3, mats.fabric);
-  box("Apartment number plaque", -22.25, 2.20, -28.0, 0.05, 0.18, 0.35, mats.white);
+  box("Entrance mat", -12.4, 0.14, -29.0, 1.3, 0.03, 0.65, mats.fabric);
+  box("Apartment number plaque", -12.25, 2.20, -28.0, 0.05, 0.18, 0.35, mats.white);
 
   return { meshes, root, entranceDoor, lights, bounds: { west,east,north,south } };
 }

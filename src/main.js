@@ -134,9 +134,47 @@ if (new URLSearchParams(location.search).get("smoke") === "1") {
   Object.defineProperty(window, "__DFLAT_SMOKE__", {
     configurable: true,
     value: {
-      playerPosition: () => ({ x: controller.player.x, z: controller.player.z }),
+      playerPosition: () => ({ x: controller.player.x, z: controller.player.z, yaw: controller.player.yaw }),
       keysDown: () => ({ ...controller.keysDown }),
-      gameState: () => ({ started: state.started, paused: state.paused })
+      gameState: () => ({ started: state.started, paused: state.paused }),
+      blockingCollidersAt: (x, z) => controller.getBlockingCollidersAt(x, z),
+      moveForFrames: (code, frames) => {
+        if (!state.started || state.paused) return { error: "gameplay is inactive", state: { ...state } };
+        controller.keysDown[code] = true;
+        for (let frame = 0; frame < frames; frame++) controller.update(1 / 60);
+        controller.keysDown[code] = false;
+        return { x: controller.player.x, z: controller.player.z, yaw: controller.player.yaw };
+      },
+      setPlayerPosition: (x, z, yaw = controller.player.yaw) => {
+        controller.player.x = x;
+        controller.player.z = z;
+        controller.player.yaw = yaw;
+        controller.player.elevation = 0;
+        controller.player.jumpHeight = 0;
+        controller.syncCamera(1);
+      },
+      interact: id => {
+        const item = world.interactables.find(entry => entry.id === id);
+        if (!item) return false;
+        item.action();
+        return true;
+      },
+      interiorDiagnostics: () => {
+        const interior = world.panelakInterior;
+        return {
+          rootVisible: interior.root.visible,
+          meshCount: interior.meshes.length,
+          visibleMeshCount: interior.meshes.filter(mesh => mesh.visible).length,
+          hasCeiling: interior.meshes.some(mesh => mesh.name === "Interior / ceiling slab"),
+          names: interior.meshes.slice(0, 12).map(mesh => mesh.name),
+          doorName: interior.entranceDoor.item.name,
+          doorRotationY: interior.entranceDoor.pivot.rotation.y,
+          nearEntryColliders: world.colliders.filter(c =>
+            c.maxX > -12.5 && c.minX < -11.4 && c.maxZ > -31 && c.minZ < -27
+          ).map(({ name, minX, maxX, minZ, maxZ }) => ({ name, minX, maxX, minZ, maxZ })),
+          entrance: { ...interior.bounds }
+        };
+      }
     }
   });
 }

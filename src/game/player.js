@@ -29,12 +29,16 @@ export function createPlayerController({ camera, colliders, interactables, state
 
   const keysDown = Object.create(null);
 
-  function canMove(nx, nz) {
+  function blockingCollidersAt(nx, nz) {
     const r = player.radius;
-    for (const c of colliders) {
-      if (nx + r > c.minX && nx - r < c.maxX && nz + r > c.minZ && nz - r < c.maxZ) return false;
-    }
-    return true;
+    return colliders.filter(c =>
+      nx + r > c.minX && nx - r < c.maxX &&
+      nz + r > c.minZ && nz - r < c.maxZ
+    );
+  }
+
+  function canMove(nx, nz) {
+    return blockingCollidersAt(nx, nz).length === 0;
   }
 
   // Open-world navigation: no storeys, stairs, elevators or architectural walls.
@@ -170,6 +174,10 @@ export function createPlayerController({ camera, colliders, interactables, state
 
   return {
     player, keysDown, doInteract, update, syncCamera, jump,
+    getBlockingCollidersAt: (x, z) => blockingCollidersAt(x, z).map(c => ({
+      name: c.name ?? "(unnamed collider)",
+      minX: c.minX, maxX: c.maxX, minZ: c.minZ, maxZ: c.maxZ
+    })),
     get isGrounded() { return player.jumpHeight === 0 && jumpVelocity <= 0; },
     get navigationHeight() { return player.elevation; }
   };
