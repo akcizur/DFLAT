@@ -60,7 +60,7 @@ export function createPanelakDistrict({ THREE, scene }) {
       // Keep the street-facing east plinth aligned with the entrance opening.
       const entranceZ = z;
       box("plinth", 0.18, 0.64, length+0.16, x-halfWidth-0.02, 0.32, z);
-      for (const [start, end] of [[z-halfLength-0.08, entranceZ-1.1], [entranceZ+1.1, z+halfLength+0.08]]) {
+      for (const [start, end] of [[z-halfLength-0.08, entranceZ-1.3], [entranceZ+1.3, z+halfLength+0.08]]) {
         box("plinth", 0.18, 0.64, end-start, x+halfWidth+0.02, 0.32, (start+end)/2);
       }
       box("plinth", width+0.16, 0.64, 0.18, x, 0.32, z-halfLength-0.02);
