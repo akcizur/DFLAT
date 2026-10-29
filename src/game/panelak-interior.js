@@ -1,7 +1,7 @@
 // First playable panelák ground-floor interior. Coordinates are metres in the existing world.
 export const PANELAK_INTERIOR_LAYOUT = Object.freeze({
   bounds: Object.freeze({ west: -22.5, east: -11.9, north: -46.2, south: -11.8 }),
-  entrance: Object.freeze({ x: -12.02, z: -29, width: 1.64, side: "east" }),
+  entrance: Object.freeze({ x: -12.02, z: -29, width: 2.1, side: "east" }),
   rooms: Object.freeze(["entrance-hall", "stairwell", "kitchen", "living-room", "bedroom", "bathroom"]),
   interactions: Object.freeze(["entrance-door", "lights"]), staticDoors: Object.freeze(["apartment", "bedroom", "bathroom"])
 });
@@ -43,7 +43,7 @@ export function createPanelakInterior({ THREE, scene, colliders, interactables }
 
   // The entrance faces the street on the east side, so it is reachable without
   // walking around the whole block. Both wall segments leave a full door-width gap.
-  const doorwayZ = -29, doorwayHalf = 0.82;
+  const doorwayZ = -29, doorwayHalf = 1.05;
   box("West exterior wall", west+0.08, wallY, -29, 0.16, wallH, 33.8, mats.concrete, { collider: true });
   for (const [a,b] of [[north, doorwayZ-doorwayHalf],[doorwayZ+doorwayHalf,south]]) {
     const length = b-a;
@@ -103,7 +103,7 @@ export function createPanelakInterior({ THREE, scene, colliders, interactables }
     return leaf;
   };
   const makeEntranceDoor = () => {
-    const width = 1.5, depth = 0.08, x = east - 0.12, z = doorwayZ;
+    const width = 1.9, depth = 0.08, x = east - 0.12, z = doorwayZ;
     const pivot = new THREE.Group();
     pivot.position.set(x, 0.1, z + width/2);
     pivot.rotation.y = Math.PI / 2;
