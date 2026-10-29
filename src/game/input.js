@@ -29,23 +29,24 @@ export function bindInput({ renderer, state, controller, ui }) {
     cluster.className = "touch-remote-cluster";
     cluster.setAttribute("aria-label", "Mobilní ovládání");
     cluster.innerHTML = `
-      <button class="touch-remote-btn primary" type="button" data-touch-action="interact">E</button>
+      <button class="touch-remote-btn is-interact" type="button" data-touch-action="interact">E</button>
       <button class="touch-remote-btn" type="button" data-touch-action="jump">JUMP</button>
       <button class="touch-remote-btn" type="button" data-touch-action="run">RUN</button>
       <button class="touch-remote-btn" type="button" data-touch-action="pause">Ⅱ</button>`;
     document.body.appendChild(cluster);
 
     const button = action => cluster.querySelector(`[data-touch-action="${action}"]`);
-    button("interact")?.addEventListener("pointerup", event => { event.preventDefault(); if (state.started && !state.paused) doInteract(); });
+    button("interact")?.addEventListener("pointerdown", event => { event.preventDefault(); if (state.started && !state.paused) doInteract(); });
     button("jump")?.addEventListener("pointerdown", event => { event.preventDefault(); if (state.started && !state.paused) controller.jump?.(); });
     const runButton = button("run");
     const runDown = event => { event.preventDefault(); if (!state.started || state.paused) return; keysDown.ShiftLeft = true; runButton.classList.add("is-held"); };
     const runUp = event => { event.preventDefault(); keysDown.ShiftLeft = false; runButton.classList.remove("is-held"); };
-    runButton?.addEventListener("pointerdown", runDown);
+    runButton?.addEventListener("pointerdown", event => { runButton.setPointerCapture?.(event.pointerId); runDown(event); });
     runButton?.addEventListener("pointerup", runUp);
     runButton?.addEventListener("pointercancel", runUp);
+    runButton?.addEventListener("pointerleave", event => { if (event.buttons === 0) runUp(event); });
     runButton?.addEventListener("lostpointercapture", runUp);
-    button("pause")?.addEventListener("pointerup", event => { event.preventDefault(); togglePause(); });
+    button("pause")?.addEventListener("pointerdown", event => { event.preventDefault(); button("pause").setPointerCapture?.(event.pointerId); togglePause(); });
   }
   createTouchRemote();
 
