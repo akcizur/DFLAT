@@ -9,12 +9,49 @@ export function bindInput({ renderer, state, controller, ui }) {
   let stickPointer = null;
   let previousGamepadButtons = [];
   let gamepadLabel = "";
-  const sensitivity = { mouseX: 0.0010, mouseY: 0.0009, touchX: 0.0032, touchY: 0.0022, padLook: 2.2 };
+  let touchLookDx = 0;
+  let touchLookDy = 0;
+  const sensitivity = { mouseX: 0.0010, mouseY: 0.0009, touchX: 0.0030, touchY: 0.0020, padLook: 2.2 };
+
+  // Load the dedicated mobile layer without changing the desktop HUD.
+  if (!document.querySelector('link[data-touch-remote-style]')) {
+    const style = document.createElement("link");
+    style.rel = "stylesheet";
+    style.href = "./src/game/touch-remote.css?v=1";
+    style.dataset.touchRemoteStyle = "";
+    document.head.appendChild(style);
+  }
+
+  function createTouchRemote() {
+    if (document.getElementById("touchRemoteCluster")) return;
+    const cluster = document.createElement("div");
+    cluster.id = "touchRemoteCluster";
+    cluster.className = "touch-remote-cluster";
+    cluster.setAttribute("aria-label", "Mobilní ovládání");
+    cluster.innerHTML = `
+      <button class="touch-remote-btn primary" type="button" data-touch-action="interact">E</button>
+      <button class="touch-remote-btn" type="button" data-touch-action="jump">JUMP</button>
+      <button class="touch-remote-btn" type="button" data-touch-action="run">RUN</button>
+      <button class="touch-remote-btn" type="button" data-touch-action="pause">Ⅱ</button>`;
+    document.body.appendChild(cluster);
+
+    const button = action => cluster.querySelector(`[data-touch-action="${action}"]`);
+    button("interact")?.addEventListener("pointerup", event => { event.preventDefault(); if (state.started && !state.paused) doInteract(); });
+    button("jump")?.addEventListener("pointerdown", event => { event.preventDefault(); if (state.started && !state.paused) controller.jump?.(); });
+    const runButton = button("run");
+    const runDown = event => { event.preventDefault(); if (!state.started || state.paused) return; keysDown.ShiftLeft = true; runButton.classList.add("is-held"); };
+    const runUp = event => { event.preventDefault(); keysDown.ShiftLeft = false; runButton.classList.remove("is-held"); };
+    runButton?.addEventListener("pointerdown", runDown);
+    runButton?.addEventListener("pointerup", runUp);
+    runButton?.addEventListener("pointercancel", runUp);
+    runButton?.addEventListener("lostpointercapture", runUp);
+    button("pause")?.addEventListener("pointerup", event => { event.preventDefault(); togglePause(); });
+  }
+  createTouchRemote();
 
   function lockPointer() {
     if (renderer.domElement.requestPointerLock) {
       const result = renderer.domElement.requestPointerLock();
-      // Browsers may reject pointer lock asynchronously, especially on touch devices.
       if (result && typeof result.catch === "function") {
         result.catch(error => console.warn("The Flat: pointer lock was denied; gameplay remains active.", error));
       }
@@ -35,6 +72,7 @@ export function bindInput({ renderer, state, controller, ui }) {
     keysDown.ShiftLeft = false;
     keysDown.ShiftRight = false;
     keysDown.Space = false;
+    document.querySelector('[data-touch-action="run"]')?.classList.remove("is-held");
   }
   function startGame() {
     if (state.started || !state.ready) return;
@@ -45,8 +83,6 @@ export function bindInput({ renderer, state, controller, ui }) {
     state.paused = false;
     ui.hidePause();
     renderer.domElement.focus();
-    // Keep keyboard focus after starting. Pointer lock is acquired only after a click
-    // in the actual game canvas, so menu activation never steals the first movement input.
     window.setTimeout(() => {
       ui.hideStart();
       startScreen.classList.remove("transition-out");
@@ -63,7 +99,6 @@ export function bindInput({ renderer, state, controller, ui }) {
     if (!state.started || state.finished) return;
     state.paused = false;
     ui.hidePause();
-    // Click the game canvas to reacquire mouse-look; keyboard movement remains active.
   }
   function togglePause() { state.paused ? resumeGame() : pauseGame(); }
   document.getElementById("startButton").addEventListener("click", startGame);
@@ -81,7 +116,6 @@ export function bindInput({ renderer, state, controller, ui }) {
         else document.body.classList.toggle("fullscreen-fallback");
       }
     } catch (error) {
-      // iOS Safari and some embedded browsers do not expose the Fullscreen API.
       document.body.classList.toggle("fullscreen-fallback");
       ui.showToast("Režim celé obrazovky");
     }
@@ -102,20 +136,15 @@ export function bindInput({ renderer, state, controller, ui }) {
       return;
     }
     const target = event.target;
-    if (target instanceof Element &&
-      (target.matches("input, textarea, select") || target.isContentEditable)) return;
-
+    if (target instanceof Element && (target.matches("input, textarea, select") || target.isContentEditable)) return;
     if (event.code === "Space") {
       event.preventDefault();
       if (!event.repeat && state.started && !state.paused) controller.jump?.();
       return;
     }
-
     const isMovementKey = movementCodes.includes(event.code);
     if (isMovementKey) {
       event.preventDefault();
-      // Ignore movement input until gameplay is active, then use the same shared key map
-      // as touch and gamepad so inputs cannot overwrite one another.
       setKey(event.code, state.started && !state.paused);
       return;
     }
@@ -151,18 +180,24 @@ export function bindInput({ renderer, state, controller, ui }) {
     }
   });
 
-  // Left thumb: analog virtual stick. It writes the same keys as a physical keyboard.
+  // Left thumb: analog virtual stick with a larger usable travel area and a dead zone.
   function updateStick(event) {
     const rect = moveStick.getBoundingClientRect();
     const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
-    const radius = rect.width * 0.34;
+    const radius = Math.min(rect.width, rect.height) * 0.34;
     const dx = event.clientX - cx, dy = event.clientY - cy;
-    const length = Math.max(1, Math.hypot(dx, dy));
-    const nx = dx / Math.max(radius, length), ny = dy / Math.max(radius, length);
-    moveKnob.style.transform = `translate(calc(-50% + ${nx * radius}px), calc(-50% + ${ny * radius}px))`;
-    const x = dx / radius, y = dy / radius;
-    setKey("KeyW", y < -0.22, "touch"); setKey("KeyS", y > 0.22, "touch");
-    setKey("KeyA", x < -0.22, "touch"); setKey("KeyD", x > 0.22, "touch");
+    const length = Math.hypot(dx, dy);
+    const nx = length > radius ? dx / length : dx / Math.max(radius, 1);
+    const ny = length > radius ? dy / length : dy / Math.max(radius, 1);
+    const px = Math.max(-radius, Math.min(radius, dx));
+    const py = Math.max(-radius, Math.min(radius, dy));
+    moveKnob.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px))`;
+    const x = dx / Math.max(radius, 1), y = dy / Math.max(radius, 1);
+    const dead = 0.18;
+    setKey("KeyW", y < -dead, "touch"); setKey("KeyS", y > dead, "touch");
+    setKey("KeyA", x < -dead, "touch"); setKey("KeyD", x > dead, "touch");
+    moveStick.style.setProperty("--stick-x", `${nx * 100}%`);
+    moveStick.style.setProperty("--stick-y", `${ny * 100}%`);
   }
   function releaseStick(event) {
     if (!stickPointer || (event && event.pointerId !== stickPointer)) return;
@@ -182,29 +217,41 @@ export function bindInput({ renderer, state, controller, ui }) {
   moveStick.addEventListener("pointercancel", releaseStick);
   moveStick.addEventListener("lostpointercapture", releaseStick);
 
-  // Right thumb: drag to look. A window-level move listener allows smooth movement at zone edges.
+  // Right thumb: drag to look. Accumulate deltas and apply them once per frame to remove jitter.
   lookZone.addEventListener("pointerdown", event => {
     if (event.pointerType === "mouse" || !state.started || state.paused) return;
     event.preventDefault();
     touchLook = { id: event.pointerId, x: event.clientX, y: event.clientY };
+    touchLookDx = 0; touchLookDy = 0;
     lookZone.setPointerCapture?.(event.pointerId);
     lookZone.classList.add("active");
   });
   lookZone.addEventListener("pointermove", event => {
     if (!touchLook || touchLook.id !== event.pointerId) return;
     event.preventDefault();
-    player.yaw -= (event.clientX - touchLook.x) * sensitivity.touchX;
-    player.pitch = Math.max(-1.25, Math.min(1.25, player.pitch - (event.clientY - touchLook.y) * sensitivity.touchY));
+    touchLookDx += event.clientX - touchLook.x;
+    touchLookDy += event.clientY - touchLook.y;
     touchLook.x = event.clientX; touchLook.y = event.clientY;
   });
   function endLook(event) {
-    if (touchLook && (!event || touchLook.id === event.pointerId)) { touchLook = null; lookZone.classList.remove("active"); }
+    if (touchLook && (!event || touchLook.id === event.pointerId)) {
+      touchLook = null; touchLookDx = 0; touchLookDy = 0; lookZone.classList.remove("active");
+    }
   }
   lookZone.addEventListener("pointerup", endLook);
   lookZone.addEventListener("pointercancel", endLook);
   lookZone.addEventListener("lostpointercapture", endLook);
+  function pollTouchLook() {
+    if (touchLook && state.started && !state.paused) {
+      player.yaw -= touchLookDx * sensitivity.touchX;
+      player.pitch = Math.max(-1.25, Math.min(1.25, player.pitch - touchLookDy * sensitivity.touchY));
+      touchLookDx *= 0.22;
+      touchLookDy *= 0.22;
+    } else { touchLookDx = 0; touchLookDy = 0; }
+    requestAnimationFrame(pollTouchLook);
+  }
+  requestAnimationFrame(pollTouchLook);
 
-  // Legacy direction buttons remain supported for accessibility and external layouts.
   document.querySelectorAll("[data-key]").forEach(button => {
     const code = button.dataset.key;
     const down = event => { event.preventDefault(); setKey(code, true, "touch"); };
@@ -225,7 +272,6 @@ export function bindInput({ renderer, state, controller, ui }) {
     clearSource("gamepad");
   });
 
-  // Poll at display rate; edge-triggered buttons avoid repeated actions while held.
   function pollGamepad() {
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
     const pad = Array.from(pads).find(item => item?.connected);
@@ -238,7 +284,6 @@ export function bindInput({ renderer, state, controller, ui }) {
       player.yaw -= rx * sensitivity.padLook / 60;
       player.pitch = Math.max(-1.25, Math.min(1.25, player.pitch + ry * sensitivity.padLook / 60));
     } else clearSource("gamepad");
-
     if (pad) {
       const pressed = index => Boolean(pad.buttons[index]?.pressed);
       const edge = index => pressed(index) && !previousGamepadButtons[index];
