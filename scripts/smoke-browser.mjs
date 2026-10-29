@@ -133,19 +133,28 @@ try {
   await page.evaluate(() => {
     window.__DFLAT_SMOKE__.setPlayerPosition(-10.9, -29, Math.PI / 2);
     if (!window.__DFLAT_SMOKE__.interact("door-vchodove-dvere")) throw new Error("Entrance door interactable is missing");
+    const door = window.__DFLAT_SMOKE__.interiorDiagnostics();
+    if (!door.doorName.startsWith("Zavřít") || door.doorRotationY === Math.PI / 2) {
+      throw new Error("Entrance interaction did not open the door: " + JSON.stringify(door));
+    }
   });
   await page.keyboard.down("w");
   await page.waitForTimeout(700);
   await page.keyboard.up("w");
+  const doorwayPosition = await page.evaluate(() => window.__DFLAT_SMOKE__.playerPosition());
+  if (doorwayPosition.x > -12.4) {
+    const diagnostics = await page.evaluate(() => window.__DFLAT_SMOKE__.interiorDiagnostics());
+    throw new Error("Player could not cross the opened entrance: " + JSON.stringify({ doorwayPosition, diagnostics }));
+  }
   await page.evaluate(() => {
     const position = window.__DFLAT_SMOKE__.playerPosition();
     window.__DFLAT_SMOKE__.setPlayerPosition(position.x, position.z, 0);
   });
   await page.keyboard.down("w");
-  await page.waitForTimeout(1250);
+  await page.waitForTimeout(1000);
   await page.keyboard.up("w");
   const hallPosition = await page.evaluate(() => window.__DFLAT_SMOKE__.playerPosition());
-  if (hallPosition.x > -12.4 || hallPosition.z > -32.5) {
+  if (hallPosition.x > -12.4 || hallPosition.z > -32.0 || hallPosition.z < -34.4) {
     throw new Error("Player could not enter and walk down the interior hall: " + JSON.stringify(hallPosition));
   }
   await page.keyboard.down("a");
@@ -156,7 +165,7 @@ try {
     throw new Error("Player could not cross the hall to the stairwell passage: " + JSON.stringify(stairApproach));
   }
   await page.keyboard.down("w");
-  await page.waitForTimeout(650);
+  await page.waitForTimeout(900);
   await page.keyboard.up("w");
   const stairPosition = await page.evaluate(() => window.__DFLAT_SMOKE__.playerPosition());
   if (stairPosition.z > -35.5) {
