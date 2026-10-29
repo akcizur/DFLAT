@@ -86,8 +86,18 @@ export function createPanelakInterior({ THREE, scene, colliders, interactables }
     // Static grey door leaves are shown swung open against the adjacent wall.
     // They are deliberately non-interactive and have no collision, so they
     // cannot seal the room openings or trap the player in the hallway.
-    const leaf = box(name, x, 1.12, z, axis === "z" ? depth : width, height, axis === "z" ? width : depth, mats.staticDoor);
-    leaf.rotation.y = Math.PI / 2;
+    const alongZ = axis === "z";
+    const offset = width / 2 + 0.05;
+    const leaf = box(
+      name,
+      alongZ ? x : x + offset,
+      1.12,
+      alongZ ? z + offset : z,
+      alongZ ? depth : width,
+      height,
+      alongZ ? width : depth,
+      mats.staticDoor
+    );
     return leaf;
   };
   const makeEntranceDoor = () => {
