@@ -82,8 +82,23 @@ export function createPanelakInterior({ THREE, scene, colliders, interactables }
 
   // Only the exterior entrance is animated. Interior doors are plain, fixed grey
   // models: no interaction prompt, rotation or moving-door collision.
-  const makeStaticDoor = ({ name, x, z, width=0.88, height=2.05, depth=0.07, axis="x" }) => {
-    return box(name, x, 1.12, z, axis === "z" ? depth : width, height, axis === "z" ? width : depth, mats.staticDoor);
+  const makeStaticDoor = ({ name, x, z, width=0.88, height=2.05, depth=0.07, axis="x", openOffset=0.95 }) => {
+    // Static grey door leaves are shown swung open against the adjacent wall.
+    // They are deliberately non-interactive and have no collision, so they
+    // cannot seal the room openings or trap the player in the hallway.
+    const alongZ = axis === "z";
+    const offset = openOffset;
+    const leaf = box(
+      name,
+      alongZ ? x : x + offset,
+      1.12,
+      alongZ ? z + offset : z,
+      alongZ ? depth : width,
+      height,
+      alongZ ? width : depth,
+      mats.staticDoor
+    );
+    return leaf;
   };
   const makeEntranceDoor = () => {
     const width = 1.5, depth = 0.08, x = west + 0.12, z = doorwayZ;
@@ -117,9 +132,9 @@ export function createPanelakInterior({ THREE, scene, colliders, interactables }
     return { pivot, item };
   };
   const entranceDoor = makeEntranceDoor();
-  makeStaticDoor({ name:"dveře bytu 1", x:-15.1, z:-23.2, width:0.9 });
-  makeStaticDoor({ name:"ložnice", x:-15.1, z:-17.4, width:0.82 });
-  makeStaticDoor({ name:"koupelna", x:-16.1, z:-17.8, width:0.72, axis:"z" });
+  makeStaticDoor({ name:"dveře bytu 1", x:-15.1, z:-23.2, width:0.9, openOffset:0.95 });
+  makeStaticDoor({ name:"ložnice", x:-15.1, z:-17.4, width:0.82, openOffset:0.885 });
+  makeStaticDoor({ name:"koupelna", x:-16.1, z:-17.6, width:0.72, axis:"z", openOffset:0.91 });
 
   // A compact, fully furnished late-1980s flat.
   // Kitchen: cabinets, sink, cooker, table and four chairs.
