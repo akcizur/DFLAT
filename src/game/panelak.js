@@ -58,10 +58,13 @@ export function createPanelakDistrict({ THREE, scene }) {
     }
     if (buildingIndex === 0) {
       // Plinth follows the entrance opening instead of sealing the new doorway.
-      box("plinth", 0.18, 0.64, length + 0.16, x - halfWidth - 0.02, 0.32, z);
-      box("plinth", 0.18, 0.64, length + 0.16, x + halfWidth + 0.02, 0.32, z);
-      box("plinth", width + 0.16, 0.64, 0.18, x, 0.32, z - halfLength - 0.02);
-      box("plinth", width + 0.16, 0.64, 0.18, x, 0.32, z + halfLength + 0.02);
+      const entranceZ = z;
+      for (const [start, end] of [[z-halfLength-0.08, entranceZ-0.9], [entranceZ+0.9, z+halfLength+0.08]]) {
+        box("plinth", 0.18, 0.64, end-start, x-halfWidth-0.02, 0.32, (start+end)/2);
+      }
+      box("plinth", 0.18, 0.64, length+0.16, x+halfWidth+0.02, 0.32, z);
+      box("plinth", width+0.16, 0.64, 0.18, x, 0.32, z-halfLength-0.02);
+      box("plinth", width+0.16, 0.64, 0.18, x, 0.32, z+halfLength+0.02);
     } else {
       box("plinth", width + 0.16, 0.64, length + 0.16, x, 0.32, z);
     }
