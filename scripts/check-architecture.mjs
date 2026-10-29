@@ -7,7 +7,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const required = [
   "package.json", "vite.config.js", "index.html", "vendor/three.module.min.js",
   "vendor/THREE-LICENSE.txt", "styles.css", "styles-cinematic.css",
-  "src/main.js", "src/boot-debug.js", "src/game/open-world.js", "src/game/panelak.js",
+  "src/main.js", "src/boot-debug.js", "src/game/open-world.js", "src/game/panelak.js", "src/game/panelak-interior.js",
   "src/game/model-library.js", "src/game/player.js", "src/game/ui.js", "src/game/input.js",
   "scripts/prepare-open-models.mjs", "scripts/smoke-browser.mjs", "assets/OPEN_SOURCE_MODELS.md"
 ];
@@ -66,6 +66,12 @@ if (!worldSource.includes("createPanelakDistrict({ THREE, scene })")) fail("the 
 const panelakSource = await readFile(path.join(root, "src/game/panelak.js"), "utf8");
 if (!panelakSource.includes("PANELAK_LAYOUT") || !panelakSource.includes("floors: 4")) fail("four-storey panelák layout is missing");
 if (!panelakSource.includes("InstancedMesh")) fail("procedural architecture should batch repeated facade geometry");
+const interiorSource = await readFile(path.join(root, "src/game/panelak-interior.js"), "utf8");
+if (!interiorSource.includes("PANELAK_INTERIOR_LAYOUT")) fail("panelák interior layout contract is missing");
+if (!interiorSource.includes("PointLight")) fail("interior lighting must use real point lights");
+if (!interiorSource.includes("pivot.rotation.y")) fail("interactive hinged doors are missing");
+if (!interiorSource.includes("Bedroom rug") || !interiorSource.includes("Bathroom tiled floor") || !interiorSource.includes("Kitchen counter")) fail("the first apartment must include furnished rooms");
+if (!worldSource.includes("createPanelakInterior({ THREE, scene, colliders, interactables })")) fail("the panelák interior is not connected to the world");
 const librarySource = await readFile(path.join(root, "src/game/model-library.js"), "utf8");
 if (!librarySource.includes('fetch(SOURCE_ROOT + "/catalog.json")')) fail("the searchable upstream catalog is missing");
 if (!librarySource.includes("PAGE_SIZE = 48")) fail("the asset browser must paginate its model cards");
