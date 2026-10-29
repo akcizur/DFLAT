@@ -40,6 +40,7 @@ test("the first panelak has a documented, human-scale walkable footprint and roo
   }
   assert.ok(interactions.includes("entrance-door"));
   assert.ok(interactions.includes("lights"));
+  assert.deepEqual(PANELAK_INTERIOR_LAYOUT.staticDoors, ["apartment", "bedroom", "bathroom"]);
 });
 
 test("the entrance door opens a collision gap and can be closed again", () => {
@@ -63,6 +64,9 @@ test("the interior includes real room geometry, stair parts, and toggleable ligh
   for (const fragment of ["Stair tread","Kitchen counter","Sofa base","Bed frame","Bathtub","Mailbox bank"]) {
     assert.ok(names.some(name=>name.includes(fragment)), "missing geometry: "+fragment);
   }
+  const doors=interactables.filter(item=>item.id.startsWith("door-"));
+  assert.deepEqual(doors.map(item=>item.id), ["door-vchodove-dvere"], "only the exterior entrance should move");
+  assert.ok(names.includes("dveře bytu 1") && names.includes("ložnice") && names.includes("koupelna"), "other doors remain visible as static models");
   const lights=interactables.filter(item=>item.id.startsWith("light-"));
   assert.ok(lights.length>=6,"each room should have a light interaction");
   const light=lights[0];
