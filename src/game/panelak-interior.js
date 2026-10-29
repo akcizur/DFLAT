@@ -3,7 +3,7 @@ export const PANELAK_INTERIOR_LAYOUT = Object.freeze({
   bounds: Object.freeze({ west: -22.5, east: -11.9, north: -46.2, south: -11.8 }),
   entrance: Object.freeze({ x: -22.38, z: -29, width: 1.64 }),
   rooms: Object.freeze(["entrance-hall", "stairwell", "kitchen", "living-room", "bedroom", "bathroom"]),
-  interactions: Object.freeze(["entrance-door", "apartment-door", "room-doors", "lights"])
+  interactions: Object.freeze(["entrance-door", "lights"]), staticDoors: Object.freeze(["apartment", "bedroom", "bathroom"])
 });
 export function createPanelakInterior({ THREE, scene, colliders, interactables }) {
   const root = new THREE.Group();
@@ -21,7 +21,7 @@ export function createPanelakInterior({ THREE, scene, colliders, interactables }
     glass: material(0x4e6869, 0.32), fabric: material(0x777f77),
     cushion: material(0x9b8e78), white: material(0xe1dfd1),
     ceramic: material(0xd4d3c7, 0.28), screen: material(0x242b2c, 0.25),
-    warm: material(0xf1d8a2, 0.45), green: material(0x536a4d)
+    warm: material(0xf1d8a2, 0.45), green: material(0x536a4d), staticDoor: material(0x858985)
   };
   const box = (name, x, y, z, w, h, d, mat, { collider = false, castShadow = true } = {}) => {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
@@ -80,49 +80,46 @@ export function createPanelakInterior({ THREE, scene, colliders, interactables }
   box("Intercom panel", -21.12, 1.52, -28.0, 0.06, 0.52, 0.28, mats.metal);
   box("Building notice board", -21.1, 1.5, -26.7, 0.06, 0.72, 0.9, mats.wood);
 
-  // Doors rotate around a hinge. Their collision volumes are removed while open.
-  const makeDoor = ({ name, x, z, width=0.88, height=2.05, depth=0.09, yaw=0, axis="x", range=2.0, message }) => {
+  // Only the exterior entrance is animated. Interior doors are plain, fixed grey
+  // models: no interaction prompt, rotation or moving-door collision.
+  const makeStaticDoor = ({ name, x, z, width=0.88, height=2.05, depth=0.07, axis="x" }) => {
+    return box(name, x, 1.12, z, axis === "z" ? depth : width, height, axis === "z" ? width : depth, mats.staticDoor);
+  };
+  const makeEntranceDoor = () => {
+    const width = 1.5, depth = 0.08, x = west + 0.12, z = doorwayZ;
     const pivot = new THREE.Group();
-    const closedYaw = axis === "z" ? Math.PI / 2 : 0;
-    pivot.position.set(axis === "z" ? x : x-width/2, 0.1, axis === "z" ? z+width/2 : z);
-    pivot.rotation.y = closedYaw;
-    pivot.name = name+" hinge";
+    pivot.position.set(x, 0.1, z + width/2);
+    pivot.rotation.y = Math.PI / 2;
+    pivot.name = "vchodové dveře hinge";
     root.add(pivot);
-    const leaf = new THREE.Mesh(new THREE.BoxGeometry(width,height,depth), mats.wood);
-    leaf.position.set(width/2,height/2,0);
+    const leaf = new THREE.Mesh(new THREE.BoxGeometry(width, 2.05, depth), mats.staticDoor);
+    leaf.position.set(width/2, 1.025, 0);
     leaf.castShadow = true;
     leaf.receiveShadow = true;
-    leaf.name = name;
+    leaf.name = "vchodové dveře";
     pivot.add(leaf);
-    box(name+" handle", axis === "z" ? x+0.07 : x-width+0.12, 1.05, axis === "z" ? z-width*0.28 : z+0.07, 0.045, 0.14, 0.045, mats.metal, {castShadow:false});
-    const collider = axis === "z"
-      ? { minX:x-depth/2-0.04, maxX:x+depth/2+0.04, minZ:z-width/2, maxZ:z+width/2, name }
-      : { minX:x-width/2, maxX:x+width/2, minZ:z-depth/2-0.04, maxZ:z+depth/2+0.04, name };
+    const collider = { minX:x-depth/2-0.04, maxX:x+depth/2+0.04, minZ:z-width/2, maxZ:z+width/2, name:"vchodové dveře" };
     colliders.push(collider);
     let opened = false;
     const item = {
-      id: "door-"+name.toLowerCase().replace(/[^a-z0-9]+/g,"-"),
-      name: (opened ? "Zavřít " : "Otevřít ") + name,
-      x, z, range,
+      id: "door-vchodove-dvere", name: "Otevřít vchodové dveře", x, z, range: 2.4,
       action() {
         opened = !opened;
-        pivot.rotation.y = opened ? closedYaw + yaw : closedYaw;
+        pivot.rotation.y = opened ? 0 : Math.PI / 2;
         if (opened) {
           const index = colliders.indexOf(collider);
-          if (index >= 0) colliders.splice(index,1);
+          if (index >= 0) colliders.splice(index, 1);
         } else if (!colliders.includes(collider)) colliders.push(collider);
-        item.name = (opened ? "Zavřít " : "Otevřít ") + name;
-        if (message) message(opened);
+        item.name = (opened ? "Zavřít " : "Otevřít ") + "vchodové dveře";
       }
     };
     interactables.push(item);
     return { pivot, item };
   };
-  const entranceDoor = makeDoor({ name:"vchodové dveře", x:west+0.12, z:doorwayZ, width:1.5, depth:0.08, axis:"z", yaw:-Math.PI/2, range:2.4 });
-  // Apartment entry is placed in the partition gap, opening into the apartment.
-  makeDoor({ name:"dveře bytu 1", x:-15.1, z:-23.2, width:0.9, depth:0.08, yaw:Math.PI/2, range:2.0 });
-  makeDoor({ name:"ložnice", x:-15.1, z:-17.4, width:0.82, depth:0.08, yaw:Math.PI/2, range:1.8 });
-  makeDoor({ name:"koupelna", x:-16.1, z:-17.8, width:0.72, depth:0.08, axis:"z", yaw:-Math.PI/2, range:1.8 });
+  const entranceDoor = makeEntranceDoor();
+  makeStaticDoor({ name:"dveře bytu 1", x:-15.1, z:-23.2, width:0.9 });
+  makeStaticDoor({ name:"ložnice", x:-15.1, z:-17.4, width:0.82 });
+  makeStaticDoor({ name:"koupelna", x:-16.1, z:-17.8, width:0.72, axis:"z" });
 
   // A compact, fully furnished late-1980s flat.
   // Kitchen: cabinets, sink, cooker, table and four chairs.
