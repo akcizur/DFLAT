@@ -138,6 +138,13 @@ if (new URLSearchParams(location.search).get("smoke") === "1") {
       keysDown: () => ({ ...controller.keysDown }),
       gameState: () => ({ started: state.started, paused: state.paused }),
       blockingCollidersAt: (x, z) => controller.getBlockingCollidersAt(x, z),
+      moveForFrames: (code, frames) => {
+        if (!state.started || state.paused) return { error: "gameplay is inactive", state: { ...state } };
+        controller.keysDown[code] = true;
+        for (let frame = 0; frame < frames; frame++) controller.update(1 / 60);
+        controller.keysDown[code] = false;
+        return { x: controller.player.x, z: controller.player.z, yaw: controller.player.yaw };
+      },
       setPlayerPosition: (x, z, yaw = controller.player.yaw) => {
         controller.player.x = x;
         controller.player.z = z;
