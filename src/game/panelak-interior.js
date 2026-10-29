@@ -83,7 +83,12 @@ export function createPanelakInterior({ THREE, scene, colliders, interactables }
   // Only the exterior entrance is animated. Interior doors are plain, fixed grey
   // models: no interaction prompt, rotation or moving-door collision.
   const makeStaticDoor = ({ name, x, z, width=0.88, height=2.05, depth=0.07, axis="x" }) => {
-    return box(name, x, 1.12, z, axis === "z" ? depth : width, height, axis === "z" ? width : depth, mats.staticDoor);
+    // Static grey door leaves are shown swung open against the adjacent wall.
+    // They are deliberately non-interactive and have no collision, so they
+    // cannot seal the room openings or trap the player in the hallway.
+    const leaf = box(name, x, 1.12, z, axis === "z" ? depth : width, height, axis === "z" ? width : depth, mats.staticDoor);
+    leaf.rotation.y = Math.PI / 2;
+    return leaf;
   };
   const makeEntranceDoor = () => {
     const width = 1.5, depth = 0.08, x = west + 0.12, z = doorwayZ;
