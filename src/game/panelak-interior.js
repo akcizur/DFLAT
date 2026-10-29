@@ -122,7 +122,7 @@ export function createPanelakInterior({ THREE, scene, colliders, interactables }
   // Apartment entry is placed in the partition gap, opening into the apartment.
   makeDoor({ name:"dveře bytu 1", x:-15.1, z:-23.2, width:0.9, depth:0.08, yaw:Math.PI/2, range:2.0 });
   makeDoor({ name:"ložnice", x:-15.1, z:-17.4, width:0.82, depth:0.08, yaw:Math.PI/2, range:1.8 });
-  makeDoor({ name:"koupelna", x:-16.1, z:-17.8, width:0.72, depth:0.08, yaw:-Math.PI/2, range:1.8 });
+  makeDoor({ name:"koupelna", x:-16.1, z:-17.8, width:0.72, depth:0.08, axis:"z", yaw:-Math.PI/2, range:1.8 });
 
   // A compact, fully furnished late-1980s flat.
   // Kitchen: cabinets, sink, cooker, table and four chairs.
