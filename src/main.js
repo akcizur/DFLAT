@@ -136,7 +136,32 @@ if (new URLSearchParams(location.search).get("smoke") === "1") {
     value: {
       playerPosition: () => ({ x: controller.player.x, z: controller.player.z }),
       keysDown: () => ({ ...controller.keysDown }),
-      gameState: () => ({ started: state.started, paused: state.paused })
+      gameState: () => ({ started: state.started, paused: state.paused }),
+      setPlayerPosition: (x, z, yaw = controller.player.yaw) => {
+        controller.player.x = x;
+        controller.player.z = z;
+        controller.player.yaw = yaw;
+        controller.player.elevation = 0;
+        controller.player.jumpHeight = 0;
+        controller.syncCamera(1);
+      },
+      interact: id => {
+        const item = world.interactables.find(entry => entry.id === id);
+        if (!item) return false;
+        item.action();
+        return true;
+      },
+      interiorDiagnostics: () => {
+        const interior = world.panelakInterior;
+        return {
+          rootVisible: interior.root.visible,
+          meshCount: interior.meshes.length,
+          visibleMeshCount: interior.meshes.filter(mesh => mesh.visible).length,
+          hasCeiling: interior.meshes.some(mesh => mesh.name === "Interior / ceiling slab"),
+          names: interior.meshes.slice(0, 12).map(mesh => mesh.name),
+          entrance: { ...interior.bounds }
+        };
+      }
     }
   });
 }
