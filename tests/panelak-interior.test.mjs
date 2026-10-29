@@ -1,0 +1,72 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { createPanelakInterior, PANELAK_INTERIOR_LAYOUT } from "../src/game/panelak-interior.js";
+
+class Vector3 {
+  set(x, y, z) { this.x=x; this.y=y; this.z=z; return this; }
+}
+class BoxGeometry { constructor(width,height,depth) { Object.assign(this,{width,height,depth}); } }
+class MeshStandardMaterial { constructor(options={}) { Object.assign(this,options); } }
+class Mesh {
+  constructor(geometry, material) {
+    this.geometry=geometry; this.material=material; this.position=new Vector3();
+    this.rotation={x:0,y:0,z:0}; this.children=[]; this.visible=true;
+  }
+  add(child) { this.children.push(child); child.parent=this; }
+}
+class Group extends Mesh {
+  constructor() { super(null,null); this.rotation={x:0,y:0,z:0}; }
+}
+class PointLight extends Mesh {
+  constructor(color,intensity,distance,decay) { super(null,null); Object.assign(this,{color,intensity,distance,decay}); }
+}
+const THREE={ BoxGeometry, MeshStandardMaterial, Mesh, Group, PointLight };
+
+function makeInterior() {
+  const scene=new Group();
+  const colliders=[];
+  const interactables=[];
+  const result=createPanelakInterior({THREE,scene,colliders,interactables});
+  return {scene,colliders,interactables,result};
+}
+
+test("the first panelak has a documented, human-scale walkable footprint and rooms", () => {
+  const {bounds,entrance,rooms,interactions}=PANELAK_INTERIOR_LAYOUT;
+  assert.ok(bounds.west < bounds.east && bounds.north < bounds.south);
+  assert.ok(entrance.width >= 1.5);
+  assert.ok(entrance.x > bounds.west && entrance.x < bounds.west+0.3);
+  for (const room of ["entrance-hall","stairwell","kitchen","living-room","bedroom","bathroom"]) {
+    assert.ok(rooms.includes(room), "missing room: "+room);
+  }
+  assert.ok(interactions.includes("entrance-door"));
+  assert.ok(interactions.includes("lights"));
+});
+
+test("the entrance door opens a collision gap and can be closed again", () => {
+  const {colliders,interactables,result}=makeInterior();
+  const door=interactables.find(item=>item.name==="Otevřít vchodové dveře");
+  assert.ok(door, "entrance door should be interactive");
+  const containsEntrance = () => colliders.some(c =>
+    -22.38 > c.minX && -22.38 < c.maxX && -29 > c.minZ && -29 < c.maxZ
+  );
+  assert.equal(containsEntrance(),true,"closed door blocks the doorway");
+  door.action();
+  assert.equal(containsEntrance(),false,"open door clears its collision volume");
+  assert.ok(result.entranceDoor.pivot.rotation.y !== Math.PI/2,"open door rotates on its hinge");
+  door.action();
+  assert.equal(containsEntrance(),true,"closed door restores its collision volume");
+});
+
+test("the interior includes real room geometry, stair parts, and toggleable lights", () => {
+  const {interactables,result}=makeInterior();
+  const names=result.meshes.map(mesh=>mesh.name);
+  for (const fragment of ["Stair tread","Kitchen counter","Sofa base","Bed frame","Bathtub","Mailbox bank"]) {
+    assert.ok(names.some(name=>name.includes(fragment)), "missing geometry: "+fragment);
+  }
+  const lights=interactables.filter(item=>item.id.startsWith("light-"));
+  assert.ok(lights.length>=6,"each room should have a light interaction");
+  const light=lights[0];
+  const previous=light.name;
+  light.action();
+  assert.notEqual(light.name,previous,"light interaction label changes");
+});

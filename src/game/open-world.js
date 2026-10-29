@@ -1,5 +1,6 @@
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { createPanelakDistrict, PANELAK_LAYOUT } from "./panelak.js";
+import { createPanelakInterior } from "./panelak-interior.js";
 
 const SOURCE_COMMIT = "eb99f44e0a4ff36a3d5e52eb1256cb566d8854c3";
 const SOURCE_ROOT = "https://raw.githubusercontent.com/Hidencod/tge-assets/" + SOURCE_COMMIT;
@@ -128,6 +129,8 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
   const panelakDistrict = createPanelakDistrict({ THREE, scene });
   colliders.push(...panelakDistrict.colliders);
   meshes.push(...panelakDistrict.meshes);
+  const panelakInterior = createPanelakInterior({ THREE, scene, colliders, interactables });
+  meshes.push(...panelakInterior.meshes);
 
   for (const entry of WORLD_LAYOUT) {
     if (entry.collider) {

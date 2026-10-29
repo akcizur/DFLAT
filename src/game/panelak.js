@@ -22,7 +22,9 @@ const MATERIALS = Object.freeze({
 export function createPanelakDistrict({ THREE, scene }) {
   const batches = new Map();
   const meshes = [];
-  const colliders = PANELAK_LAYOUT.map(building => ({
+  // The first block has a walkable ground floor. Its perimeter and door opening
+  // are collision-tested by panelak-interior.js; the other blocks remain solid.
+  const colliders = PANELAK_LAYOUT.slice(1).map(building => ({
     minX: building.x - building.width / 2,
     maxX: building.x + building.width / 2,
     minZ: building.z - building.length / 2,
@@ -48,8 +50,24 @@ export function createPanelakDistrict({ THREE, scene }) {
     const halfLength = length / 2;
     const floorHeight = height / floors;
 
-    box(buildingIndex % 2 === 0 ? "concrete" : "concreteCool", width, height, length, x, height / 2, z);
-    box("plinth", width + 0.16, 0.64, length + 0.16, x, 0.32, z);
+    if (buildingIndex === 0) {
+      // Keep the upper three floors solid, leaving the ground floor open for the interior.
+      box("concrete", width, height - floorHeight, length, x, (height + floorHeight) / 2, z);
+    } else {
+      box(buildingIndex % 2 === 0 ? "concrete" : "concreteCool", width, height, length, x, height / 2, z);
+    }
+    if (buildingIndex === 0) {
+      // Plinth follows the entrance opening instead of sealing the new doorway.
+      const entranceZ = z;
+      for (const [start, end] of [[z-halfLength-0.08, entranceZ-0.9], [entranceZ+0.9, z+halfLength+0.08]]) {
+        box("plinth", 0.18, 0.64, end-start, x-halfWidth-0.02, 0.32, (start+end)/2);
+      }
+      box("plinth", 0.18, 0.64, length+0.16, x+halfWidth+0.02, 0.32, z);
+      box("plinth", width+0.16, 0.64, 0.18, x, 0.32, z-halfLength-0.02);
+      box("plinth", width+0.16, 0.64, 0.18, x, 0.32, z+halfLength+0.02);
+    } else {
+      box("plinth", width + 0.16, 0.64, length + 0.16, x, 0.32, z);
+    }
 
     // Flat roof, low parapet and a small service room typical of prefabricated blocks.
     box("roof", width + 0.08, 0.16, length + 0.08, x, height + 0.04, z);
@@ -71,11 +89,14 @@ export function createPanelakDistrict({ THREE, scene }) {
         const floorY = floorHeight * (floor + 0.5);
         for (let bay = 0; bay < bayOffsets.length; bay += 1) {
           const bayZ = z + bayOffsets[bay];
-          box((bay + floor + buildingIndex) % 3 === 0 ? "concreteLight" : "concrete",
-            0.045, floorHeight - 0.13, 3.88, faceX + side * 0.026, floorY, bayZ);
+          if (buildingIndex !== 0 || floor > 0) {
+            box((bay + floor + buildingIndex) % 3 === 0 ? "concreteLight" : "concrete",
+              0.045, floorHeight - 0.13, 3.88, faceX + side * 0.026, floorY, bayZ);
+          }
         }
         const windowY = floorHeight * (floor + 0.51);
         for (let bay = 0; bay < bayOffsets.length; bay += 1) {
+          if (buildingIndex === 0 && floor === 0) continue;
           const bayZ = z + bayOffsets[bay];
           const glassType = (bay + floor * 3 + buildingIndex) % 9 === 0 ? "glassWarm" : "glass";
           box("windowFrame", 0.14, 1.48, 1.28, faceX + side * 0.064, windowY, bayZ);
@@ -111,7 +132,7 @@ export function createPanelakDistrict({ THREE, scene }) {
       }
 
       // Recessed entrances with a flat canopy, plaque, light and shallow steps.
-      for (const entrance of [-8, 0, 8]) {
+      for (const entrance of (buildingIndex === 0 ? [] : [-8, 0, 8])) {
         box("doorFrame", 0.18, 2.28, 1.92, faceX + side * 0.075, 1.13, z + entrance);
         box("door", 0.075, 2.06, 1.48, faceX + side * 0.16, 1.08, z + entrance);
         box("doorGlass", 0.035, 0.67, 0.47, faceX + side * 0.205, 1.52, z + entrance);
