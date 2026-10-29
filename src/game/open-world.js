@@ -200,6 +200,8 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
   return {
     colliders,
     interactables,
+    panelakDistrict,
+    panelakInterior,
     meshesToAnimate,
     doorAnimations,
     meshes,
