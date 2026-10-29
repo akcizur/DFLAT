@@ -134,7 +134,7 @@ if (new URLSearchParams(location.search).get("smoke") === "1") {
   Object.defineProperty(window, "__DFLAT_SMOKE__", {
     configurable: true,
     value: {
-      playerPosition: () => ({ x: controller.player.x, z: controller.player.z }),
+      playerPosition: () => ({ x: controller.player.x, z: controller.player.z, yaw: controller.player.yaw }),
       keysDown: () => ({ ...controller.keysDown }),
       gameState: () => ({ started: state.started, paused: state.paused }),
       setPlayerPosition: (x, z, yaw = controller.player.yaw) => {
