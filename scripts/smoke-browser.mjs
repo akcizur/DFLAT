@@ -130,54 +130,43 @@ try {
     throw new Error("Panelák interior geometry is missing or hidden: " + JSON.stringify(interiorBefore));
   }
 
-  await page.evaluate(() => {
-    window.__DFLAT_SMOKE__.setPlayerPosition(-10.9, -29, Math.PI / 2);
-    if (!window.__DFLAT_SMOKE__.interact("door-vchodove-dvere")) throw new Error("Entrance door interactable is missing");
-    const door = window.__DFLAT_SMOKE__.interiorDiagnostics();
+  const route = await page.evaluate(() => {
+    const smoke = window.__DFLAT_SMOKE__;
+    smoke.setPlayerPosition(-10.9, -29, Math.PI / 2);
+    if (!smoke.interact("door-vchodove-dvere")) throw new Error("Entrance door interactable is missing");
+    const door = smoke.interiorDiagnostics();
     if (!door.doorName.startsWith("Zavřít") || door.doorRotationY === Math.PI / 2) {
       throw new Error("Entrance interaction did not open the door: " + JSON.stringify(door));
     }
-  });
-  await page.keyboard.down("w");
-  await page.waitForTimeout(700);
-  await page.keyboard.up("w");
-  const doorwayPosition = await page.evaluate(() => window.__DFLAT_SMOKE__.playerPosition());
-  if (doorwayPosition.x > -12.4) {
-    const diagnostics = await page.evaluate(() => window.__DFLAT_SMOKE__.interiorDiagnostics());
-    const collisionDiagnostics = await page.evaluate(position => ({
-      current: window.__DFLAT_SMOKE__.blockingCollidersAt(position.x, position.z),
-      nextStep: window.__DFLAT_SMOKE__.blockingCollidersAt(position.x - 0.08, position.z)
-    }), doorwayPosition);
-    throw new Error("Player could not cross the opened entrance: " + JSON.stringify({ doorwayPosition, diagnostics, collisionDiagnostics }));
-  }
-  await page.evaluate(() => {
-    const position = window.__DFLAT_SMOKE__.playerPosition();
-    window.__DFLAT_SMOKE__.setPlayerPosition(position.x, position.z, 0);
-  });
-  await page.keyboard.down("w");
-  await page.waitForTimeout(1000);
-  await page.keyboard.up("w");
-  const hallPosition = await page.evaluate(() => window.__DFLAT_SMOKE__.playerPosition());
-  if (hallPosition.x > -12.4 || hallPosition.z > -32.0 || hallPosition.z < -34.4) {
-    throw new Error("Player could not enter and walk down the interior hall: " + JSON.stringify(hallPosition));
-  }
-  await page.keyboard.down("a");
-  await page.waitForTimeout(1300);
-  await page.keyboard.up("a");
-  const stairApproach = await page.evaluate(() => window.__DFLAT_SMOKE__.playerPosition());
-  if (stairApproach.x > -17.7) {
-    throw new Error("Player could not cross the hall to the stairwell passage: " + JSON.stringify(stairApproach));
-  }
-  await page.keyboard.down("w");
-  await page.waitForTimeout(900);
-  await page.keyboard.up("w");
-  const stairPosition = await page.evaluate(() => window.__DFLAT_SMOKE__.playerPosition());
-  if (stairPosition.z > -35.5) {
-    throw new Error("Player is blocked by the stairwell partition: " + JSON.stringify(stairPosition));
-  }
-
-  await page.evaluate(() => {
-    window.__DFLAT_SMOKE__.setPlayerPosition(-18.2, -37.5, -Math.PI / 2);
+    const doorway = smoke.moveForFrames("KeyW", 60);
+    if (doorway.error || doorway.x > -12.4) {
+      throw new Error("Player could not cross the opened entrance: " + JSON.stringify({
+        doorway, door, blockers: smoke.blockingCollidersAt(doorway.x, doorway.z)
+      }));
+    }
+    smoke.setPlayerPosition(doorway.x, doorway.z, 0);
+    const hall = smoke.moveForFrames("KeyW", 65);
+    if (hall.error || hall.x > -12.4 || hall.z > -32.0 || hall.z < -34.4) {
+      throw new Error("Player could not walk down the entrance hall: " + JSON.stringify({
+        hall, blockers: smoke.blockingCollidersAt(hall.x, hall.z)
+      }));
+    }
+    smoke.setPlayerPosition(hall.x, hall.z, 0);
+    const stairApproach = smoke.moveForFrames("KeyA", 60);
+    if (stairApproach.error || stairApproach.x > -17.7) {
+      throw new Error("Player could not cross the hall to the stairwell passage: " + JSON.stringify({
+        stairApproach, blockers: smoke.blockingCollidersAt(stairApproach.x, stairApproach.z)
+      }));
+    }
+    smoke.setPlayerPosition(stairApproach.x, stairApproach.z, 0);
+    const stairs = smoke.moveForFrames("KeyW", 60);
+    if (stairs.error || stairs.z > -35.5) {
+      throw new Error("Player is blocked by the stairwell partition: " + JSON.stringify({
+        stairs, blockers: smoke.blockingCollidersAt(stairs.x, stairs.z)
+      }));
+    }
+    smoke.setPlayerPosition(-18.2, -37.5, -Math.PI / 2);
+    return { doorway, hall, stairApproach, stairs };
   });
   await page.waitForTimeout(300);
   const interiorVisual = await page.evaluate(() => {
