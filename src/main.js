@@ -137,6 +137,7 @@ if (new URLSearchParams(location.search).get("smoke") === "1") {
       playerPosition: () => ({ x: controller.player.x, z: controller.player.z, yaw: controller.player.yaw }),
       keysDown: () => ({ ...controller.keysDown }),
       gameState: () => ({ started: state.started, paused: state.paused }),
+      blockingCollidersAt: (x, z) => controller.getBlockingCollidersAt(x, z),
       setPlayerPosition: (x, z, yaw = controller.player.yaw) => {
         controller.player.x = x;
         controller.player.z = z;
