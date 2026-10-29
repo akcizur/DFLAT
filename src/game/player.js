@@ -68,7 +68,7 @@ export function createPlayerController({ camera, colliders, interactables, state
   function doInteract() {
     const item = nearestInteractable();
     if (!item) {
-      ui.showToast("Prázdná mapa. Nic k interakci.");
+      ui.showToast("V okolí není žádný dostupný objekt k interakci.");
       return;
     }
     item.action();

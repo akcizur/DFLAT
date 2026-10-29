@@ -8,7 +8,7 @@
     "build": "node scripts/prepare-open-models.mjs && vite build",
     "preview": "vite preview",
     "check": "node scripts/check-architecture.mjs",
-    "check:syntax": "node --check src/main.js && node --check src/game/open-world.js && node --check src/game/model-library.js && node --check src/game/player.js && node --check src/game/ui.js && node --check src/game/input.js && node --check scripts/prepare-open-models.mjs && node --check scripts/check-architecture.mjs && node --check scripts/smoke-browser.mjs",
+    "check:syntax": "node --check src/main.js && node --check src/game/open-world.js && node --check src/game/panelak.js && node --check src/game/model-library.js && node --check src/game/player.js && node --check src/game/ui.js && node --check src/game/input.js && node --check scripts/prepare-open-models.mjs && node --check scripts/check-architecture.mjs && node --check scripts/smoke-browser.mjs",
     "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {

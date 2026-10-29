@@ -1,16 +1,18 @@
-# DFLAT | Open Model World
+# DFLAT | Panelák District
 
-A first-person low-poly neighbourhood built with Three.js, Vite and Bun. The game keeps the existing keyboard, mouse-look, jumping, touch and gamepad controls while using open model assets instead of the former empty map.
+A first-person low-poly neighbourhood built with Three.js, Vite and Bun. The world now combines an original procedural four-storey panelák estate with pinned CC0 street assets, while preserving keyboard, mouse-look, jumping, touch and gamepad controls.
 
 ## Open model library
 
 - Search and browse **1,883 CC0 1.0 Kenney models** from 19 packs in the in-game model browser.
-- The build downloads a curated bundle of **32 pinned GLB assets**; the initial neighbourhood places a subset of them and the rest remain available in the model browser.
+- The build downloads a curated bundle of **25 pinned GLB assets**; the initial neighbourhood places a subset of them and the rest remain available in the model browser.
 - Additional catalog models are loaded only when selected. The entire library is not downloaded or rendered at startup.
 - Press `M` or select **MODEL LIBRARY** from the menu to browse. Choose a model and insert it into the world in front of the player.
 - See [assets/OPEN_SOURCE_MODELS.md](assets/OPEN_SOURCE_MODELS.md) for sources, license details and the pinned upstream commit.
 
-The model catalog and non-bundled models require an internet connection. The selected neighbourhood assets are downloaded before Vite starts or builds the app.
+The core panelák geometry is generated locally in Three.js: four four-storey blocks, concrete-panel seams, inset windows, stacked balconies, recessed entrances, roof utility rooms, ventilation, courtyard paths, benches, planters, curbs, street lamps and zebra crossings. Repeated facade parts are batched with instanced meshes. Imported CC0 models supply the surrounding roads, vehicles, vegetation and street props.
+
+The model catalog and non-bundled models require an internet connection. The selected CC0 neighbourhood assets are downloaded before Vite starts or builds the app.
 
 ## Run locally
 

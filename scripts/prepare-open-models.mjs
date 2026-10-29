@@ -12,13 +12,6 @@ const CATALOG_URL = SOURCE_ROOT + "/catalog.json";
 // Only the models used by the shipped neighbourhood are downloaded at build time.
 // The complete 1,883-model catalog remains discoverable on demand in the in-game browser.
 const WORLD_MODEL_IDS = [
-  "city-kit-suburban/building-type-a",
-  "city-kit-suburban/building-type-b",
-  "city-kit-suburban/building-type-c",
-  "city-kit-suburban/building-type-d",
-  "city-kit-suburban/building-type-e",
-  "city-kit-commercial/building-a",
-  "city-kit-commercial/building-b",
   "city-kit-commercial/building-skyscraper-a",
   "city-kit-roads/road-straight",
   "city-kit-roads/road-crossroad",

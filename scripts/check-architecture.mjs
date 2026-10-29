@@ -7,7 +7,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const required = [
   "package.json", "vite.config.js", "index.html", "vendor/three.module.min.js",
   "vendor/THREE-LICENSE.txt", "styles.css", "styles-cinematic.css",
-  "src/main.js", "src/boot-debug.js", "src/game/open-world.js",
+  "src/main.js", "src/boot-debug.js", "src/game/open-world.js", "src/game/panelak.js",
   "src/game/model-library.js", "src/game/player.js", "src/game/ui.js", "src/game/input.js",
   "scripts/prepare-open-models.mjs", "scripts/smoke-browser.mjs", "assets/OPEN_SOURCE_MODELS.md"
 ];
@@ -62,6 +62,10 @@ const worldSource = await readFile(path.join(root, "src/game/open-world.js"), "u
 if (!worldSource.includes("CC0 neighbourhood ground")) fail("world ground is missing");
 if (!worldSource.includes("WORLD_LAYOUT")) fail("the curated asset-backed world layout is missing");
 if (!worldSource.includes('fetch(APP_BASE + "models/manifest.json")')) fail("the local asset manifest must load at runtime");
+if (!worldSource.includes("createPanelakDistrict({ THREE, scene })")) fail("the procedural panelák district must be present");
+const panelakSource = await readFile(path.join(root, "src/game/panelak.js"), "utf8");
+if (!panelakSource.includes("PANELAK_LAYOUT") || !panelakSource.includes("floors: 4")) fail("four-storey panelák layout is missing");
+if (!panelakSource.includes("InstancedMesh")) fail("procedural architecture should batch repeated facade geometry");
 const librarySource = await readFile(path.join(root, "src/game/model-library.js"), "utf8");
 if (!librarySource.includes('fetch(SOURCE_ROOT + "/catalog.json")')) fail("the searchable upstream catalog is missing");
 if (!librarySource.includes("PAGE_SIZE = 48")) fail("the asset browser must paginate its model cards");

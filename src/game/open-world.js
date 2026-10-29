@@ -1,4 +1,5 @@
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { createPanelakDistrict, PANELAK_LAYOUT } from "./panelak.js";
 
 const SOURCE_COMMIT = "eb99f44e0a4ff36a3d5e52eb1256cb566d8854c3";
 const SOURCE_ROOT = "https://raw.githubusercontent.com/Hidencod/tge-assets/" + SOURCE_COMMIT;
@@ -12,15 +13,14 @@ export const WORLD_LAYOUT = [
   { id: "city-kit-roads/road-straight", x: 0, z: -46, kind: "road" },
   { id: "city-kit-roads/road-straight", x: 0, z: -56, kind: "road" },
   { id: "city-kit-roads/road-straight", x: 0, z: -66, kind: "road" },
+  { id: "city-kit-roads/road-straight", x: 0, z: -76, kind: "road" },
+  { id: "city-kit-roads/road-crossroad", x: 0, z: -76, kind: "road" },
+  { id: "city-kit-roads/road-straight", x: 0, z: -86, kind: "road" },
+  { id: "city-kit-roads/road-straight", x: 0, z: -96, kind: "road" },
   { id: "city-kit-roads/road-crossing", x: 0, z: -26, kind: "road" },
 
-  { id: "city-kit-suburban/building-type-a", x: -13, z: -17, yaw: Math.PI / 2, kind: "building", targetHeight: 4.2, collider: [4, 4.5] },
-  { id: "city-kit-suburban/building-type-b", x: 13, z: -17, yaw: -Math.PI / 2, kind: "building", targetHeight: 4.6, collider: [4, 4.5] },
-  { id: "city-kit-suburban/building-type-c", x: -13, z: -39, yaw: Math.PI / 2, kind: "building", targetHeight: 4.8, collider: [4.5, 4.5] },
-  { id: "city-kit-suburban/building-type-d", x: 13, z: -39, yaw: -Math.PI / 2, kind: "building", targetHeight: 4.5, collider: [4.5, 4.5] },
-  { id: "city-kit-commercial/building-a", x: -15, z: -62, yaw: Math.PI / 2, kind: "building", targetHeight: 6.8, collider: [5, 5] },
-  { id: "city-kit-commercial/building-b", x: 15, z: -62, yaw: -Math.PI / 2, kind: "building", targetHeight: 7.4, collider: [5, 5] },
-  { id: "city-kit-commercial/building-skyscraper-a", x: 0, z: -94, yaw: 0, kind: "building", targetHeight: 17, collider: [7, 7] },
+  // Keep the skyline outside the playable road; foreground housing is generated as paneláks.
+  { id: "city-kit-commercial/building-skyscraper-a", x: -30, z: -118, yaw: 0, kind: "building", targetHeight: 17, collider: [7, 7] },
 
   { id: "car-kit/taxi", x: -2.1, z: -13, yaw: 0, kind: "vehicle", targetHeight: 1.45 },
   { id: "car-kit/ambulance", x: 2.2, z: -52, yaw: Math.PI, kind: "vehicle", targetHeight: 1.65 },
@@ -105,7 +105,7 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
 
   // A quiet asphalt underlay keeps the street continuous if a source model fails to load.
   meshes.push(makeBox(THREE, scene, {
-    x: 0, y: -0.055, z: -40, width: 8.8, height: 0.08, depth: 94,
+    x: 0, y: -0.055, z: -47.5, width: 8.8, height: 0.08, depth: 111,
     color: 0x34393a, name: "Asphalt road underlay"
   }));
   meshes.push(makeBox(THREE, scene, {
@@ -113,13 +113,21 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
     color: 0x34393a, name: "Asphalt cross street underlay"
   }));
   meshes.push(makeBox(THREE, scene, {
-    x: -5.6, y: -0.035, z: -40, width: 2, height: 0.08, depth: 94,
+    x: 0, y: -0.047, z: -76, width: 66, height: 0.065, depth: 7.4,
+    color: 0x34393a, name: "Asphalt cross street underlay north"
+  }));
+  meshes.push(makeBox(THREE, scene, {
+    x: -5.6, y: -0.035, z: -47.5, width: 2, height: 0.08, depth: 111,
     color: 0x999a91, name: "West sidewalk"
   }));
   meshes.push(makeBox(THREE, scene, {
-    x: 5.6, y: -0.035, z: -40, width: 2, height: 0.08, depth: 94,
+    x: 5.6, y: -0.035, z: -47.5, width: 2, height: 0.08, depth: 111,
     color: 0x999a91, name: "East sidewalk"
   }));
+
+  const panelakDistrict = createPanelakDistrict({ THREE, scene });
+  colliders.push(...panelakDistrict.colliders);
+  meshes.push(...panelakDistrict.meshes);
 
   for (const entry of WORLD_LAYOUT) {
     if (entry.collider) {
@@ -198,11 +206,15 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
     getCoordinateData: () => ({
       schemaVersion: "1.0",
       units: "metres",
-      objects: WORLD_LAYOUT.map(entry => ({ id: entry.id, x: entry.x, y: 0, z: entry.z, kind: entry.kind })),
+      objects: [
+        ...PANELAK_LAYOUT.map(entry => ({ id: entry.id, x: entry.x, y: 0, z: entry.z, kind: "panelak" })),
+        ...WORLD_LAYOUT.map(entry => ({ id: entry.id, x: entry.x, y: 0, z: entry.z, kind: entry.kind }))
+      ],
       anchors: [{ id: "spawn", x: 0, y: 0, z: 9.2 }]
     }),
-    exportCoordinateCSV: () => "record_type,id,name,x,y,z\n" + WORLD_LAYOUT
-      .map((entry, i) => ["object", i + 1, entry.id, entry.x, 0, entry.z].join(","))
-      .join("\n")
+    exportCoordinateCSV: () => "record_type,id,name,x,y,z\n" + [
+      ...PANELAK_LAYOUT.map(entry => ({ id: entry.id, x: entry.x, z: entry.z })),
+      ...WORLD_LAYOUT
+    ].map((entry, i) => ["object", i + 1, entry.id, entry.x, 0, entry.z].join(",")).join("\n")
   };
 }
