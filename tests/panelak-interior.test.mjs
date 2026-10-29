@@ -70,7 +70,7 @@ test("the interior includes real room geometry, stair parts, and toggleable ligh
   for (const name of ["dveře bytu 1", "ložnice", "koupelna"]) {
     const doorMesh=result.meshes.find(mesh=>mesh.name===name);
     assert.ok(doorMesh, "static grey door model should exist: "+name);
-    assert.equal(doorMesh.rotation.y, Math.PI/2, "static door should sit open along the wall: "+name);
+    assert.equal(doorMesh.rotation.y, 0, "static door should remain a plain, unanimated model: "+name);
     assert.equal(colliders.some(c=>c.name===name), false, "static door model must not block its opening: "+name);
   }
   const lights=interactables.filter(item=>item.id.startsWith("light-"));
