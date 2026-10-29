@@ -159,6 +159,11 @@ if (new URLSearchParams(location.search).get("smoke") === "1") {
           visibleMeshCount: interior.meshes.filter(mesh => mesh.visible).length,
           hasCeiling: interior.meshes.some(mesh => mesh.name === "Interior / ceiling slab"),
           names: interior.meshes.slice(0, 12).map(mesh => mesh.name),
+          doorName: interior.entranceDoor.item.name,
+          doorRotationY: interior.entranceDoor.pivot.rotation.y,
+          nearEntryColliders: world.colliders.filter(c =>
+            c.maxX > -12.5 && c.minX < -11.4 && c.maxZ > -31 && c.minZ < -27
+          ).map(({ name, minX, maxX, minZ, maxZ }) => ({ name, minX, maxX, minZ, maxZ })),
           entrance: { ...interior.bounds }
         };
       }
