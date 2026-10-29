@@ -56,7 +56,15 @@ export function createPanelakDistrict({ THREE, scene }) {
     } else {
       box(buildingIndex % 2 === 0 ? "concrete" : "concreteCool", width, height, length, x, height / 2, z);
     }
-    box("plinth", width + 0.16, 0.64, length + 0.16, x, 0.32, z);
+    if (buildingIndex === 0) {
+      // Plinth follows the entrance opening instead of sealing the new doorway.
+      box("plinth", 0.18, 0.64, length + 0.16, x - halfWidth - 0.02, 0.32, z);
+      box("plinth", 0.18, 0.64, length + 0.16, x + halfWidth + 0.02, 0.32, z);
+      box("plinth", width + 0.16, 0.64, 0.18, x, 0.32, z - halfLength - 0.02);
+      box("plinth", width + 0.16, 0.64, 0.18, x, 0.32, z + halfLength + 0.02);
+    } else {
+      box("plinth", width + 0.16, 0.64, length + 0.16, x, 0.32, z);
+    }
 
     // Flat roof, low parapet and a small service room typical of prefabricated blocks.
     box("roof", width + 0.08, 0.16, length + 0.08, x, height + 0.04, z);
