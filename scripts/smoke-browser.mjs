@@ -57,7 +57,13 @@ try {
     state: window.__DEPOO_SMOKE__?.gameState()
   }));
   await page.keyboard.down("w");
-  await page.waitForTimeout(700);
+  // Wait for actual simulation progress instead of assuming a fixed frame budget.
+  // The low-poly scene can render more slowly on software WebGL runners.
+  await page.waitForFunction(
+    beforeZ => window.__DEPOO_SMOKE__?.playerPosition()?.z < beforeZ - 0.20,
+    movementBefore.position.z,
+    { timeout: 8000 }
+  ).catch(() => {});
   const movementDuring = await page.evaluate(() => ({
     position: window.__DEPOO_SMOKE__?.playerPosition(),
     keys: window.__DEPOO_SMOKE__?.keysDown(),
@@ -70,7 +76,15 @@ try {
     !movementDuring.keys?.KeyW ||
     movementDuring.position.z > movementBefore.position.z - 0.20
   ) {
-    throw new Error("WASD movement failed: " + JSON.stringify({ movementBefore, movementDuring }));
+    const diagnostics = await page.evaluate(() => {
+      const position = window.__DEPOO_SMOKE__?.playerPosition();
+      return {
+        blockers: position ? window.__DEPOO_SMOKE__?.blockingCollidersAt(position.x, position.z) : null,
+        manualSimulation: window.__DEPOO_SMOKE__?.moveForFrames("KeyW", 30),
+        state: window.__DEPOO_SMOKE__?.gameState()
+      };
+    });
+    throw new Error("WASD movement failed: " + JSON.stringify({ movementBefore, movementDuring, diagnostics, pageErrors, consoleErrors }));
   }
   await page.waitForTimeout(400);
 
