@@ -269,6 +269,34 @@ try {
   if (!runRelease.during || runRelease.after) {
     throw new Error("RUN button did not release after pointercancel: " + JSON.stringify(runRelease));
   }
+  const pauseRelease = await mobilePage.evaluate(() => {
+    const stick = document.querySelector("#moveStick");
+    const look = document.querySelector("#touchLookZone");
+    const pause = document.querySelector('[data-touch-action="pause"]');
+    Element.prototype.setPointerCapture = function () {};
+    const send = (element, type, pointerId, x = 100, y = 100) => element.dispatchEvent(new PointerEvent(type, {
+      bubbles: true, cancelable: true, pointerId, pointerType: "touch",
+      clientX: x, clientY: y, buttons: type === "pointerup" ? 0 : 1
+    }));
+    const rect = stick.getBoundingClientRect();
+    send(stick, "pointerdown", 41, rect.left + rect.width / 2, rect.top + rect.height / 2);
+    send(stick, "pointermove", 41, rect.left + rect.width / 2, rect.top + rect.height * 0.2);
+    send(look, "pointerdown", 42, innerWidth - 20, innerHeight * 0.4);
+    const activeBeforePause = window.__DFLAT_SMOKE__.keysDown().KeyW && look.classList.contains("active");
+    send(pause, "pointerdown", 43);
+    return {
+      activeBeforePause,
+      paused: window.__DFLAT_SMOKE__.gameState().paused,
+      keyAfterPause: window.__DFLAT_SMOKE__.keysDown().KeyW,
+      lookAfterPause: look.classList.contains("active")
+    };
+  });
+  if (!pauseRelease.activeBeforePause || !pauseRelease.paused ||
+      pauseRelease.keyAfterPause || pauseRelease.lookAfterPause) {
+    throw new Error("Pause did not release active touch input: " + JSON.stringify(pauseRelease));
+  }
+  await mobilePage.locator("#resumeButton").click();
+
   if (mobileErrors.length) throw new Error("Mobile browser runtime errors: " + mobileErrors.join(" | "));
 
   if (pageErrors.length) throw new Error("Browser runtime errors: " + pageErrors.join(" | "));
