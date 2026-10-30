@@ -34,12 +34,9 @@ export function createPanelakDistrict({ THREE, scene }) {
   const meshes = [];
   // The first block has a walkable ground floor. Its perimeter and door opening
   // are collision-tested by panelak-interior.js; the other blocks remain solid.
-  const colliders = PANELAK_LAYOUT.slice(1).map(building => ({
-    minX: building.x - building.width / 2,
-    maxX: building.x + building.width / 2,
-    minZ: building.z - building.length / 2,
-    maxZ: building.z + building.length / 2
-  }));
+  // Building collision is generated from the actual ground-floor room shell,
+  // not a solid box that would seal every entrance.
+  const colliders = [];
 
   function box(materialName, width, height, depth, x, y, z) {
     const dimensions = [width, height, depth].map(value => Math.max(0.01, Math.round(value * 1000) / 1000));
@@ -60,12 +57,8 @@ export function createPanelakDistrict({ THREE, scene }) {
     const halfLength = length / 2;
     const floorHeight = height / floors;
 
-    if (buildingIndex === 0) {
-      // Keep the upper three floors solid, leaving the ground floor open for the interior.
-      box("concrete", width, height - floorHeight, length, x, (height + floorHeight) / 2, z);
-    } else {
-      box(buildingIndex % 2 === 0 ? "concrete" : "concreteCool", width, height, length, x, height / 2, z);
-    }
+    // The room module supplies real perimeter walls and floor plates on every
+    // storey. A solid core here would hide all cloned apartments behind concrete.
     if (buildingIndex === 0) {
       // Keep the street-facing east plinth aligned with the entrance opening.
       const entranceZ = z;
