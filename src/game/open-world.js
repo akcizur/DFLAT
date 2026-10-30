@@ -441,6 +441,7 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
 
   async function loadImportedUserCity() {
     try {
+      onProgress(0, 2, "uploaded-city");
       const [cityResponse, housesResponse, colliderResponse] = await Promise.all([
         fetch(APP_BASE + IMPORTED_CITY_ASSETS.city),
         fetch(APP_BASE + IMPORTED_CITY_ASSETS.houses),
@@ -459,6 +460,7 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
       const decompressedCity = await new Response(
         new Blob([compressedCity]).stream().pipeThrough(new DecompressionStream("gzip"))
       ).arrayBuffer();
+      onProgress(1, 2, "uploaded-city");
 
       const [cityGltf, houseRoot] = await Promise.all([
         loader.parseAsync(decompressedCity, APP_BASE + "models/user-world/"),
@@ -466,6 +468,7 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
       ]);
 
       // All three uploaded files are ready before the old procedural world is removed.
+      onProgress(2, 2, "modern-houses");
       const cityRoot = cityGltf.scene;
       cityRoot.name = "Imported LowPoly City";
       const sourceBounds = new THREE.Box3().setFromObject(cityRoot);
