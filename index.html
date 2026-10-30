@@ -5,7 +5,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#080502" />
-  <title>DEPOO — Outer Rim Cargo Depot</title>
+  <title>DEPOO — Open City</title>
   <link rel="stylesheet" href="./styles.css?v=15" />
   <link rel="stylesheet" href="./styles-cinematic.css?v=15" />
   <link rel="stylesheet" href="./src/game/touch-remote.css?v=3" />
@@ -22,18 +22,18 @@
   <div id="game"></div>
   <div class="hud" id="hud" aria-hidden="true">
     <div class="topline">
-      <div class="brand">DEPOO<span>OUTER RIM / CARGO DEPOT</span></div>
+      <div class="brand">DEPOO<span>OPEN CITY / FREE ROAM</span></div>
       <div class="status" id="clock">21:07<br>NOČNÍ SMĚNA</div>
     </div>
     <div class="objective"><b>ÚKOL</b>
-      <div id="objectiveText">Prozkoumej přístav DEPOO. Aktivuj řídicí konzoli.</div>
-      <div id="inventoryText" style="margin-top:7px">DEPOO / OUTER RIM · 1 883 CC0 ASSETŮ</div>
+      <div id="objectiveText">Prozkoumej město DEPOO. Najdi centrální park a okolní čtvrti.</div>
+      <div id="inventoryText" style="margin-top:7px">DEPOO / OPEN CITY · 1 883 CC0 ASSETŮ</div>
     </div>
     <div class="crosshair"></div>
     <div class="interaction" id="interaction"><b>E</b> — interagovat</div>
     <div class="bottomline">
       <div class="hint">WASD / POHYB&nbsp; · &nbsp;SHIFT / BĚH&nbsp; · &nbsp;SPACE / SKOK&nbsp; · &nbsp;MYŠ / POHLED&nbsp; · &nbsp;M / MODELY&nbsp; · &nbsp;ESC / PAUZA</div>
-      <div class="right">OUTER RIM / CARGO DEPOT<br>SPACE KIT / FREE ROAM.</div>
+      <div class="right">OUTER RIM / OPEN CITY<br>KENNEY CITY KIT.</div>
     </div>
   </div>
   <div class="toast" id="toast"></div>
@@ -48,20 +48,20 @@
 
   <div class="boot-screen" id="bootScreen" aria-label="BIOS boot intro">
     <div class="bios">
-      <div>DEPOO SYSTEM BIOS <span>v0.9.0</span></div>
+      <div>DEPOO CITY SYSTEM BIOS <span>v0.9.0</span></div>
       <div>CPU CHECK ............. OK</div>
       <div>MEMORY TEST ........... 640K OK</div>
       <div>VIDEO MODE ............ 8-BIT / READY</div>
-      <div>WORLD INIT ............ <span class="boot-dots">...</span></div>
+      <div>CITY INIT ............. <span class="boot-dots">...</span></div>
     </div>
     <div class="boot-footer">SYSTEM READY // HANDING OFF TO REALITY</div>
   </div>
   <div class="loading-screen" id="loadingScreen" role="status" aria-live="polite" aria-atomic="true" aria-label="Načítání hry">
     <div class="loading-panel">
       <div class="loading-mark" aria-hidden="true">DP<span>_</span></div>
-      <div class="loading-kicker">DEPOO SYSTEM / WORLD BOOT</div>
+      <div class="loading-kicker">DEPOO CITY SYSTEM / WORLD BOOT</div>
       <h2 id="loadingTitle">PŘIPRAVUJI SVĚT</h2>
-      <p id="loadingDetail">Skládám kosmický přístav z modulárních CC0 assetů.</p>
+      <p id="loadingDetail">Skládám město z modulárních CC0 assetů.</p>
       <div class="loading-progress" id="loadingProgress" role="progressbar" aria-label="Průběh načítání" aria-valuemin="0" aria-valuemax="100" aria-valuenow="8">
         <span id="loadingProgressBar" style="width:8%"></span>
       </div>
@@ -75,7 +75,7 @@
       <div class="nexus-bezel">
         <section class="nexus-glass">
           <header class="nexus-topbar">
-            <span class="nexus-brand"><i aria-hidden="true"></i> DEPOO / TERMINAL 04</span>
+            <span class="nexus-brand"><i aria-hidden="true"></i> DEPOO / CITY TERMINAL 04</span>
             <span class="nexus-status"><span><i class="nexus-led"></i>ONLINE</span><span>OUTER RIM / CARGO DEPOT</span></span>
           </header>
           <div class="nexus-content">
@@ -99,10 +99,10 @@
             <nav class="nexus-menu" aria-label="Hlavní menu">
               <div class="nexus-eyebrow">SYSTEM MENU / 01</div>
               <h1>DEPOO<span>_</span></h1>
-              <p class="nexus-subtitle">KOSMICKÝ NÁKLADNÍ UZEL</p>
+              <p class="nexus-subtitle">MĚSTO DEPOO / OPEN CITY</p>
               <button type="button" class="cmd nexus-command" id="startButton" disabled aria-disabled="true"><span class="nexus-chevron">&gt;</span><span>START GAME</span><span class="nexus-enter">WAIT…</span></button>
               <button type="button" class="cmd nexus-command nexus-command-secondary" id="modelLibraryMenuButton" aria-controls="modelLibraryScreen"><span class="nexus-chevron">+</span><span>MODEL LIBRARY</span><span class="nexus-enter">1,883 CC0</span></button>
-              <div class="nexus-menu-note">CC0 MODEL LIBRARY / FREE ROAM</div>
+              <div class="nexus-menu-note">CITY KIT / FREE ROAM</div>
               <div class="nexus-controls"><span>WASD <b>MOVE</b></span><span>SHIFT <b>RUN</b></span><span>SPACE <b>JUMP</b></span><span>MOUSE <b>LOOK</b></span><span>ESC <b>PAUSE</b></span><span>PAD <b>LEFT STICK / MOVE</b></span><span>PAD <b>RIGHT STICK / LOOK</b></span><span>B <b>PAUSE</b></span></div>
             </nav>
           </div>
@@ -130,9 +130,9 @@
   <section class="model-library" id="modelLibraryScreen" hidden aria-hidden="true" aria-label="Open source model library">
     <header class="model-library-header">
       <div>
-        <p class="model-library-kicker">DEPOO ASSET SYSTEM / CC0-1.0</p>
+        <p class="model-library-kicker">DEPOO CITY ASSET SYSTEM / CC0-1.0</p>
         <h2>MODEL LIBRARY <span>1,883 OPEN MODELS</span></h2>
-        <p class="model-library-intro">Search the Kenney GLB catalog. Models are loaded only when selected.</p>
+        <p class="model-library-intro">Search the Kenney CC0 catalog. Models are loaded only when selected.</p>
       </div>
       <button type="button" class="model-library-close" id="modelLibraryClose" aria-label="Close model library">×</button>
     </header>

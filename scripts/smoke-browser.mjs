@@ -140,18 +140,19 @@ try {
     return { theme: data?.theme, count: objects.length, ids: [...new Set(objects.map(item => item.id))] };
   });
   if (
-    worldCheck.theme !== "DEPOO" || worldCheck.count < 55 ||
-    !worldCheck.ids.includes("space-kit/hangar-largea") ||
-    !worldCheck.ids.includes("space-kit/monorail-trackstraight") ||
-    !worldCheck.ids.includes("space-kit/craft-cargoa")
-  ) throw new Error("DEPOO modular asset world is incomplete: " + JSON.stringify(worldCheck));
+    worldCheck.theme !== "DEPOO" || worldCheck.count < 140 ||
+    !worldCheck.ids.includes("city-kit-roads/road-straight") ||
+    !worldCheck.ids.includes("city-kit-commercial/building-skyscraper-a") ||
+    !worldCheck.ids.includes("city-kit-suburban/building-type-a") ||
+    !worldCheck.ids.includes("car-kit/sedan")
+  ) throw new Error("DEPOO modular city is incomplete: " + JSON.stringify(worldCheck));
 
   const controls = await page.evaluate(() => ({
-    dispatch: window.__DEPOO_SMOKE__.interact("depoo-control"),
-    relay: window.__DEPOO_SMOKE__.interact("depoo-relay")
+    park: window.__DEPOO_SMOKE__.interact("city-park-light"),
+    street: window.__DEPOO_SMOKE__.interact("city-street-light")
   }));
-  if (!controls.dispatch || !controls.relay) {
-    throw new Error("DEPOO dispatch/relay interaction failed: " + JSON.stringify(controls));
+  if (!controls.park || !controls.street) {
+    throw new Error("DEPOO park/street lighting interaction failed: " + JSON.stringify(controls));
   }
 
   // Mobile touch regression: use a real touch-enabled Chromium context and

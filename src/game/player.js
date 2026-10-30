@@ -7,7 +7,7 @@ export function createPlayerController({ camera, colliders, interactables, state
   const GRAVITY = 18.5;
   const movementCodes = ["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
   const player = {
-    x: 0, z: 9.2, elevation: 0,
+    x: 0, z: 46, elevation: 0,
     yaw: Math.PI * 0.02, pitch: -0.04,
     speed: WALK_SPEED, radius: 0.29, jumpHeight: 0
   };

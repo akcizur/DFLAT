@@ -9,77 +9,96 @@ const SOURCE_COMMIT = "eb99f44e0a4ff36a3d5e52eb1256cb566d8854c3";
 const SOURCE_ROOT = "https://raw.githubusercontent.com/" + SOURCE_REPO + "/" + SOURCE_COMMIT;
 const CATALOG_URL = SOURCE_ROOT + "/catalog.json";
 
-// Only the modular Space Kit components used by DEPOO are downloaded at build time.
-// The complete 1,883-model catalog remains discoverable on demand in the in-game browser.
-const WORLD_MODEL_IDS = [
-  "space-kit/terrain-roadstraight",
-  "space-kit/terrain-roadcross",
-  "space-kit/terrain-roadcorner",
-  "space-kit/terrain-roadend",
-  "space-kit/terrain",
-  "space-kit/terrain-side",
-  "space-kit/gate-complex",
-  "space-kit/gate-simple",
-  "space-kit/platform-large",
-  "space-kit/platform-long",
-  "space-kit/platform-high",
-  "space-kit/platform-straight",
-  "space-kit/stairs",
-  "space-kit/hangar-largea",
-  "space-kit/hangar-largeb",
-  "space-kit/hangar-smalla",
-  "space-kit/hangar-rounda",
-  "space-kit/hangar-roundglass",
-  "space-kit/monorail-trackstraight",
-  "space-kit/monorail-trackcornerlarge",
-  "space-kit/monorail-tracksupport",
-  "space-kit/monorail-trainfront",
-  "space-kit/monorail-traincargo",
-  "space-kit/monorail-trainbox",
-  "space-kit/craft-cargoa",
-  "space-kit/craft-cargob",
-  "space-kit/craft-miner",
-  "space-kit/machine-generatorlarge",
-  "space-kit/machine-generator",
-  "space-kit/machine-wireless",
-  "space-kit/machine-barrellarge",
-  "space-kit/barrels-rail",
-  "space-kit/barrels",
-  "space-kit/pipe-straight",
-  "space-kit/pipe-supporthigh",
-  "space-kit/astronauta",
-  "space-kit/astronautb",
-  "space-kit/desk-computer",
-  "space-kit/desk-chair",
-  "space-kit/satellitedish-large",
-  "space-kit/chimney-detailed",
-  "space-kit/rock-largea",
-  "space-kit/craterlarge",
-  "space-kit/meteor-detailed"
+// Curated Kenney city models. The full 1,883-model CC0 catalog stays searchable in-game.
+const CITY_MODEL_IDS = [
+  "city-kit-roads/road-straight",
+  "city-kit-roads/road-crossroad",
+  "city-kit-roads/road-roundabout",
+  "city-kit-roads/road-end",
+  "city-kit-roads/light-square-double",
+  "city-kit-roads/traffic-light-object-vertical",
+  "city-kit-roads/road-sign-stop",
+  "city-kit-roads/road-sign-street",
+  "city-kit-roads/electricity-pole",
+  "city-kit-roads/dumpster",
+  "city-kit-commercial/building-a",
+  "city-kit-commercial/building-c",
+  "city-kit-commercial/building-f",
+  "city-kit-commercial/building-h",
+  "city-kit-commercial/building-j",
+  "city-kit-commercial/building-n",
+  "city-kit-commercial/building-skyscraper-a",
+  "city-kit-commercial/building-skyscraper-b",
+  "city-kit-commercial/building-skyscraper-c",
+  "city-kit-commercial/building-skyscraper-d",
+  "city-kit-commercial/building-skyscraper-e",
+  "city-kit-commercial/low-detail-building-a",
+  "city-kit-commercial/low-detail-building-d",
+  "city-kit-commercial/low-detail-building-g",
+  "city-kit-commercial/low-detail-building-j",
+  "city-kit-commercial/low-detail-building-m",
+  "city-kit-commercial/low-detail-building-wide-a",
+  "city-kit-commercial/detail-awning-wide",
+  "city-kit-commercial/detail-awning",
+  "city-kit-commercial/detail-parasol-a",
+  "city-kit-commercial/detail-parasol-b",
+  "city-kit-commercial/detail-overhang-wide",
+  "city-kit-suburban/building-type-a",
+  "city-kit-suburban/building-type-b",
+  "city-kit-suburban/building-type-d",
+  "city-kit-suburban/building-type-f",
+  "city-kit-suburban/building-type-h",
+  "city-kit-suburban/building-type-j",
+  "city-kit-suburban/building-type-l",
+  "city-kit-suburban/building-type-n",
+  "city-kit-suburban/building-type-p",
+  "city-kit-suburban/building-type-r",
+  "city-kit-suburban/building-type-t",
+  "city-kit-suburban/building-type-u",
+  "city-kit-suburban/tree-large",
+  "city-kit-suburban/tree-small",
+  "city-kit-suburban/driveway-short",
+  "city-kit-suburban/planter",
+  "nature-kit/tree-oak",
+  "nature-kit/tree-detailed",
+  "nature-kit/plant-bushlarge",
+  "furniture-kit/bench",
+  "furniture-kit/trashcan",
+  "car-kit/sedan",
+  "car-kit/taxi",
+  "car-kit/suv",
+  "car-kit/police",
+  "car-kit/delivery",
+  "car-kit/ambulance",
+  "car-kit/firetruck",
+  "car-kit/garbage-truck"
 ];
 
 async function fetchBuffer(url) {
-  const response = await fetch(url, { headers: { "User-Agent": "DEPOO-open-source-model-setup" } });
+  const response = await fetch(url, { headers: { "User-Agent": "DEPOO-city-asset-setup" } });
   if (!response.ok) throw new Error("Download failed (" + response.status + "): " + url);
   return Buffer.from(await response.arrayBuffer());
 }
 
 async function main() {
   await mkdir(PUBLIC_MODELS, { recursive: true });
-
-  console.log("Reading the pinned CC0 model catalog…");
+  console.log("Reading the pinned Kenney CC0 city catalog…");
   const catalogBytes = await fetchBuffer(CATALOG_URL);
   const catalog = JSON.parse(catalogBytes.toString("utf8"));
   const available = new Map();
+
   for (const pack of catalog.packs || []) {
     for (const model of pack.models || []) {
-      available.set(model.id, { ...model, packId: pack.id, packName: pack.name, author: pack.author, license: pack.license, packUrl: pack.url });
+      available.set(model.id, {
+        ...model, packId: pack.id, packName: pack.name,
+        author: pack.author, license: pack.license, packUrl: pack.url
+      });
     }
   }
 
-  const chosen = WORLD_MODEL_IDS.map(id => {
+  const chosen = CITY_MODEL_IDS.map(id => {
     const model = available.get(id);
-    if (!model) throw new Error("Model missing from pinned source catalog: " + id);
+    if (!model) throw new Error("City model missing from pinned source catalog: " + id);
     if (model.license !== "CC0-1.0") throw new Error("Refusing model without verified CC0-1.0 license: " + id);
     if (model.author !== "Kenney") throw new Error("Unexpected asset author for " + id + ": " + model.author);
     return model;
@@ -92,9 +111,7 @@ async function main() {
       const destination = path.join(PUBLIC_MODELS, model.file);
       await mkdir(path.dirname(destination), { recursive: true });
       let alreadyValid = false;
-      try {
-        alreadyValid = (await stat(destination)).size === model.size;
-      } catch {}
+      try { alreadyValid = (await stat(destination)).size === model.size; } catch {}
       if (!alreadyValid) {
         const bytes = await fetchBuffer(SOURCE_ROOT + "/" + model.file);
         if (bytes.byteLength !== model.size) {
@@ -108,7 +125,7 @@ async function main() {
   }
 
   const manifest = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     source: "https://github.com/" + SOURCE_REPO,
     sourceCommit: SOURCE_COMMIT,
     sourceCatalog: CATALOG_URL,
@@ -116,31 +133,26 @@ async function main() {
     author: "Kenney",
     catalogModelCount: available.size,
     bundledModelCount: chosen.length,
+    world: "DEPOO Open City",
     assets: chosen.map(model => ({
-      id: model.id,
-      name: model.name,
-      pack: model.packId,
-      file: model.file,
-      bytes: model.size,
-      license: model.license,
-      author: model.author,
+      id: model.id, name: model.name, pack: model.packId, file: model.file,
+      bytes: model.size, license: model.license, author: model.author,
       source: "https://github.com/" + SOURCE_REPO + "/blob/" + SOURCE_COMMIT + "/" + model.file,
       packUrl: model.packUrl
     }))
   };
   await writeFile(path.join(PUBLIC_MODELS, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
   await writeFile(path.join(PUBLIC_MODELS, "NOTICE-KENNEY-CC0.txt"),
-    "DFLAT uses selected 3D models by Kenney from the tge-assets GLB library.\n" +
+    "DEPOO uses modular city, road, vehicle and nature models by Kenney.\n" +
     "Source: " + manifest.source + "\n" +
     "Pinned commit: " + SOURCE_COMMIT + "\n" +
     "License: Creative Commons Zero 1.0 Universal (CC0-1.0).\n" +
-    "The source repository states that the models and its converted GLB files are CC0.\n" +
     "Attribution is not required but appreciated. Support the artist: https://kenney.nl/donate\n"
   );
-  console.log("Prepared " + chosen.length + " local CC0 models; catalog exposes " + available.size + " models.");
+  console.log("Prepared " + chosen.length + " local city CC0 models; catalog exposes " + available.size + " models.");
 }
 
 main().catch(error => {
-  console.error("Could not prepare the open model library:", error);
+  console.error("Could not prepare DEPOO city models:", error);
   process.exitCode = 1;
 });

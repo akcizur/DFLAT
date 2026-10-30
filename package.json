@@ -1,8 +1,8 @@
 {
-  "name": "depoo-outer-rim",
+  "name": "depoo-open-city",
   "private": true,
   "type": "module",
-  "description": "A modular low-poly outer-rim cargo depot built from CC0 Space Kit assets with Three.js.",
+  "description": "A first-person low-poly open city built from CC0 Kenney modular assets with Three.js.",
   "scripts": {
     "dev": "node scripts/prepare-open-models.mjs && vite",
     "build": "node scripts/prepare-open-models.mjs && vite build",

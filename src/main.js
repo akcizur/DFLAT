@@ -7,7 +7,7 @@ import { bindInput } from "./game/input.js";
 
 const mount = document.getElementById("game");
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x151d2b);
+scene.background = new THREE.Color(0x8599a6);
 const loadingScreen = document.getElementById("loadingScreen");
 let firstSceneFrame = false;
 let worldReady = false;
@@ -42,7 +42,7 @@ function finishStartupWhenReady() {
     const enterLabel = startButton.querySelector(".nexus-enter");
     if (enterLabel) enterLabel.textContent = "ENTER ↵";
   }
-  setLoadingProgress(100, "SVĚT JE PŘIPRAVEN", "Překladiště DEPOO a knihovna CC0 modelů jsou připraveny.", "READY");
+  setLoadingProgress(100, "SVĚT JE PŘIPRAVEN", "Město DEPOO a knihovna CC0 modelů jsou připraveny.", "READY");
   if (!loadingScreen) return;
   window.setTimeout(() => {
     loadingScreen.classList.add("loading-exit");
@@ -54,9 +54,9 @@ function finishStartupWhenReady() {
   }, 180);
 }
 
-setLoadingProgress(12, "ZAPÍNÁM ENGINE", "Inicializuji 3D vykreslování.", "INITIALIZING");
-scene.fog = new THREE.FogExp2(0x151d2b, 0.00155);
-const globalHemisphere = new THREE.HemisphereLight(0xa9c9e5, 0x31303b, 1.05);
+setLoadingProgress(12, "ZAPÍNÁM ENGINE", "Inicializuji městskou 3D scénu.", "INITIALIZING");
+scene.fog = new THREE.FogExp2(0x8599a6, 0.00135);
+const globalHemisphere = new THREE.HemisphereLight(0xd2e0e8, 0x4b4642, 1.15);
 globalHemisphere.name = "Global fill / hemisphere";
 scene.add(globalHemisphere);
 const globalSun = new THREE.DirectionalLight(0xffc68b, 1.85);
@@ -81,7 +81,7 @@ renderer.shadowMap.autoUpdate = true;
 renderer.domElement.id = "screenCanvas";
 renderer.domElement.tabIndex = 0;
 mount.appendChild(renderer.domElement);
-setLoadingProgress(34, "VYKRESLOVAČ PŘIPRAVEN", "Připravuji svět DEPOO.", "RENDERER");
+setLoadingProgress(34, "VYKRESLOVAČ PŘIPRAVEN", "Připravuji město DEPOO.", "RENDERER");
 
 function resize() {
   const displayWidth = Math.max(1, innerWidth);
@@ -107,7 +107,7 @@ const state = {
   finished: false, started: false, paused: false, openWorld: true, ready: false
 };
 const ui = createUI();
-setLoadingProgress(45, "SKLÁDÁM PŘÍSTAV DEPOO", "Skládám hangáry, monorail, lodě a servisní uzly.", "CC0 WORLD");
+setLoadingProgress(45, "STAVÍM MĚSTO DEPOO", "Skládám ulice, domy, obchody, parky a městský provoz.", "CITY KIT");
 const world = createOpenWorld({
   THREE,
   scene,
@@ -121,16 +121,16 @@ const controller = createPlayerController({
   navigation: world.navigation, state, ui
 });
 createModelLibrary({ THREE, scene, camera, state, ui, world });
-state.changeFloor = () => ui.showToast("DEPOO je otevřený jednopodlažní přístav.");
+state.changeFloor = () => ui.showToast("DEPOO je otevřené město. Prozkoumej jeho ulice.");
 
 world.ready.then(result => {
   worldReady = true;
-  setLoadingProgress(87, "MODELY PŘIPRAVENY", result.loaded + " / " + result.total + " modelových typů zpracováno.", "CC0 ASSETS");
+  setLoadingProgress(87, "MĚSTO PŘIPRAVENO", result.loaded + " / " + result.total + " typů městských assetů načteno.", "CITY ASSETS");
   finishStartupWhenReady();
 }).catch(error => {
   console.error("Open world initialization failed:", error);
   worldReady = true;
-  setLoadingProgress(87, "SVĚT PŘIPRAVEN S OMEZENÍM", "Některé modely nejsou dostupné; pohyb zůstává funkční.", "PARTIAL");
+  setLoadingProgress(87, "MĚSTO PŘIPRAVENO S OMEZENÍM", "Některé modely nejsou dostupné; pohyb zůstává funkční.", "PARTIAL");
   finishStartupWhenReady();
 });
 if (new URLSearchParams(location.search).get("smoke") === "1") {

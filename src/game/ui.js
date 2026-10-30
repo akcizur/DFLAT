@@ -17,8 +17,8 @@ export function createUI() {
 
   function updateObjective(state) {
     if (state.openWorld) {
-      objectiveText.textContent = "Prozkoumej kosmický přístav DEPOO a aktivuj řídicí konzoli.";
-      inventoryText.textContent = "DEPOO / OUTER RIM · 1 883 CC0 ASSETŮ";
+      objectiveText.textContent = "Prozkoumej město DEPOO. Najdi centrální park a projdi okolní čtvrti.";
+      inventoryText.textContent = "DEPOO / OPEN CITY · CC0 CITY ASSETS";
       return;
     }
     if (state.emptyMap) {

@@ -33,8 +33,8 @@ test("running produces a stronger forward posture than walking", () => {
   running.controller.keysDown.ShiftLeft = true;
   advance(running.controller, 30);
   assert.ok(running.camera.rotation.x > walking.camera.rotation.x);
-  assert.ok(running.controller.player.z < 9.2);
-  assert.ok(walking.controller.player.z < 9.2);
+  assert.ok(running.controller.player.z < 46);
+  assert.ok(walking.controller.player.z < 46);
 });
 
 test("strafing adds a small body roll and settles when movement stops", () => {

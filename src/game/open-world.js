@@ -2,113 +2,154 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 const APP_BASE = typeof import.meta.env !== "undefined" && import.meta.env.BASE_URL ? import.meta.env.BASE_URL : "/";
 
-// The depot is built from independent CC0 Space Kit GLBs, not procedural buildings.
-const module = (id, x, z, kind, zone, options = {}) => ({
-  id, x, z, kind, zone, ...options
+const place = (id, x, z, kind, zone, options = {}) => ({ id, x, z, kind, zone, ...options });
+const ROAD_SCALE = 8;
+const STREET_LINES = [-32, -16, 0, 16, 32];
+const ROAD_COORDS = Array.from({ length: 11 }, (_, index) => -40 + index * 8);
+
+// DEPOO is a walkable town with a connected road grid, downtown core,
+// residential blocks, a civic park, shops and static street traffic.
+const roads = [];
+for (const x of STREET_LINES) {
+  for (const z of ROAD_COORDS) {
+    const crossing = STREET_LINES.includes(z);
+    const id = x === 0 && z === 0
+      ? "city-kit-roads/road-roundabout"
+      : crossing
+        ? "city-kit-roads/road-crossroad"
+        : Math.abs(z) === 40
+          ? "city-kit-roads/road-end"
+          : "city-kit-roads/road-straight";
+    roads.push(place(id, x, z, "road", "street-grid", {
+      scale: ROAD_SCALE,
+      yaw: Math.abs(z) === 40 && z < 0 ? Math.PI : 0
+    }));
+  }
+}
+for (const z of STREET_LINES) {
+  for (const x of ROAD_COORDS) {
+    if (STREET_LINES.includes(x)) continue;
+    roads.push(place(
+      Math.abs(x) === 40 ? "city-kit-roads/road-end" : "city-kit-roads/road-straight",
+      x, z, "road", "street-grid",
+      { scale: ROAD_SCALE, yaw: x < 0 && Math.abs(x) === 40 ? -Math.PI / 2 : Math.PI / 2 }
+    ));
+  }
+}
+
+const commercial = [
+  place("city-kit-commercial/building-a", 4, 8, "commercial", "downtown", { targetHeight: 9.2, yaw: Math.PI / 2, collider: [3.5, 3.5] }),
+  place("city-kit-commercial/building-f", 12, 8, "commercial", "downtown", { targetHeight: 11.5, yaw: -Math.PI / 2, collider: [3.8, 3.8] }),
+  place("city-kit-commercial/building-c", -12, 8, "commercial", "downtown", { targetHeight: 8.8, yaw: Math.PI / 2, collider: [3.5, 3.5] }),
+  place("city-kit-commercial/building-j", -4, 8, "commercial", "downtown", { targetHeight: 13.5, yaw: -Math.PI / 2, collider: [3.8, 3.8] }),
+  place("city-kit-commercial/building-h", 4, 24, "commercial", "market-street", { targetHeight: 10.2, collider: [3.8, 3.8] }),
+  place("city-kit-commercial/building-n", 12, 24, "commercial", "market-street", { targetHeight: 14.5, collider: [4, 4] }),
+  place("city-kit-commercial/detail-awning-wide", 4, 11.5, "shop-detail", "downtown", { targetHeight: 2.2 }),
+  place("city-kit-commercial/detail-awning", 12, 11.5, "shop-detail", "downtown", { targetHeight: 2.1 }),
+  place("city-kit-commercial/detail-parasol-a", 0, 12, "shop-detail", "downtown", { targetHeight: 2.8 }),
+  place("city-kit-commercial/detail-parasol-b", 16, 12, "shop-detail", "downtown", { targetHeight: 2.8 }),
+  place("city-kit-commercial/detail-overhang-wide", 4, 27, "shop-detail", "market-street", { targetHeight: 2.4 })
+];
+
+const towers = [
+  place("city-kit-commercial/building-skyscraper-a", -8, -8, "tower", "downtown", { targetHeight: 25, collider: [5, 5] }),
+  place("city-kit-commercial/building-skyscraper-c", 8, -8, "tower", "downtown", { targetHeight: 28, collider: [5, 5] }),
+  place("city-kit-commercial/building-skyscraper-d", -24, 8, "tower", "civic-district", { targetHeight: 22, collider: [5, 5] }),
+  place("city-kit-commercial/building-skyscraper-e", 24, 8, "tower", "civic-district", { targetHeight: 24, collider: [5, 5] }),
+  place("city-kit-commercial/building-skyscraper-b", 0, -52, "tower", "skyline", { targetHeight: 21 })
+];
+
+const houseBlocks = [
+  [-24, -24], [-8, -24], [8, -24], [24, -24],
+  [-24, -8], [24, -8],
+  [-24, 24], [-8, 24], [8, 24], [24, 24]
+];
+const houseTypes = ["a", "b", "d", "f", "h", "j", "l", "n", "p", "r", "t", "u"];
+const houses = houseBlocks.flatMap(([x, z], index) => {
+  const type = houseTypes[index % houseTypes.length];
+  const height = [6.3, 6.8, 7.2, 6.5, 7.5][index % 5];
+  return [
+    place("city-kit-suburban/building-type-" + type, x, z, "house", "residential", {
+      targetHeight: height, yaw: [0, Math.PI / 2, Math.PI, -Math.PI / 2][index % 4],
+      collider: [3.5, 3.5]
+    }),
+    place(index % 2 ? "city-kit-suburban/tree-small" : "city-kit-suburban/tree-large",
+      x + 5.2, z + 4.8, "tree", "residential", { targetHeight: index % 2 ? 3.8 : 5.2 }),
+    place("city-kit-suburban/driveway-short", x, z + 5.8, "driveway", "residential", {
+      scale: 5.2, yaw: index % 2 ? Math.PI : 0
+    })
+  ];
 });
 
-const ROAD_Z = Array.from({ length: 14 }, (_, index) => 12 - index * 10);
+const distantBlocks = [
+  ["a", -55, -44], ["d", -55, 0], ["g", -55, 44],
+  ["j", 55, -44], ["m", 55, 0], ["wide-a", 55, 44]
+].map(([variant, x, z]) => place(
+  "city-kit-commercial/low-detail-building-" + variant,
+  x, z, "distant-building", "city-edge", { targetHeight: 10.5 }
+));
 
-// DEPOO is arranged as a connected freight campus:
-// arrival spine -> dispatch court -> cross-yard -> five-hangar crescent.
-// Every visible structure, vehicle and prop is an independent Space Kit GLB.
+const streetFurniture = [];
+for (const x of STREET_LINES) {
+  for (const z of [-32, -16, 0, 16, 32]) {
+    streetFurniture.push(place(
+      "city-kit-roads/light-square-double", x + 4.8, z + 4.8,
+      "streetlight", "street-grid", { targetHeight: 5.2 }
+    ));
+  }
+}
+for (const x of [-16, 0, 16]) {
+  for (const z of [-16, 0, 16]) {
+    if (x === 0 && z === 0) continue;
+    streetFurniture.push(place(
+      "city-kit-roads/traffic-light-object-vertical",
+      x + 3.6, z + 3.6, "traffic-light", "downtown",
+      { targetHeight: 3.2, yaw: Math.PI / 2 }
+    ));
+  }
+}
+streetFurniture.push(
+  place("city-kit-roads/road-sign-stop", -35, -16, "sign", "west-quarter", { targetHeight: 2.5 }),
+  place("city-kit-roads/road-sign-street", 35, 16, "sign", "east-quarter", { targetHeight: 2.7 }),
+  place("city-kit-roads/electricity-pole", -36, -32, "utility", "city-edge", { targetHeight: 7 }),
+  place("city-kit-roads/electricity-pole", 36, -32, "utility", "city-edge", { targetHeight: 7 }),
+  place("city-kit-roads/electricity-pole", -36, 32, "utility", "city-edge", { targetHeight: 7 }),
+  place("city-kit-roads/electricity-pole", 36, 32, "utility", "city-edge", { targetHeight: 7 }),
+  place("city-kit-roads/dumpster", 17, 11, "street-detail", "downtown", { targetHeight: 1.8 }),
+  place("city-kit-roads/dumpster", -16, 27, "street-detail", "market-street", { targetHeight: 1.8 })
+);
+
+const park = [
+  place("city-kit-suburban/planter", -12, 8, "planter", "civic-park", { targetHeight: 1.2 }),
+  place("city-kit-suburban/planter", -4, 8, "planter", "civic-park", { targetHeight: 1.2 }),
+  place("nature-kit/tree-oak", -8, 13, "tree", "civic-park", { targetHeight: 6.2 }),
+  place("nature-kit/tree-detailed", -13, 15, "tree", "civic-park", { targetHeight: 5.5 }),
+  place("nature-kit/plant-bushlarge", -3, 15, "plant", "civic-park", { targetHeight: 1.8 }),
+  place("furniture-kit/bench", -11, 5, "bench", "civic-park", { targetHeight: 0.85, yaw: Math.PI / 2 }),
+  place("furniture-kit/bench", -5, 5, "bench", "civic-park", { targetHeight: 0.85, yaw: -Math.PI / 2 }),
+  place("furniture-kit/trashcan", -2.5, 10, "street-detail", "civic-park", { targetHeight: 1 })
+];
+
+const traffic = [
+  place("car-kit/sedan", -2.0, -27, "vehicle", "traffic", { targetHeight: 1.45, collider: [1.2, 2.1] }),
+  place("car-kit/taxi", 2.0, -7, "vehicle", "traffic", { targetHeight: 1.45, yaw: Math.PI, collider: [1.2, 2.1] }),
+  place("car-kit/suv", -2.0, 17, "vehicle", "traffic", { targetHeight: 1.5, collider: [1.3, 2.2] }),
+  place("car-kit/police", 2.0, 31, "vehicle", "traffic", { targetHeight: 1.45, yaw: Math.PI, collider: [1.2, 2.1] }),
+  place("car-kit/delivery", -27, -2, "vehicle", "traffic", { targetHeight: 1.5, yaw: Math.PI / 2, collider: [1.3, 2.2] }),
+  place("car-kit/ambulance", 27, 2, "vehicle", "traffic", { targetHeight: 1.5, yaw: -Math.PI / 2, collider: [1.3, 2.2] }),
+  place("car-kit/firetruck", -18, 2, "vehicle", "traffic", { targetHeight: 1.55, yaw: -Math.PI / 2, collider: [1.5, 2.5] }),
+  place("car-kit/garbage-truck", 18, -2, "vehicle", "traffic", { targetHeight: 1.6, yaw: Math.PI / 2, collider: [1.5, 2.5] })
+];
+
 export const WORLD_LAYOUT = [
-  // Arrival spine and terminal threshold.
-  ...ROAD_Z.map(z => module("space-kit/terrain-roadstraight", 0, z, "road", "arrival")),
-  module("space-kit/terrain-roadcross", 0, -38, "road", "dispatch"),
-  module("space-kit/terrain-roadcross", 0, -78, "road", "freight-yard"),
-  module("space-kit/gate-complex", 0, -17, "gate", "arrival", { targetHeight: 5.8 }),
-  module("space-kit/gate-simple", -20, -48, "gate", "west-service", { yaw: Math.PI / 2, targetHeight: 4.2 }),
-  module("space-kit/gate-simple", 20, -88, "gate", "east-service", { yaw: -Math.PI / 2, targetHeight: 4.2 }),
-
-  // A pair of service wings creates a proper cross-yard instead of one long road.
-  ...[-10, 10].flatMap(x => [
-    module("space-kit/terrain-roadstraight", x, -48, "road", "west-service", { yaw: Math.PI / 2 }),
-    module("space-kit/terrain-roadstraight", x, -88, "road", "east-service", { yaw: Math.PI / 2 })
-  ]),
-  ...[-20, 20].flatMap(x => [-58, -68, -78].map(z =>
-    module("space-kit/terrain-roadstraight", x, z, "road", x < 0 ? "west-service" : "east-service")
-  )),
-  module("space-kit/terrain-roadcorner", -10, -38, "road", "west-service", { yaw: Math.PI / 2 }),
-  module("space-kit/terrain-roadcorner", 10, -38, "road", "east-service", { yaw: 0 }),
-  module("space-kit/terrain-roadcorner", -10, -98, "road", "west-service", { yaw: Math.PI }),
-  module("space-kit/terrain-roadcorner", 10, -98, "road", "east-service", { yaw: -Math.PI / 2 }),
-  module("space-kit/terrain-roadend", -20, -48, "road", "west-service", { yaw: Math.PI / 2 }),
-  module("space-kit/terrain-roadend", 20, -88, "road", "east-service", { yaw: -Math.PI / 2 }),
-
-  // Dispatch court: console, crew, utilities and the first loading apron.
-  module("space-kit/platform-large", 0, -43, "platform", "dispatch", { y: 0.08 }),
-  module("space-kit/platform-long", 0, -50, "platform", "dispatch", { y: 0.08 }),
-  module("space-kit/platform-high", -7, -48, "platform", "dispatch", { y: 0.1 }),
-  module("space-kit/platform-straight", 7, -48, "platform", "dispatch", { y: 0.08 }),
-  module("space-kit/stairs", 8, -45, "platform", "dispatch", { yaw: -Math.PI / 2 }),
-  module("space-kit/desk-computer", 4.2, -35.5, "console", "dispatch", { targetHeight: 1.5 }),
-  module("space-kit/desk-chair", 4.2, -37.2, "console", "dispatch", { yaw: Math.PI, targetHeight: 1.2 }),
-  module("space-kit/astronauta", -4.5, -29, "crew", "dispatch", { yaw: Math.PI / 2, targetHeight: 1.8 }),
-  module("space-kit/machine-generatorlarge", 9, -39, "machine", "dispatch", { targetHeight: 3.2, collider: [2, 2] }),
-  module("space-kit/machine-generator", -9, -41, "machine", "dispatch", { targetHeight: 2.5, collider: [1.5, 1.5] }),
-  module("space-kit/barrels", 12, -42, "cargo", "dispatch"),
-  module("space-kit/barrels-rail", -12, -44, "cargo", "dispatch"),
-
-  // Freight court: two craft pads and a dense service strip.
-  module("space-kit/platform-large", -15, -60, "platform", "freight-yard", { y: 0.08 }),
-  module("space-kit/platform-large", 15, -60, "platform", "freight-yard", { y: 0.08 }),
-  module("space-kit/platform-long", 0, -68, "platform", "freight-yard", { y: 0.08 }),
-  module("space-kit/platform-high", -15, -69, "platform", "freight-yard", { y: 0.1 }),
-  module("space-kit/platform-straight", 15, -69, "platform", "freight-yard", { y: 0.08 }),
-  module("space-kit/stairs", -8, -65, "platform", "freight-yard", { yaw: Math.PI / 2 }),
-  module("space-kit/craft-cargoa", 15, -58, "craft", "freight-yard", { yaw: Math.PI / 2, targetHeight: 3.6, collider: [3, 4] }),
-  module("space-kit/craft-cargob", -17, -61, "craft", "freight-yard", { yaw: -Math.PI / 2, targetHeight: 3.6, collider: [3, 4] }),
-  module("space-kit/machine-wireless", 7, -74, "machine", "freight-yard", { targetHeight: 2.8 }),
-  module("space-kit/machine-barrellarge", -8, -74, "machine", "freight-yard", { targetHeight: 2.6 }),
-  module("space-kit/barrels-rail", 11, -52, "cargo", "freight-yard"),
-  module("space-kit/barrels", -11, -81, "cargo", "freight-yard"),
-  module("space-kit/pipe-straight", -9, -82, "pipe", "freight-yard", { y: 1.4, yaw: Math.PI / 2 }),
-  module("space-kit/pipe-straight", -9, -90, "pipe", "freight-yard", { y: 1.4, yaw: Math.PI / 2 }),
-  module("space-kit/pipe-supporthigh", -9, -82, "pipe", "freight-yard", { yaw: Math.PI / 2 }),
-  module("space-kit/astronautb", 7.5, -57, "crew", "freight-yard", { yaw: -Math.PI / 2, targetHeight: 1.8 }),
-
-  // Elevated freight monorail, kept as a continuous modular run.
-  ...Array.from({ length: 13 }, (_, index) =>
-    module("space-kit/monorail-trackstraight", -13, 12 - index * 10, "rail", "monorail", { y: 5.2 })
-  ),
-  module("space-kit/monorail-trackcornerlarge", -13, -118, "rail", "monorail", { y: 5.2, yaw: Math.PI }),
-  ...[-10, -40, -70, -100].map(z =>
-    module("space-kit/monorail-tracksupport", -13, z, "rail-support", "monorail")
-  ),
-  module("space-kit/monorail-trainfront", -13, -43, "train", "monorail", { y: 5.6 }),
-  module("space-kit/monorail-traincargo", -13, -50, "train", "monorail", { y: 5.6 }),
-  module("space-kit/monorail-trainbox", -13, -57, "train", "monorail", { y: 5.6 }),
-
-  // Hangar crescent: one primary terminal and four satellite halls.
-  module("space-kit/hangar-largea", 0, -106, "hangar", "hangar-crescent", { targetHeight: 12, collider: [10, 8] }),
-  module("space-kit/hangar-largeb", -30, -94, "hangar", "hangar-crescent", { targetHeight: 10, collider: [8, 7] }),
-  module("space-kit/hangar-smalla", 30, -94, "hangar", "hangar-crescent", { targetHeight: 8, collider: [6, 6] }),
-  module("space-kit/hangar-rounda", 30, -122, "hangar", "hangar-crescent", { targetHeight: 7.5, collider: [6, 6] }),
-  module("space-kit/hangar-roundglass", -30, -122, "hangar", "hangar-crescent", { targetHeight: 7.5, collider: [6, 6] }),
-  module("space-kit/craft-miner", 20, -91, "craft", "hangar-crescent", { yaw: Math.PI / 2, targetHeight: 3.1, collider: [3, 3] }),
-  module("space-kit/chimney-detailed", 11, -103, "structure", "hangar-crescent", { targetHeight: 5.5 }),
-  module("space-kit/satellitedish-large", -25, -76, "antenna", "west-service", { targetHeight: 5.2, collider: [2, 2] }),
-
-  // Lunar terrain, rock formations and a meteor mark the outer boundary.
-  module("space-kit/terrain", -34, -28, "terrain", "perimeter"),
-  module("space-kit/terrain", 34, -28, "terrain", "perimeter"),
-  module("space-kit/terrain", -42, -66, "terrain", "perimeter"),
-  module("space-kit/terrain", 42, -66, "terrain", "perimeter"),
-  module("space-kit/terrain", -38, -106, "terrain", "perimeter"),
-  module("space-kit/terrain", 38, -106, "terrain", "perimeter"),
-  module("space-kit/terrain-side", -34, -51, "terrain", "perimeter", { yaw: Math.PI / 2 }),
-  module("space-kit/terrain-side", 34, -55, "terrain", "perimeter", { yaw: -Math.PI / 2 }),
-  module("space-kit/terrain-side", -36, -94, "terrain", "perimeter", { yaw: Math.PI / 2 }),
-  module("space-kit/terrain-side", 36, -96, "terrain", "perimeter", { yaw: -Math.PI / 2 }),
-  module("space-kit/rock-largea", -43, -82, "rock", "perimeter", { targetHeight: 6, collider: [2.5, 2.5] }),
-  module("space-kit/craterlarge", 43, -78, "crater", "perimeter", { targetHeight: 4.5, collider: [3, 3] }),
-  module("space-kit/meteor-detailed", 41, -119, "rock", "perimeter", { targetHeight: 5.5, collider: [2, 2] })
+  ...roads, ...commercial, ...towers, ...houses, ...distantBlocks,
+  ...streetFurniture, ...park, ...traffic
 ];
 
 function prepareModel(THREE, root, entry) {
   root.position.set(0, 0, 0);
   root.rotation.y = entry.yaw || 0;
+  if (entry.scale) root.scale.multiplyScalar(entry.scale);
   if (entry.targetHeight) {
     const box = new THREE.Box3().setFromObject(root);
     const size = box.getSize(new THREE.Vector3());
@@ -118,7 +159,7 @@ function prepareModel(THREE, root, entry) {
   root.position.set(entry.x, (entry.y || 0) - bounds.min.y, entry.z);
   root.traverse(node => {
     if (!node.isMesh) return;
-    node.castShadow = !["road", "rail", "rail-support", "terrain"].includes(entry.kind);
+    node.castShadow = !["road", "driveway"].includes(entry.kind);
     node.receiveShadow = true;
     if (node.material) {
       const mats = Array.isArray(node.material) ? node.material : [node.material];
@@ -136,16 +177,16 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
   const loadedIds = new Set();
   const failedIds = [];
   let elapsed = 0;
-  let controlOnline = false;
-  let relayOnline = true;
+  let parkLightOnline = false;
+  let streetLightOnline = false;
 
   const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(360, 360),
-    new THREE.MeshStandardMaterial({ color: 0x343a43, roughness: 1, metalness: 0 })
+    new THREE.PlaneGeometry(220, 220),
+    new THREE.MeshStandardMaterial({ color: 0x4b5154, roughness: 1, metalness: 0 })
   );
-  ground.name = "DEPOO outer-rim ground";
+  ground.name = "DEPOO city ground";
   ground.rotation.x = -Math.PI / 2;
-  ground.position.y = -0.16;
+  ground.position.y = -0.18;
   ground.frustumCulled = false;
   ground.receiveShadow = true;
   scene.add(ground);
@@ -161,40 +202,40 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
     });
   }
 
-  const dispatchLight = new THREE.PointLight(0x56d9ee, 0, 28, 1.7);
-  dispatchLight.name = "DEPOO / dispatch core light";
-  dispatchLight.position.set(4.2, 2.8, -35.5);
-  scene.add(dispatchLight);
-  meshes.push(dispatchLight);
+  const parkLight = new THREE.PointLight(0xffc47c, 0, 19, 1.8);
+  parkLight.name = "DEPOO / civic park light";
+  parkLight.position.set(-8, 3.1, 8);
+  scene.add(parkLight);
+  meshes.push(parkLight);
 
-  const relayLight = new THREE.PointLight(0xffb45d, 2.2, 20, 1.8);
-  relayLight.name = "DEPOO / relay beacon";
-  relayLight.position.set(-8.8, 2.4, -41);
-  scene.add(relayLight);
-  meshes.push(relayLight);
+  const streetLight = new THREE.PointLight(0xffb86b, 0, 26, 1.6);
+  streetLight.name = "DEPOO / downtown street lighting";
+  streetLight.position.set(0, 5.2, -8);
+  scene.add(streetLight);
+  meshes.push(streetLight);
 
   interactables.push({
-    id: "depoo-control", name: "Aktivovat řídicí konzoli",
-    x: 4.2, z: -35.5, range: 3.8,
+    id: "city-park-light", name: "Zapnout osvětlení parku",
+    x: -8, z: 5, range: 3.2,
     action() {
-      controlOnline = !controlOnline;
-      dispatchLight.intensity = controlOnline ? 8.5 : 0;
-      this.name = controlOnline ? "Vypnout řídicí konzoli" : "Aktivovat řídicí konzoli";
+      parkLightOnline = !parkLightOnline;
+      parkLight.intensity = parkLightOnline ? 5.5 : 0;
+      this.name = parkLightOnline ? "Vypnout osvětlení parku" : "Zapnout osvětlení parku";
     }
   });
   interactables.push({
-    id: "depoo-relay", name: "Vypnout servisní maják",
-    x: -8.8, z: -41, range: 3.5,
+    id: "city-street-light", name: "Zapnout veřejné osvětlení",
+    x: 0, z: -8, range: 3.2,
     action() {
-      relayOnline = !relayOnline;
-      relayLight.visible = relayOnline;
-      this.name = relayOnline ? "Vypnout servisní maják" : "Zapnout servisní maják";
+      streetLightOnline = !streetLightOnline;
+      streetLight.intensity = streetLightOnline ? 6.5 : 0;
+      this.name = streetLightOnline ? "Vypnout veřejné osvětlení" : "Zapnout veřejné osvětlení";
     }
   });
 
   const ready = (async () => {
     const response = await fetch(APP_BASE + "models/manifest.json");
-    if (!response.ok) throw new Error("DEPOO asset manifest request failed: " + response.status);
+    if (!response.ok) throw new Error("DEPOO city asset manifest request failed: " + response.status);
     const manifest = await response.json();
     const assetMap = new Map((manifest.assets || []).map(asset => [asset.id, asset]));
     const uniqueIds = [...new Set(WORLD_LAYOUT.map(entry => entry.id))];
@@ -222,7 +263,7 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
           loadedIds.add(id);
         } catch (error) {
           failedIds.push(id);
-          console.warn("DEPOO asset could not be loaded:", id, error);
+          console.warn("DEPOO city asset could not be loaded:", id, error);
         } finally {
           completed += 1;
           onProgress(completed, uniqueIds.length, id);
@@ -246,7 +287,7 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
       colliders.push({
         minX: center.x - size.x * 0.36, maxX: center.x + size.x * 0.36,
         minZ: center.z - size.z * 0.36, maxZ: center.z + size.z * 0.36,
-        name: root.name || "Placed CC0 asset"
+        name: root.name || "Placed CC0 model"
       });
     }
     return root;
@@ -254,23 +295,24 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
 
   function tick(deltaTime) {
     elapsed += Math.max(0, deltaTime || 0);
-    if (controlOnline) dispatchLight.intensity = 8.1 + Math.sin(elapsed * 2.1) * 0.55;
-    if (relayOnline) relayLight.intensity = 1.9 + Math.sin(elapsed * 3.2) * 0.25;
+    if (parkLightOnline) parkLight.intensity = 5.3 + Math.sin(elapsed * 2.1) * 0.25;
+    if (streetLightOnline) streetLight.intensity = 6.2 + Math.sin(elapsed * 1.4) * 0.3;
   }
 
   function getCoordinateData() {
     return {
-      schemaVersion: "2.0", theme: "DEPOO",
-      setting: "DEPOO / modular freight campus", units: "metres",
+      schemaVersion: "3.0", theme: "DEPOO",
+      setting: "DEPOO / low-poly open city", units: "metres",
       objects: WORLD_LAYOUT.map((entry, index) => ({
         index, id: entry.id, x: entry.x, y: entry.y || 0, z: entry.z,
         yaw: entry.yaw || 0, kind: entry.kind, zone: entry.zone
       })),
       anchors: [
-        { id: "spawn", x: 0, y: 0, z: 9.2 },
-        { id: "dispatch-court", x: 0, y: 0, z: -38 },
-        { id: "freight-yard", x: 0, y: 0, z: -68 },
-        { id: "main-hangar", x: 0, y: 0, z: -106 }
+        { id: "spawn", x: 0, y: 0, z: 46 },
+        { id: "town-square", x: 0, y: 0, z: 0 },
+        { id: "downtown", x: 0, y: 0, z: -8 },
+        { id: "civic-park", x: -8, y: 0, z: 8 },
+        { id: "residential-quarter", x: 24, y: 0, z: 24 }
       ],
       loadedAssetIds: [...loadedIds], failedAssetIds: failedIds.slice()
     };

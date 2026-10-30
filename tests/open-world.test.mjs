@@ -6,63 +6,58 @@ const ids = new Set(WORLD_LAYOUT.map(item => item.id));
 const kinds = new Set(WORLD_LAYOUT.map(item => item.kind));
 const zones = new Set(WORLD_LAYOUT.map(item => item.zone));
 
-test("DEPOO is assembled entirely from modular Space Kit components", () => {
-  assert.ok(WORLD_LAYOUT.length >= 80, "the new campus should use a substantial modular layout");
-  assert.ok([...ids].every(id => id.startsWith("space-kit/")), "world geometry must come from the pinned Space Kit set");
+test("DEPOO is a city assembled from Kenney modular city components", () => {
+  assert.ok(WORLD_LAYOUT.length >= 140, "the city should contain a substantial modular layout");
+  assert.ok([...ids].every(id => !id.startsWith("space-kit/")), "no space depot assets may remain");
   for (const id of [
-    "space-kit/hangar-largea", "space-kit/hangar-largeb",
-    "space-kit/monorail-trackstraight", "space-kit/monorail-trainfront",
-    "space-kit/craft-cargoa", "space-kit/machine-generatorlarge",
-    "space-kit/astronauta", "space-kit/craterlarge"
-  ]) assert.ok(ids.has(id), "missing DEPOO component: " + id);
+    "city-kit-roads/road-straight", "city-kit-roads/road-crossroad",
+    "city-kit-commercial/building-a", "city-kit-commercial/building-skyscraper-a",
+    "city-kit-suburban/building-type-a", "car-kit/sedan", "nature-kit/tree-oak"
+  ]) assert.ok(ids.has(id), "missing DEPOO city component: " + id);
 });
 
-test("the world is split into connected operational districts", () => {
-  for (const zone of ["arrival", "dispatch", "west-service", "east-service", "freight-yard", "monorail", "hangar-crescent", "perimeter"]) {
-    assert.ok(zones.has(zone), "missing DEPOO district: " + zone);
+test("the city contains connected streets, downtown, housing, civic park and traffic", () => {
+  for (const zone of ["street-grid","downtown","market-street","civic-district","residential","civic-park","traffic","city-edge"]) {
+    assert.ok(zones.has(zone), "missing DEPOO city zone: " + zone);
   }
-  for (const kind of ["road", "gate", "platform", "hangar", "rail", "rail-support", "train", "craft", "machine", "crew", "terrain", "rock"]) {
-    assert.ok(kinds.has(kind), "missing world component category: " + kind);
+  for (const kind of ["road","commercial","tower","house","distant-building","streetlight","traffic-light","vehicle","tree","bench"]) {
+    assert.ok(kinds.has(kind), "missing city component category: " + kind);
   }
-  assert.ok(WORLD_LAYOUT.filter(item => item.kind === "hangar").length >= 5);
-  assert.ok(WORLD_LAYOUT.filter(item => item.kind === "rail").length >= 10);
-  assert.ok(WORLD_LAYOUT.filter(item => item.kind === "train").length >= 3);
-  assert.ok(WORLD_LAYOUT.filter(item => item.zone === "west-service").length >= 6);
-  assert.ok(WORLD_LAYOUT.filter(item => item.zone === "east-service").length >= 6);
+  assert.ok(WORLD_LAYOUT.filter(item => item.kind === "road").length >= 80);
+  assert.ok(WORLD_LAYOUT.filter(item => item.kind === "house").length >= 8);
+  assert.ok(WORLD_LAYOUT.filter(item => item.kind === "tower").length >= 4);
+  assert.ok(WORLD_LAYOUT.filter(item => item.kind === "vehicle").length >= 6);
 });
 
-test("every placed module has finite coordinates and valid dimensions", () => {
+test("every city component has valid coordinates, dimensions and a district", () => {
   for (const item of WORLD_LAYOUT) {
     assert.equal(typeof item.id, "string");
     assert.ok(Number.isFinite(item.x) && Number.isFinite(item.z));
     assert.ok(Number.isFinite(item.y || 0) && Number.isFinite(item.yaw || 0));
     assert.equal(typeof item.zone, "string");
+    if (item.scale !== undefined) assert.ok(item.scale > 0);
     if (item.targetHeight !== undefined) assert.ok(item.targetHeight > 0);
     if (item.collider) assert.ok(item.collider.length === 2 && item.collider.every(n => Number.isFinite(n) && n > 0));
   }
 });
 
-test("arrival, dispatch approach and main walking spine remain unobstructed", () => {
-  const anchors = [{ x: 0, z: 9.2 }, { x: 0, z: -35.5 }, { x: 0, z: -68 }];
+test("the spawn street and central avenue stay open for first-person movement", () => {
+  const anchors = [{ x: 0, z: 46 }, { x: 0, z: 0 }, { x: 0, z: -8 }];
   const blockers = WORLD_LAYOUT.filter(item => item.collider).filter(item =>
     anchors.some(anchor =>
-      Math.abs(item.x - anchor.x) < item.collider[0] + 0.5 &&
-      Math.abs(item.z - anchor.z) < item.collider[1] + 0.5
+      Math.abs(item.x - anchor.x) < item.collider[0] + 0.35 &&
+      Math.abs(item.z - anchor.z) < item.collider[1] + 0.35
     )
   );
-  assert.deepEqual(blockers, [], "spawn and central walking spine must remain clear");
+  assert.deepEqual(blockers, [], "spawn and central avenue must remain walkable");
 });
 
-test("the monorail spans the campus and the hangars form a separate destination district", () => {
-  const rail = WORLD_LAYOUT.filter(item => item.kind === "rail" && item.id === "space-kit/monorail-trackstraight");
-  assert.ok(Math.min(...rail.map(item => item.z)) <= -108);
-  assert.ok(Math.max(...rail.map(item => item.z)) >= 12);
-  const hangars = WORLD_LAYOUT.filter(item => item.kind === "hangar");
-  assert.ok(hangars.some(item => item.x === 0 && item.z < -100));
-  assert.ok(hangars.some(item => item.x < -20));
-  assert.ok(hangars.some(item => item.x > 20));
+test("the downtown includes a roundabout, a park and a varied residential ring", () => {
+  assert.ok(WORLD_LAYOUT.some(item => item.id === "city-kit-roads/road-roundabout" && item.x === 0 && item.z === 0));
+  assert.ok(WORLD_LAYOUT.some(item => item.zone === "civic-park" && item.kind === "tree"));
+  assert.ok(WORLD_LAYOUT.some(item => item.zone === "residential" && item.kind === "house"));
 });
 
-test("no residential or panelák assets remain in DEPOO", () => {
-  assert.ok(WORLD_LAYOUT.every(item => !/panelak|apartment|building-type/.test(item.id)));
+test("no depot, monorail, hangar or panelak assets remain", () => {
+  assert.ok(WORLD_LAYOUT.every(item => !/space-kit|hangar|monorail|panelak|apartment/.test(item.id)));
 });
