@@ -145,8 +145,17 @@ export function createPanelakInterior({ THREE, scene, colliders, interactables }
     box("Stair riser "+(i+1), -20.1, 0.18+rise/2-0.09, -43.2+i*0.72-0.31, 3.1, rise, 0.07, mats.plaster);
   }
   box("Stair landing", -20.1, 1.95, -35.9, 3.1, 0.18, 1.55, mats.concrete);
+  // Return flight completes the 2.9 m storey rise; the same module repeats above.
+  for (let i=0;i<6;i++) {
+    const rise = 0.158*(i+1);
+    box("Stair return tread "+(i+1), -17.25, 1.95+rise-0.05, -36.35-i*0.58, 1.82, 0.10, 0.56, mats.concrete);
+    box("Stair return riser "+(i+1), -17.25, 1.95+rise/2-0.05, -36.63-i*0.58, 1.82, rise, 0.06, mats.plaster);
+  }
+  box("Stair upper landing", -17.25, 2.82, -40.2, 1.9, 0.16, 1.2, mats.concrete);
   box("Stair handrail", -18.55, 1.10, -39.8, 0.07, 0.07, 7.2, mats.metal);
+  box("Stair return handrail", -16.32, 2.35, -38.0, 0.07, 0.07, 4.2, mats.metal);
   for (let i=0;i<12;i++) box("Stair baluster", -18.55, 0.65, -43.1+i*0.58, 0.055, 0.88, 0.055, mats.metal);
+  for (let i=0;i<8;i++) box("Stair return baluster", -16.32, 2.12, -36.6-i*0.52, 0.055, 0.46, 0.055, mats.metal);
   box("Mailbox bank", -12.65, 1.35, -31.1, 0.24, 0.86, 2.1, mats.metal);
   for (let i=0;i<8;i++) box("Mailbox door "+i, -12.51, 1.15+(i%4)*0.19, -31.75+Math.floor(i/4)*0.65, 0.035, 0.15, 0.55, mats.white);
   box("Intercom panel", -12.12, 1.52, -28.0, 0.06, 0.52, 0.28, mats.metal);
