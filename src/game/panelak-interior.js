@@ -4,6 +4,13 @@ export const PANELAK_INTERIOR_LAYOUT = Object.freeze({
   entrance: Object.freeze({ x: -12.02, z: -29, width: 2.5, side: "east" }),
   floor: Object.freeze({ index: 0, elevation: 0, height: 2.9 }),
   windowBays: Object.freeze([-14, -10, -6, -2, 2, 6, 10, 14].map(offset => -29 + offset)),
+  roomWindowBays: Object.freeze({
+    "living-room": -35,
+    "kitchen": -27,
+    "bedroom": -19,
+    "bathroom": -15,
+    "stairwell": -39
+  }),
   rooms: Object.freeze(["entrance-hall", "stairwell", "kitchen", "living-room", "bedroom", "bathroom"]),
   interactions: Object.freeze(["entrance-door", "lights"]), staticDoors: Object.freeze(["apartment", "bedroom", "bathroom"])
 });
@@ -83,8 +90,25 @@ export function createPanelakInterior({ THREE, scene, colliders, interactables }
   };
   addLongFacade(west+0.08, "West exterior", "west");
   addLongFacade(east-0.08, "East exterior", "east");
-  box("North end wall", -17.2, wallY, north+0.08, 10.2, wallH, 0.16, mats.concrete, { collider: true });
-  box("South end wall", -17.2, wallY, south-0.08, 10.2, wallH, 0.16, mats.concrete, { collider: true });
+  const addEndFacade = (z, label, side) => {
+    const centers = [-19.2, -15.2];
+    const width = 1.38;
+    let cursor = west;
+    for (const x of centers) {
+      const a=x-width/2, b=x+width/2;
+      if (a>cursor) box(label+" / concrete pier", (cursor+a)/2, wallY, z, a-cursor, wallH, 0.16, mats.concrete, { collider:true });
+      box(label+" / window sill", x, sillHeight/2, z, width, sillHeight, 0.16, mats.concrete, { collider:true });
+      box(label+" / window head", x, (windowTop+wallH)/2, z, width, wallH-windowTop, 0.16, mats.concrete, { collider:true });
+      box(label+" / window frame", x, (sillHeight+windowTop)/2, z, width, windowTop-sillHeight, 0.19, mats.white);
+      box(label+" / window glass", x, (sillHeight+windowTop)/2, z+(side==="north"?0.035:-0.035), width-0.18, windowTop-sillHeight-0.12, 0.045, mats.glass);
+      box(label+" / window mullion", x, (sillHeight+windowTop)/2, z, 0.055, windowTop-sillHeight-0.08, 0.20, mats.white);
+      box(label+" / window sill ledge", x, sillHeight, z, width+0.12, 0.08, 0.24, mats.concrete);
+      cursor=b;
+    }
+    if (cursor<east) box(label+" / concrete pier", (cursor+east)/2, wallY, z, east-cursor, wallH, 0.16, mats.concrete, { collider:true });
+  };
+  addEndFacade(north+0.08, "North end exterior", "north");
+  addEndFacade(south-0.08, "South end exterior", "south");
 
   // Wall segments keep the apartment plan open while leaving real door-sized gaps.
   const partition = (z, gapX, gapWidth, name) => {
