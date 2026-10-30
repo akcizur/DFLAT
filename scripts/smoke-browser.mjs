@@ -45,7 +45,9 @@ try {
     })(),
     renderCanvas: Boolean(document.querySelector("#screenCanvas")),
     startEnabled: document.querySelector("#startButton")?.disabled === false,
-    debugText: document.querySelector("#boot-debug")?.textContent || ""
+    debugText: document.querySelector("#boot-debug")?.textContent || "",
+    worldMode: window.__DEPOO_SMOKE__?.worldMode(),
+    assetDiagnostics: window.__DEPOO_SMOKE__?.assetDiagnostics()
   }));
   if (!beforeStart.webgl) throw new Error("WebGL context could not be created.");
   if (beforeStart.debugText.trim()) throw new Error("Boot diagnostics reported an error: " + beforeStart.debugText);
@@ -117,13 +119,24 @@ try {
 
   if (!visual.ok && visual.distinctColorBuckets < 2) throw new Error("3D frame appears blank: " + JSON.stringify({ visual, pageErrors, consoleErrors }));
 
-  const entranceRoute = await page.evaluate(() => {
-    const smoke = window.__DEPOO_SMOKE__;
-    smoke.setPlayerPosition(0, 100, 0);
-    return smoke.moveForFrames("KeyW", 360);
-  });
-  if (!entranceRoute || entranceRoute.z > 82) {
-    throw new Error("The central entrance route is obstructed: " + JSON.stringify({ entranceRoute, worldCheck }));
+  if (beforeStart.worldMode === "imported-user-city") {
+    const imported = beforeStart.assetDiagnostics;
+    if (!imported?.cityVisible || !imported?.housesVisible || imported.colliderCount < 1) {
+      throw new Error("Uploaded world assets did not become visible/collidable: " + JSON.stringify(imported));
+    }
+  } else if (beforeStart.worldMode !== "bundled-city") {
+    throw new Error("World did not resolve to an available city mode: " + JSON.stringify(beforeStart));
+  }
+
+  const entranceRoute = beforeStart.worldMode === "bundled-city"
+    ? await page.evaluate(() => {
+      const smoke = window.__DEPOO_SMOKE__;
+      smoke.setPlayerPosition(0, 100, 0);
+      return smoke.moveForFrames("KeyW", 360);
+    })
+    : null;
+  if (beforeStart.worldMode === "bundled-city" && (!entranceRoute || entranceRoute.z > 82)) {
+    throw new Error("The central entrance route is obstructed: " + JSON.stringify({ entranceRoute }));
   }
 
   // Exercise the catalog end-to-end: query all CC0 entries, find a model shipped locally,
@@ -207,7 +220,20 @@ try {
       fifthTowerBlockers: window.__DEPOO_SMOKE__?.blockingCollidersAt(-12, -36) || []
     };
   });
-  if (
+  if (beforeStart.worldMode === "imported-user-city") {
+    if (
+      worldCheck.theme !== "Imported LowPoly City" ||
+      worldCheck.count !== 2 ||
+      !worldCheck.ids.includes("user-lowpoly-city") ||
+      !worldCheck.ids.includes("user-modern-houses") ||
+      !worldCheck.loadedAssetIds.includes("user-lowpoly-city") ||
+      !worldCheck.loadedAssetIds.includes("user-modern-houses") ||
+      worldCheck.colliderCount < 1
+    ) {
+      throw new Error("Imported user city is incomplete: " + JSON.stringify({ worldCheck, assets: beforeStart.assetDiagnostics }));
+    }
+  } else {
+    if (
     worldCheck.theme !== "DEPOO" || worldCheck.count < 600 ||
     worldCheck.geometryCount < worldCheck.count ||
     worldCheck.roadCount !== 273 ||
@@ -229,12 +255,17 @@ try {
 
 
 
-  const controls = await page.evaluate(() => ({
-    park: window.__DEPOO_SMOKE__.interact("city-park-light"),
-    street: window.__DEPOO_SMOKE__.interact("city-street-light")
-  }));
-  if (!controls.park || !controls.street) {
-    throw new Error("DEPOO park/street lighting interaction failed: " + JSON.stringify(controls));
+
+  }
+
+  if (beforeStart.worldMode === "bundled-city") {
+    const controls = await page.evaluate(() => ({
+      park: window.__DEPOO_SMOKE__.interact("city-park-light"),
+      street: window.__DEPOO_SMOKE__.interact("city-street-light")
+    }));
+    if (!controls.park || !controls.street) {
+      throw new Error("DEPOO park/street lighting interaction failed: " + JSON.stringify(controls));
+    }
   }
 
   // Mobile touch regression: use a real touch-enabled Chromium context and
