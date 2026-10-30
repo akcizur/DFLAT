@@ -12,6 +12,7 @@ export function bindInput({ renderer, state, controller, ui }) {
   let touchLookDx = 0;
   let touchLookDy = 0;
   const sensitivity = { mouseX: 0.0010, mouseY: 0.0009, touchX: 0.0030, touchY: 0.0020, padLook: 2.2 };
+  let resetTouchActions = () => {};
 
   function createTouchRemote() {
     if (document.getElementById("touchRemoteCluster")) return;
@@ -59,6 +60,12 @@ export function bindInput({ renderer, state, controller, ui }) {
     runButton?.addEventListener("pointerup", releaseRun);
     runButton?.addEventListener("pointercancel", releaseRun);
     runButton?.addEventListener("lostpointercapture", releaseRun);
+    resetTouchActions = () => {
+      runPointers.clear();
+      setKey("ShiftLeft", false, "touchButtons");
+      runButton?.classList.remove("is-held");
+      cluster.querySelectorAll("[data-key].is-held").forEach(element => element.classList.remove("is-held"));
+    };
     button("pause")?.addEventListener("pointerdown", event => {
       if (event.pointerType === "mouse") return;
       event.preventDefault();
@@ -103,6 +110,7 @@ export function bindInput({ renderer, state, controller, ui }) {
     for (const code of knownCodes) keysDown[code] = false;
     document.querySelector('[data-touch-action="run"]')?.classList.remove("is-held");
     document.querySelectorAll("[data-key].is-held").forEach(button => button.classList.remove("is-held"));
+    resetTouchActions();
   }
   function startGame() {
     if (state.started || !state.ready) return;
