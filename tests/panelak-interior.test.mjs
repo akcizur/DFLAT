@@ -126,3 +126,25 @@ test("the street-facing entrance leads into a visible, navigable interior", () =
   controller.keysDown.KeyW=false;
   assert.ok(controller.player.z < -35.4, "the widened stairwell opening must be traversable");
 });
+
+test("ground-floor rooms align to the four-storey block's facade window rhythm", () => {
+  const { floor, windowBays, roomWindowBays } = PANELAK_INTERIOR_LAYOUT;
+  assert.equal(floor.index, 0);
+  assert.equal(floor.elevation, 0);
+  assert.equal(floor.height, 2.9);
+  assert.deepEqual(windowBays, [-43,-39,-35,-31,-27,-23,-19,-15]);
+  for (const room of ["living-room","kitchen","bedroom","bathroom","stairwell"]) {
+    assert.ok(windowBays.includes(roomWindowBays[room]), room+" should sit on a real facade window bay");
+  }
+
+  const { result } = makeInterior();
+  const windowGlass = result.meshes.filter(mesh => mesh.name.includes("/ window glass"));
+  const windowFrames = result.meshes.filter(mesh => mesh.name.includes("/ window frame"));
+  assert.equal(windowGlass.length, 19, "both long facades and both end walls need matching ground-floor windows");
+  assert.equal(windowFrames.length, 19, "every glass opening needs a visible frame");
+  const longFacadeBays = windowGlass
+    .filter(mesh => mesh.userData?.facadeSide)
+    .map(mesh => mesh.userData.bayZ);
+  assert.deepEqual(longFacadeBays.filter(z => z < -29).sort((a,b)=>a-b), [-43,-39,-35,-31,-27,-23,-19,-15]);
+  assert.ok(!longFacadeBays.includes(-29), "the east-facing entrance must remain clear instead of becoming a window");
+});
