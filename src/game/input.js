@@ -244,7 +244,11 @@ export function bindInput({ renderer, state, controller, ui }) {
   }
   function releaseStick(event) {
     if (!stickPointer || (event && event.pointerId !== stickPointer)) return;
+    const pointerId = stickPointer;
     stickPointer = null;
+    try {
+      if (moveStick.hasPointerCapture?.(pointerId)) moveStick.releasePointerCapture(pointerId);
+    } catch {}
     clearSource("touchStick");
     moveKnob.style.transform = "translate(-50%, -50%)";
     moveStick.classList.remove("active");
@@ -278,7 +282,11 @@ export function bindInput({ renderer, state, controller, ui }) {
   });
   function endLook(event) {
     if (touchLook && (!event || touchLook.id === event.pointerId)) {
+      const pointerId = touchLook.id;
       touchLook = null; touchLookDx = 0; touchLookDy = 0; lookZone.classList.remove("active");
+      try {
+        if (lookZone.hasPointerCapture?.(pointerId)) lookZone.releasePointerCapture(pointerId);
+      } catch {}
     }
   }
   lookZone.addEventListener("pointerup", endLook);
