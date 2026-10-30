@@ -113,7 +113,7 @@ const world = createOpenWorld({
   scene,
   onProgress: (completed, total, modelId) => {
     const percent = 46 + Math.round(38 * completed / Math.max(1, total));
-    setLoadingProgress(percent, "NAČÍTÁM CC0 MODELY", completed + "/" + total + " · " + modelId, "CC0 ASSETS");
+    setLoadingProgress(percent, "NAČÍTÁM 3D MODELY", completed + "/" + total + " · " + modelId, "WORLD ASSETS");
   }
 });
 const controller = createPlayerController({
