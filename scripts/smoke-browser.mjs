@@ -117,6 +117,15 @@ try {
 
   if (!visual.ok && visual.distinctColorBuckets < 2) throw new Error("3D frame appears blank: " + JSON.stringify({ visual, pageErrors, consoleErrors }));
 
+  const entranceRoute = await page.evaluate(() => {
+    const smoke = window.__DEPOO_SMOKE__;
+    smoke.setPlayerPosition(0, 100, 0);
+    return smoke.moveForFrames("KeyW", 360);
+  });
+  if (!entranceRoute || entranceRoute.z > 82) {
+    throw new Error("The central entrance route is obstructed: " + JSON.stringify({ entranceRoute, worldCheck }));
+  }
+
   // Exercise the catalog end-to-end: query all CC0 entries, find a model shipped locally,
   // and place it into the live world. This catches missing controls, catalog/CORS errors,
   // bad manifests and failures in the GLB loading path.
@@ -218,14 +227,7 @@ try {
     throw new Error("DEPOO entrance/tower collision geometry is incorrect: " + JSON.stringify(worldCheck));
   }
 
-  const entranceRoute = await page.evaluate(() => {
-    const smoke = window.__DEPOO_SMOKE__;
-    smoke.setPlayerPosition(0, 100, 0);
-    return smoke.moveForFrames("KeyW", 360);
-  });
-  if (!entranceRoute || entranceRoute.z > 82) {
-    throw new Error("The central entrance route is obstructed: " + JSON.stringify({ entranceRoute, worldCheck }));
-  }
+
 
   const controls = await page.evaluate(() => ({
     park: window.__DEPOO_SMOKE__.interact("city-park-light"),
