@@ -137,16 +137,87 @@ try {
   const worldCheck = await page.evaluate(() => {
     const data = window.__DEPOO_SMOKE__?.worldDiagnostics();
     const objects = data?.objects || [];
-    return { theme: data?.theme, count: objects.length, ids: [...new Set(objects.map(item => item.id))] };
+    const geometry = data?.geometry || [];
+    const roads = geometry.filter(item => item.kind === "road");
+    const buildings = geometry.filter(item =>
+      ["tower", "commercial", "civic-building", "house", "skyline-building"].includes(item.kind)
+    );
+    const vehicles = geometry.filter(item => item.kind === "vehicle");
+    const overlaps = (a, b, epsilon = 0.02) =>
+      a.minX < b.maxX - epsilon && a.maxX > b.minX + epsilon &&
+      a.minZ < b.maxZ - epsilon && a.maxZ > b.minZ + epsilon;
+    const roadOverlaps = [...buildings, ...vehicles].flatMap(item =>
+      roads.filter(road => overlaps(item, road)).map(road => ({
+        item: item.id + " @ " + item.x + "," + item.z,
+        road: road.x + "," + road.z
+      }))
+    );
+    const buildingOverlaps = [];
+    for (let i = 0; i < buildings.length; i += 1) {
+      for (let j = i + 1; j < buildings.length; j += 1) {
+        if (overlaps(buildings[i], buildings[j])) buildingOverlaps.push([
+          buildings[i].id + " @ " + buildings[i].x + "," + buildings[i].z,
+          buildings[j].id + " @ " + buildings[j].x + "," + buildings[j].z
+        ]);
+      }
+    }
+    const roadMap = new Set(roads.map(item => Math.round(item.x) + ":" + Math.round(item.z)));
+    const streetLines = [-72, -48, -24, 0, 24, 48, 72];
+    const roadCells = Array.from({ length: 23 }, (_, index) => -88 + index * 8);
+    const missingRoadCells = [];
+    for (const line of streetLines) for (const cell of roadCells) {
+      if (!roadMap.has(line + ":" + cell)) missingRoadCells.push(line + "," + cell);
+      if (!roadMap.has(cell + ":" + line)) missingRoadCells.push(cell + "," + line);
+    }
+    const wrongRoadSizes = roads.filter(item =>
+      Math.abs(item.width - 8) > 0.08 || Math.abs(item.depth - 8) > 0.08
+    );
+    const offCenter = geometry.filter(item =>
+      Math.abs((item.minX + item.maxX) / 2 - item.x) > 0.02 ||
+      Math.abs((item.minZ + item.maxZ) / 2 - item.z) > 0.02
+    ).map(item => item.id + " @ " + item.x + "," + item.z);
+    return {
+      theme: data?.theme,
+      count: objects.length,
+      geometryCount: geometry.length,
+      colliderCount: data?.colliderCount || 0,
+      roadCount: roads.length,
+      buildingCount: buildings.length,
+      vehicleCount: vehicles.length,
+      ids: [...new Set(objects.map(item => item.id))],
+      missingRoadCells, wrongRoadSizes, roadOverlaps, buildingOverlaps, offCenter,
+      spawnBlockers: window.__DEPOO_SMOKE__?.blockingCollidersAt(0, 100) || [],
+      fifthTowerBlockers: window.__DEPOO_SMOKE__?.blockingCollidersAt(-12, -36) || []
+    };
   });
   if (
-    worldCheck.theme !== "DEPOO" || worldCheck.count < 140 ||
+    worldCheck.theme !== "DEPOO" || worldCheck.count < 600 ||
+    worldCheck.geometryCount < worldCheck.count ||
+    worldCheck.roadCount !== 273 ||
     !worldCheck.ids.includes("city-kit-roads/road-roundabout") ||
     !worldCheck.ids.includes("city-kit-commercial/building-skyscraper-a") ||
     !worldCheck.ids.includes("city-kit-suburban/building-type-a") ||
     !worldCheck.ids.includes("car-kit/sedan") ||
     !worldCheck.ids.includes("mini-characters/character-female-a")
   ) throw new Error("DEPOO modular city is incomplete: " + JSON.stringify(worldCheck));
+  if (worldCheck.missingRoadCells.length || worldCheck.wrongRoadSizes.length) {
+    throw new Error("DEPOO road grid has a gap or a mis-sized module: " + JSON.stringify(worldCheck));
+  }
+  if (worldCheck.roadOverlaps.length || worldCheck.buildingOverlaps.length || worldCheck.offCenter.length) {
+    throw new Error("DEPOO geometry overlaps or off-center models were found: " + JSON.stringify(worldCheck));
+  }
+  if (worldCheck.spawnBlockers.length || !worldCheck.fifthTowerBlockers.length) {
+    throw new Error("DEPOO entrance/tower collision geometry is incorrect: " + JSON.stringify(worldCheck));
+  }
+
+  const entranceRoute = await page.evaluate(() => {
+    const smoke = window.__DEPOO_SMOKE__;
+    smoke.setPlayerPosition(0, 100, 0);
+    return smoke.moveForFrames("KeyW", 360);
+  });
+  if (!entranceRoute || entranceRoute.z > 82) {
+    throw new Error("The central entrance route is obstructed: " + JSON.stringify({ entranceRoute, worldCheck }));
+  }
 
   const controls = await page.evaluate(() => ({
     park: window.__DEPOO_SMOKE__.interact("city-park-light"),

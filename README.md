@@ -10,13 +10,13 @@ The map is arranged as a **seven-by-seven connected street network** with 36 cit
 - **Downtown:** five skyline towers surrounded by commercial streets and a central traffic junction.
 - **Market district:** four mixed-use blocks with fourteen shop/office variations, awnings, parasols and street details.
 - **Civic quarter:** public buildings, pedestrian spaces and city services.
-- **Residential neighbourhoods:** 69 houses in 23 blocks, with varied building types, driveways, gardens and trees.
+- **Residential neighbourhoods:** 66 houses in 22 blocks, with varied building types, driveways, gardens and trees.
 - **Green space:** a central park and a smaller neighbourhood garden with trees, benches, planters and paths.
 - **Parking and services:** parked cars, taxi, police, delivery van, ambulance, fire engine, refuse truck and utility vehicles.
 - **Public life:** twelve static pedestrians, an accessible wheelchair character, a park dog, streetlights, traffic signals, signs, bins and utility poles.
 - **City edge:** low-detail skyline buildings create a visual boundary beyond the playable street grid.
 
-The authored layout contains **621 placed world instances using 106 curated model types**. Repeated GLB components are rendered with Three.js `InstancedMesh` batches, which keeps the larger city practical to run in a browser. Building and vehicle lots retain collision bounds, while the roads and main pedestrian routes stay open.
+The authored layout contains **610 placed world instances using 106 curated model types**. Repeated GLB components are rendered with Three.js `InstancedMesh` batches, which keeps the larger city practical to run in a browser. Building and vehicle lots retain collision bounds, while the roads and main pedestrian routes stay open.
 
 ## Asset library
 

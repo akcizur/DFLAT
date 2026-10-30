@@ -69,7 +69,10 @@ for (const template of [
   '"mini-characters/character-" + model'
 ]) if (!worldSource.includes(template)) fail("missing generated city asset family: " + template);
 if (!worldSource.includes("new THREE.InstancedMesh") || !worldSource.includes("addStaticInstances")) fail("repeated city assets must use GPU instancing");
+if (!worldSource.includes("placementBounds") || !worldSource.includes("bounds.min.x - padding")) fail("geometry diagnostics and GLB-derived collision boxes are missing");
+if (!worldSource.includes("entry.x - center.x") || !worldSource.includes("entry.z - center.z")) fail("GLB models must be centered on their authored map coordinates");
 if (!worldSource.includes("ROAD_FOOTPRINT = 8") || !worldSource.includes("targetFootprint: ROAD_FOOTPRINT")) fail("road modules must use the fitted city grid");
+if (!worldSource.includes("collider: true")) fail("major structures must use exact model collision bounds");
 if (!worldSource.includes("length: 23") || !worldSource.includes("STREET_LINES = [-72, -48, -24, 0, 24, 48, 72]")) fail("the seven-by-seven street network is missing");
 const modelPrep = await readFile(path.join(root, "scripts/prepare-open-models.mjs"), "utf8");
 if (!modelPrep.includes('model.license !== "CC0-1.0"')) fail("asset downloader must verify CC0 license");

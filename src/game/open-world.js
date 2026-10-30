@@ -4,8 +4,8 @@ const APP_BASE = typeof import.meta.env !== "undefined" && import.meta.env.BASE_
 const place = (id, x, z, kind, zone, options = {}) => ({ id, x, z, kind, zone, ...options });
 
 const BLOCK_CENTERS = [-60, -36, -12, 12, 36, 60];
-const STREET_LINES = [-72, -48, -24, 0, 24, 48, 72];
-const ROAD_CELLS = Array.from({ length: 23 }, (_, index) => -88 + index * 8);
+export const STREET_LINES = [-72, -48, -24, 0, 24, 48, 72];
+export const ROAD_CELLS = Array.from({ length: 23 }, (_, index) => -88 + index * 8);
 const ROAD_FOOTPRINT = 8;
 const world = [];
 
@@ -38,13 +38,13 @@ for (const x of ROAD_CELLS) {
 const towers = [
   ["a", -12, -12, 34], ["c", 12, -12, 38],
   ["d", -12, 12, 30], ["e", 12, 12, 32],
-  ["b", 0, -36, 25]
+  ["b", -12, -36, 25]
 ];
 for (const [variant, x, z, height] of towers) {
   world.push(place(
     "city-kit-commercial/building-skyscraper-" + variant,
     x, z, "tower", "downtown",
-    { targetHeight: height, targetFootprint: 9, collider: [4.2, 4.2] }
+    { targetHeight: height, targetFootprint: 14, collider: true }
   ));
 }
 
@@ -55,7 +55,7 @@ const marketBlocks = [
 const commercialTypes = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n"];
 let commercialIndex = 0;
 for (const [cx, cz] of marketBlocks) {
-  const lots = [[-5, -4], [5, -4], [0, 5]];
+  const lots = [[-4.5, -4.5], [4.5, -4.5], [0, 4.5]];
   for (const [dx, dz] of lots) {
     const variant = commercialTypes[commercialIndex++ % commercialTypes.length];
     const x = cx + dx;
@@ -67,7 +67,7 @@ for (const [cx, cz] of marketBlocks) {
         targetHeight: 8.5 + (commercialIndex % 4) * 1.3,
         targetFootprint: 5.8,
         yaw: [0, Math.PI / 2, Math.PI, -Math.PI / 2][commercialIndex % 4],
-        collider: [2.5, 2.5]
+        collider: true
       }
     ));
     if (commercialIndex % 2 === 0) {
@@ -87,17 +87,17 @@ world.push(
 
 // 04 / Civic quarter. Public buildings, a forecourt and accessible pedestrian space.
 const civicLots = [
-  ["g", 31, 8, 12], ["l", 41, 8, 11], ["n", 36, 18, 13]
+  ["g", 32, 8, 12], ["l", 40, 8, 11], ["n", 36, 16, 13]
 ];
 for (const [variant, x, z, height] of civicLots) {
   world.push(place(
     "city-kit-commercial/building-" + variant,
     x, z, "civic-building", "civic-quarter",
-    { targetHeight: height, targetFootprint: 6, collider: [2.8, 2.8] }
+    { targetHeight: height, targetFootprint: 5.6, collider: true }
   ));
 }
 world.push(
-  place("city-kit-commercial/detail-awning-wide", 31, 10.5, "civic-detail", "civic-quarter", { targetHeight: 2.4, targetFootprint: 4.5 }),
+  place("city-kit-commercial/detail-awning-wide", 32, 10.5, "civic-detail", "civic-quarter", { targetHeight: 2.4, targetFootprint: 4.5 }),
   place("furniture-kit/trashcan", 43, 14, "street-detail", "civic-quarter", { targetHeight: 1, targetFootprint: 1.2 })
 );
 
@@ -108,7 +108,7 @@ for (const cx of BLOCK_CENTERS) {
     const key = cx + "," + cz;
     const special = new Set([
       "-12,-12", "12,-12", "-12,12", "12,12",
-      "-36,12", "-36,-12",
+      "-36,12", "-36,-12", "-12,-36",
       "-36,36", "-12,36", "12,36", "36,36",
       "36,12", "60,-36", "-60,12"
     ]);
@@ -119,7 +119,7 @@ for (const cx of BLOCK_CENTERS) {
 const houseTypes = "abcdefghijklmnopqrstu".split("");
 let houseIndex = 0;
 for (const [cx, cz] of residentialBlocks) {
-  const lots = [[-4.7, -4.2], [4.7, -4.2], [0, 5.0]];
+  const lots = [[-4.2, -4.2], [4.2, -4.2], [0, 4.2]];
   for (const [dx, dz] of lots) {
     const variant = houseTypes[houseIndex % houseTypes.length];
     const height = [6.2, 6.8, 7.1, 6.5, 7.6, 6.4][houseIndex % 6];
@@ -130,7 +130,7 @@ for (const [cx, cz] of residentialBlocks) {
         targetHeight: height,
         targetFootprint: 6.1,
         yaw: [0, Math.PI / 2, Math.PI, -Math.PI / 2][houseIndex % 4],
-        collider: [2.55, 2.55]
+        collider: true
       }
     ));
     houseIndex += 1;
@@ -159,26 +159,30 @@ function addPark(cx, cz, zone, scale = 1) {
       : index % 3 === 1 ? "nature-kit/tree-detailed"
         : "nature-kit/tree-default";
     world.push(place(id, cx + dx * scale, cz + dz * scale, "tree", zone, {
-      targetHeight: index % 2 ? 5.2 : 6.3, targetFootprint: 4.5
+      targetHeight: index % 2 ? 5.2 : 6.3, targetFootprint: 4.2
     }));
   });
+
   for (const [dx, dz, yaw] of [
-    [-4, 0, 0], [4, 0, Math.PI], [0, -4, Math.PI / 2], [0, 4, -Math.PI / 2]
+    [-3, 0, 0], [3, 0, Math.PI], [0, -3, Math.PI / 2], [0, 3, -Math.PI / 2]
   ]) {
     world.push(place(
       "furniture-kit/bench", cx + dx * scale, cz + dz * scale,
-      "bench", zone, { targetHeight: 0.85, targetFootprint: 2.2, yaw }
+      "bench", zone, { targetHeight: 0.85, targetFootprint: 2.2 * scale, yaw }
     ));
   }
+
   world.push(
-    place("city-kit-suburban/planter", cx - 2, cz - 2, "planter", zone, { targetHeight: 1.1, targetFootprint: 2 }),
-    place("city-kit-suburban/planter", cx + 2, cz + 2, "planter", zone, { targetHeight: 1.1, targetFootprint: 2 }),
-    place("nature-kit/plant-bushlarge", cx, cz, "plant", zone, { targetHeight: 1.7, targetFootprint: 2.4 }),
-    place("furniture-kit/trashcan", cx + 5, cz, "street-detail", zone, { targetHeight: 1, targetFootprint: 1.2 })
+    place("city-kit-suburban/planter", cx - 2.2 * scale, cz - 2.2 * scale, "planter", zone, {
+      targetHeight: 0.9, targetFootprint: 1.6 * scale
+    }),
+    place("city-kit-suburban/planter", cx + 2.2 * scale, cz + 2.2 * scale, "planter", zone, {
+      targetHeight: 0.9, targetFootprint: 1.6 * scale
+    }),
+    place("city-kit-roads/road-square", cx, cz, "park-path", zone, {
+      targetFootprint: 6 * scale
+    })
   );
-  for (const [dx, dz] of [[-3, 5], [3, -5]]) {
-    world.push(place("city-kit-roads/road-square", cx + dx * scale, cz + dz * scale, "park-path", zone, { targetFootprint: 5 }));
-  }
 }
 addPark(-36, 12, "central-park");
 addPark(-36, -12, "neighborhood-garden", 0.68);
@@ -195,7 +199,7 @@ for (const [model, x, z, yaw] of traffic) {
   world.push(place("car-kit/" + model, x, z, "vehicle", model === "firetruck" || model === "ambulance" ? "emergency-services" : "parking-and-traffic", {
     targetHeight: model === "truck" || model === "garbage-truck" || model === "firetruck" ? 1.8 : 1.48,
     targetFootprint: model === "truck" || model === "garbage-truck" || model === "firetruck" ? 5.5 : 4.5,
-    yaw, collider: [1.25, 2.25]
+    yaw, collider: true
   }));
 }
 
@@ -211,18 +215,27 @@ for (const [model, x, z] of pedestrians) {
   }));
 }
 world.push(
-  place("mini-characters/wheelchair-deluxe", -31, 12, "pedestrian", "central-park", { targetHeight: 1.25, targetFootprint: 1.5 }),
+  place("mini-characters/wheelchair-deluxe", -36, 12, "pedestrian", "central-park", { targetHeight: 1.25, targetFootprint: 1.5 }),
   place("prototype-kit/animal-dog", -39, 10, "animal", "central-park", { targetHeight: 0.75, targetFootprint: 1.2 })
 );
 
 // 08 / Street furniture, lighting and road safety.
 // Lamps follow both sides of the main streets, never blocking the central walking lanes.
+const PARK_BLOCKS = [{ x: -36, z: 12 }, { x: -36, z: -12 }];
+const insidePark = (x, z) => PARK_BLOCKS.some(block =>
+  Math.abs(x - block.x) < 9 && Math.abs(z - block.z) < 9
+);
 for (const street of STREET_LINES) {
   for (let offset = -80; offset <= 80; offset += 32) {
-    world.push(
-      place("city-kit-roads/light-square-double", street + 5.1, offset, "streetlight", "street-network", { targetHeight: 5.3, targetFootprint: 2.2 }),
-      place("city-kit-roads/light-square-double", offset, street - 5.1, "streetlight", "street-network", { targetHeight: 5.3, targetFootprint: 2.2, yaw: Math.PI / 2 })
-    );
+    const candidates = [
+      place("city-kit-roads/light-square-double", street + 5.1, offset, "streetlight", "street-network", {
+        targetHeight: 5.3, targetFootprint: 2.2
+      }),
+      place("city-kit-roads/light-square-double", offset, street - 5.1, "streetlight", "street-network", {
+        targetHeight: 5.3, targetFootprint: 2.2, yaw: Math.PI / 2
+      })
+    ];
+    candidates.filter(item => !insidePark(item.x, item.z)).forEach(item => world.push(item));
   }
 }
 for (const x of [-48, -24, 0, 24, 48]) {
@@ -253,16 +266,16 @@ world.push(
 
 // 09 / Skyline fringe. Low-detail buildings extend the city beyond the playable blocks.
 const skyline = [
-  ["a", -96, -88], ["d", -96, 0], ["g", -96, 88],
-  ["j", 96, -88], ["m", 96, 0], ["wide-a", 96, 88],
-  ["b", -88, -96], ["e", 0, -96], ["h", 88, -96],
-  ["k", -88, 96], ["n", 0, 96], ["wide-b", 88, 96]
+  ["a", -96, -88], ["d", -100, 0], ["g", -96, 88],
+  ["j", 96, -88], ["m", 100, 0], ["wide-a", 96, 88],
+  ["b", -88, -96], ["e", -36, -96], ["h", 88, -96],
+  ["k", -88, 96], ["n", 36, 96], ["wide-b", 88, 96]
 ];
 for (const [variant, x, z] of skyline) {
   world.push(place(
     "city-kit-commercial/low-detail-building-" + variant,
     x, z, "skyline-building", "city-edge",
-    { targetHeight: 13 + (skyline.findIndex(item => item[0] === variant) % 3) * 2, targetFootprint: 10 }
+    { targetHeight: 13 + (skyline.findIndex(item => item[0] === variant) % 3) * 2, targetFootprint: 10, collider: true }
   ));
 }
 
@@ -272,16 +285,25 @@ function prepareModel(THREE, root, entry) {
   root.position.set(0, 0, 0);
   root.rotation.y = entry.yaw || 0;
   if (entry.scale) root.scale.multiplyScalar(entry.scale);
+  root.updateMatrixWorld(true);
 
-  const initialBounds = new THREE.Box3().setFromObject(root);
-  const size = initialBounds.getSize(new THREE.Vector3());
+  let bounds = new THREE.Box3().setFromObject(root);
+  const size = bounds.getSize(new THREE.Vector3());
   let fitScale = 1;
   if (entry.targetHeight) fitScale = Math.min(fitScale, entry.targetHeight / Math.max(0.001, size.y));
   if (entry.targetFootprint) fitScale = Math.min(fitScale, entry.targetFootprint / Math.max(0.001, size.x, size.z));
   root.scale.multiplyScalar(fitScale);
+  root.updateMatrixWorld(true);
 
-  const bounds = new THREE.Box3().setFromObject(root);
-  root.position.set(entry.x, (entry.y || 0) - bounds.min.y, entry.z);
+  bounds = new THREE.Box3().setFromObject(root);
+  const center = bounds.getCenter(new THREE.Vector3());
+  root.position.set(
+    entry.x - center.x,
+    (entry.y || 0) - bounds.min.y,
+    entry.z - center.z
+  );
+  root.updateMatrixWorld(true);
+
   root.traverse(node => {
     if (!node.isMesh) return;
     node.castShadow = !["road", "driveway", "park-path"].includes(entry.kind);
@@ -293,12 +315,31 @@ function prepareModel(THREE, root, entry) {
   });
   return root;
 }
-
-function addStaticInstances(THREE, scene, sourceScene, entries, meshes) {
+function addStaticInstances(THREE, scene, sourceScene, entries, meshes, colliders, placementBounds) {
   const batches = [];
   const roots = entries.map(entry => {
     const root = prepareModel(THREE, sourceScene.clone(true), entry);
     root.updateMatrixWorld(true);
+
+    const bounds = new THREE.Box3().setFromObject(root);
+    const size = bounds.getSize(new THREE.Vector3());
+    placementBounds.push({
+      id: entry.id, kind: entry.kind, zone: entry.zone,
+      x: entry.x, z: entry.z,
+      minX: bounds.min.x, maxX: bounds.max.x,
+      minY: bounds.min.y, maxY: bounds.max.y,
+      minZ: bounds.min.z, maxZ: bounds.max.z,
+      width: size.x, height: size.y, depth: size.z
+    });
+    if (entry.collider) {
+      const padding = Math.max(0, entry.collisionPadding ?? 0.08);
+      colliders.push({
+        minX: bounds.min.x - padding, maxX: bounds.max.x + padding,
+        minZ: bounds.min.z - padding, maxZ: bounds.max.z + padding,
+        name: entry.id + " / " + entry.kind
+      });
+    }
+
     const renderables = [];
     root.traverse(node => {
       if (node.isMesh) renderables.push({ node, matrix: node.matrixWorld.clone() });
@@ -326,10 +367,10 @@ function addStaticInstances(THREE, scene, sourceScene, entries, meshes) {
   }
   return roots.length;
 }
-
 export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
   const loader = new GLTFLoader();
   const colliders = [];
+  const placementBounds = [];
   const interactables = [];
   const meshes = [];
   const loadedIds = new Set();
@@ -349,16 +390,6 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
   ground.receiveShadow = true;
   scene.add(ground);
   meshes.push(ground);
-
-  for (const entry of WORLD_LAYOUT) {
-    if (!entry.collider) continue;
-    const [halfWidth, halfDepth] = entry.collider;
-    colliders.push({
-      minX: entry.x - halfWidth, maxX: entry.x + halfWidth,
-      minZ: entry.z - halfDepth, maxZ: entry.z + halfDepth,
-      name: entry.id
-    });
-  }
 
   const parkLight = new THREE.PointLight(0xffc47c, 0, 24, 1.8);
   parkLight.name = "DEPOO / central park lights";
@@ -418,7 +449,7 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
         }
         try {
           const gltf = await loader.loadAsync(APP_BASE + "models/" + asset.file);
-          instancesLoaded += addStaticInstances(THREE, scene, gltf.scene, entries, meshes);
+          instancesLoaded += addStaticInstances(THREE, scene, gltf.scene, entries, meshes, colliders, placementBounds);
           loadedIds.add(id);
         } catch (error) {
           failedIds.push(id);
@@ -434,6 +465,7 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
       loaded: loadedIds.size,
       total: uniqueIds.length,
       instances: instancesLoaded,
+      colliders: colliders.length,
       failed: failedIds.slice(),
       source: manifest.source
     };
@@ -464,7 +496,7 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
   function getCoordinateData() {
     const zones = [...new Set(WORLD_LAYOUT.map(entry => entry.zone))];
     return {
-      schemaVersion: "4.0",
+      schemaVersion: "5.0",
       theme: "DEPOO",
       setting: "DEPOO / complete modular open city",
       units: "metres",
@@ -482,7 +514,9 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
         { id: "utility-quarter", x: 60, y: 0, z: -36 }
       ],
       loadedAssetIds: [...loadedIds],
-      failedAssetIds: failedIds.slice()
+      failedAssetIds: failedIds.slice(),
+      colliderCount: colliders.length,
+      geometry: placementBounds.slice()
     };
   }
 
