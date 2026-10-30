@@ -140,11 +140,12 @@ test("ground-floor rooms align to the four-storey block's facade window rhythm",
   const { result } = makeInterior();
   const windowGlass = result.meshes.filter(mesh => mesh.name.includes("/ window glass"));
   const windowFrames = result.meshes.filter(mesh => mesh.name.includes("/ window frame"));
-  assert.equal(windowGlass.length, 19, "both long facades and both end walls need matching ground-floor windows");
-  assert.equal(windowFrames.length, 19, "every glass opening needs a visible frame");
+  assert.equal(windowGlass.length, 20, "both long facades and both end walls need matching ground-floor windows");
+  assert.equal(windowFrames.length, 20, "every glass opening needs a visible frame");
   const longFacadeBays = windowGlass
     .filter(mesh => mesh.userData?.facadeSide)
     .map(mesh => mesh.userData.bayZ);
-  assert.deepEqual(longFacadeBays.filter(z => z < -29).sort((a,b)=>a-b), [-43,-39,-35,-31,-27,-23,-19,-15]);
+  assert.equal(longFacadeBays.length, 16, "both long facades should expose all eight window bays");
+  assert.deepEqual([...new Set(longFacadeBays)].sort((a,b)=>a-b), [...windowBays].sort((a,b)=>a-b));
   assert.ok(!longFacadeBays.includes(-29), "the east-facing entrance must remain clear instead of becoming a window");
 });
