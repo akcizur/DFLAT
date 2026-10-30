@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { WORLD_LAYOUT } from "../src/game/open-world.js";
-import { PANELAK_LAYOUT } from "../src/game/panelak.js";
+import { PANELAK_LAYOUT, PANELAK_APARTMENT_INSTANCES } from "../src/game/panelak.js";
 
 test("the surrounding street retains CC0 road, vehicle, foliage, furniture and character models", () => {
   const ids = new Set(WORLD_LAYOUT.map(item => item.id));
@@ -32,4 +32,26 @@ test("the road layout extends past both panelák rows and keeps a distant skylin
   assert.ok(WORLD_LAYOUT.filter(item => item.id === "city-kit-roads/road-straight").length >= 8);
   assert.ok(WORLD_LAYOUT.some(item => item.id === "city-kit-commercial/building-skyscraper-a" && item.z < -100));
   assert.ok(WORLD_LAYOUT.every(item => typeof item.id === "string" && Number.isFinite(item.x) && Number.isFinite(item.z) && typeof item.kind === "string"));
+});
+
+test("all four blocks receive a cloned apartment on every floor", () => {
+  assert.equal(PANELAK_APARTMENT_INSTANCES.length, 16);
+  for (const building of PANELAK_LAYOUT) {
+    const apartments = PANELAK_APARTMENT_INSTANCES.filter(item => item.buildingId === building.id);
+    assert.equal(apartments.length, building.floors, building.id + " must have one apartment module per storey");
+    assert.deepEqual(apartments.map(item => item.floor), [0,1,2,3]);
+    assert.deepEqual(apartments.map(item => item.elevation), [0,2.9,5.8,8.7]);
+    assert.ok(apartments.every(item => item.x === building.x && item.z === building.z));
+  }
+  assert.equal(new Set(PANELAK_APARTMENT_INSTANCES.map(item => item.id)).size, 16);
+});
+
+test("apartment modules preserve one shared floor height and facade alignment", () => {
+  for (const building of PANELAK_LAYOUT) {
+    const floorHeight = building.height / building.floors;
+    const apartments = PANELAK_APARTMENT_INSTANCES.filter(item => item.buildingId === building.id);
+    for (const apartment of apartments) {
+      assert.ok(Math.abs(apartment.elevation - apartment.floor * floorHeight) < 1e-9);
+    }
+  }
 });
