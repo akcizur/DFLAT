@@ -1,4 +1,4 @@
-name: Deploy DFLAT to GitHub Pages
+name: Deploy DEPOO to GitHub Pages
 
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   validate:
-    name: Validate empty map and production build
+    name: Validate DEPOO world and production build
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -25,7 +25,7 @@ jobs:
         run: bun run check:syntax
       - name: Check repository architecture
         run: bun run check
-      - name: Test empty-world and movement invariants
+      - name: Test modular DEPOO world and movement invariants
         run: bun run test
       - name: Verify production build
         run: bun run build

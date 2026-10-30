@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "the-flat-dflat",
+      "name": "depoo-outer-rim",
       "dependencies": {
         "three": "0.169.0",
       },
