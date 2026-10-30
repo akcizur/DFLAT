@@ -5,7 +5,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#080502" />
-  <title>DFLAT — Open Model World</title>
+  <title>DEPOO — Outer Rim Cargo Depot</title>
   <link rel="stylesheet" href="./styles.css?v=15" />
   <link rel="stylesheet" href="./styles-cinematic.css?v=15" />
   <link rel="stylesheet" href="./src/game/touch-remote.css?v=3" />
@@ -22,7 +22,7 @@
   <div id="game"></div>
   <div class="hud" id="hud" aria-hidden="true">
     <div class="topline">
-      <div class="brand">THE FLAT<span>OPEN MODEL WORLD</span></div>
+      <div class="brand">DEPOO<span>OUTER RIM / CARGO DEPOT</span></div>
       <div class="status" id="clock">21:07<br>ÚTERÝ</div>
     </div>
     <div class="objective"><b>ÚKOL</b>
@@ -33,7 +33,7 @@
     <div class="interaction" id="interaction"><b>E</b> — interagovat</div>
     <div class="bottomline">
       <div class="hint">WASD / POHYB&nbsp; · &nbsp;SHIFT / BĚH&nbsp; · &nbsp;SPACE / SKOK&nbsp; · &nbsp;MYŠ / POHLED&nbsp; · &nbsp;M / MODELY&nbsp; · &nbsp;ESC / PAUZA</div>
-      <div class="right">OPEN MODEL WORLD<br>1 883 CC0 MODELS — FREE ROAM.</div>
+      <div class="right">OUTER RIM / CARGO DEPOT<br>SPACE KIT / FREE ROAM.</div>
     </div>
   </div>
   <div class="toast" id="toast"></div>
@@ -48,7 +48,7 @@
 
   <div class="boot-screen" id="bootScreen" aria-label="BIOS boot intro">
     <div class="bios">
-      <div>DFLAT SYSTEM BIOS <span>v0.9.0</span></div>
+      <div>DEPOO SYSTEM BIOS <span>v0.9.0</span></div>
       <div>CPU CHECK ............. OK</div>
       <div>MEMORY TEST ........... 640K OK</div>
       <div>VIDEO MODE ............ 8-BIT / READY</div>
@@ -58,8 +58,8 @@
   </div>
   <div class="loading-screen" id="loadingScreen" role="status" aria-live="polite" aria-atomic="true" aria-label="Načítání hry">
     <div class="loading-panel">
-      <div class="loading-mark" aria-hidden="true">DF<span>_</span></div>
-      <div class="loading-kicker">DFLAT SYSTEM / WORLD BOOT</div>
+      <div class="loading-mark" aria-hidden="true">DP<span>_</span></div>
+      <div class="loading-kicker">DEPOO SYSTEM / WORLD BOOT</div>
       <h2 id="loadingTitle">PŘIPRAVUJI SVĚT</h2>
       <p id="loadingDetail">Připravuji otevřený svět a CC0 modely.</p>
       <div class="loading-progress" id="loadingProgress" role="progressbar" aria-label="Průběh načítání" aria-valuemin="0" aria-valuemax="100" aria-valuenow="8">
@@ -70,13 +70,13 @@
   </div>
   <script src="./boot.js"></script>
 
-  <div class="screen tv-bios-mode nexus-menu" id="startScreen" aria-label="Hlavní menu DFLAT">
+  <div class="screen tv-bios-mode nexus-menu" id="startScreen" aria-label="Hlavní menu DEPOO">
     <main class="nexus-monitor">
       <div class="nexus-bezel">
         <section class="nexus-glass">
           <header class="nexus-topbar">
-            <span class="nexus-brand"><i aria-hidden="true"></i> DFLAT / TERMINAL 04</span>
-            <span class="nexus-status"><span><i class="nexus-led"></i>ONLINE</span><span>OPEN MODEL WORLD</span></span>
+            <span class="nexus-brand"><i aria-hidden="true"></i> DEPOO / TERMINAL 04</span>
+            <span class="nexus-status"><span><i class="nexus-led"></i>ONLINE</span><span>OUTER RIM / CARGO DEPOT</span></span>
           </header>
           <div class="nexus-content">
             <div class="nexus-art" aria-hidden="true">
@@ -94,12 +94,12 @@
                 <g fill="#fff13b"><circle cx="220" cy="34" r="3"/><circle cx="78" cy="112" r="3"/><circle cx="362" cy="112" r="3"/><circle cx="220" cy="190" r="3"/></g>
                 <g fill="currentColor" opacity=".7"><circle cx="88" cy="75" r="1.5"/><circle cx="350" cy="66" r="1.5"/><circle cx="368" cy="170" r="1.5"/><circle cx="66" cy="176" r="1.5"/><circle cx="145" cy="56" r="1.5"/><circle cx="300" cy="207" r="1.5"/></g>
               </svg>
-              <div class="nexus-art-caption">GEOMETRIC SCAN // STABLE</div>
+              <div class="nexus-art-caption">CARGO NETWORK // STABLE</div>
             </div>
             <nav class="nexus-menu" aria-label="Hlavní menu">
               <div class="nexus-eyebrow">SYSTEM MENU / 01</div>
-              <h1>DFLAT<span>_</span></h1>
-              <p class="nexus-subtitle">OTEVŘENÝ LOW-POLY SVĚT</p>
+              <h1>DEPOO<span>_</span></h1>
+              <p class="nexus-subtitle">KOSMICKÝ NÁKLADNÍ UZEL</p>
               <button type="button" class="cmd nexus-command" id="startButton" disabled aria-disabled="true"><span class="nexus-chevron">&gt;</span><span>START GAME</span><span class="nexus-enter">WAIT…</span></button>
               <button type="button" class="cmd nexus-command nexus-command-secondary" id="modelLibraryMenuButton" aria-controls="modelLibraryScreen"><span class="nexus-chevron">+</span><span>MODEL LIBRARY</span><span class="nexus-enter">1,883 CC0</span></button>
               <div class="nexus-menu-note">CC0 MODEL LIBRARY / FREE ROAM</div>
@@ -109,7 +109,7 @@
           <footer class="nexus-footer">
             <span>LINK ESTABLISHED // SECURE CHANNEL</span>
             <span class="nexus-meter" aria-label="Signal strength"><i style="--h:6px"></i><i style="--h:10px"></i><i style="--h:14px"></i><i style="--h:8px"></i><i style="--h:17px"></i><i style="--h:12px"></i><i style="--h:15px"></i><i style="--h:7px"></i></span>
-            <span>DFLAT / 0.9.0</span>
+            <span>DEPOO / 0.9.0</span>
           </footer>
         </section>
       </div>
@@ -118,7 +118,7 @@
 
   <div class="screen hidden" id="pauseScreen">
     <div class="term">
-      <div class="dim">DFLAT SYSTEM BIOS / PAUSED</div>
+      <div class="dim">DEPOO SYSTEM BIOS / PAUSED</div>
       <div class="gap"></div>
       <button class="cmd" id="resumeButton"><span class="p">&gt;</span> RESUME<span class="cur">_</span></button>
       <div class="gap"></div>
@@ -130,7 +130,7 @@
   <section class="model-library" id="modelLibraryScreen" hidden aria-hidden="true" aria-label="Open source model library">
     <header class="model-library-header">
       <div>
-        <p class="model-library-kicker">DFLAT ASSET SYSTEM / CC0-1.0</p>
+        <p class="model-library-kicker">DEPOO ASSET SYSTEM / CC0-1.0</p>
         <h2>MODEL LIBRARY <span>1,883 OPEN MODELS</span></h2>
         <p class="model-library-intro">Search the Kenney GLB catalog. Models are loaded only when selected.</p>
       </div>

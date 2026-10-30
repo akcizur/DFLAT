@@ -1,8 +1,8 @@
 {
-  "name": "the-flat-dflat",
+  "name": "depoo-outer-rim",
   "private": true,
   "type": "module",
-  "description": "First-person low-poly neighbourhood with a searchable CC0 3D model library",
+  "description": "A modular low-poly outer-rim cargo depot built from CC0 Space Kit assets with Three.js.",
   "scripts": {
     "dev": "node scripts/prepare-open-models.mjs && vite",
     "build": "node scripts/prepare-open-models.mjs && vite build",

@@ -53,15 +53,15 @@ try {
   await page.locator("#startButton").click();
   await page.waitForTimeout(500);
   const movementBefore = await page.evaluate(() => ({
-    position: window.__DFLAT_SMOKE__?.playerPosition(),
-    state: window.__DFLAT_SMOKE__?.gameState()
+    position: window.__DEPOO_SMOKE__?.playerPosition(),
+    state: window.__DEPOO_SMOKE__?.gameState()
   }));
   await page.keyboard.down("w");
   await page.waitForTimeout(700);
   const movementDuring = await page.evaluate(() => ({
-    position: window.__DFLAT_SMOKE__?.playerPosition(),
-    keys: window.__DFLAT_SMOKE__?.keysDown(),
-    state: window.__DFLAT_SMOKE__?.gameState()
+    position: window.__DEPOO_SMOKE__?.playerPosition(),
+    keys: window.__DEPOO_SMOKE__?.keysDown(),
+    state: window.__DEPOO_SMOKE__?.gameState()
   }));
   await page.keyboard.up("w");
   if (
@@ -112,87 +112,32 @@ try {
     const count = document.querySelector("#modelLibraryCount")?.textContent || "";
     return Number(count.replace(/[^0-9]/g, "")) >= 1883;
   }, null, { timeout: 20000 });
-  await page.locator("#modelLibrarySearch").fill("building-type-a");
-  const modelCard = page.locator("#modelLibraryGrid .model-card").filter({ hasText: "Building type a" }).first();
+  await page.locator("#modelLibrarySearch").fill("hangar-largea");
+  const modelCard = page.locator("#modelLibraryGrid .model-card").filter({ hasText: "Hangar largea" }).first();
   await modelCard.waitFor({ state: "visible", timeout: 10000 });
   await modelCard.click();
   await page.locator("#modelLibraryPlace").click();
   await page.locator("#modelLibraryScreen").waitFor({ state: "hidden", timeout: 10000 });
 
-  // Walk into the panelák through the live entrance, then traverse the hall and stairwell.
-  const interiorBefore = await page.evaluate(() => window.__DFLAT_SMOKE__?.interiorDiagnostics());
+  // Check the assembled modular DEPOO world and its live controls.
+  const worldCheck = await page.evaluate(() => {
+    const data = window.__DEPOO_SMOKE__?.worldDiagnostics();
+    const objects = data?.objects || [];
+    return { theme: data?.theme, count: objects.length, ids: [...new Set(objects.map(item => item.id))] };
+  });
   if (
-    !interiorBefore?.rootVisible ||
-    interiorBefore.meshCount < 40 ||
-    interiorBefore.visibleMeshCount < 40 ||
-    interiorBefore.hasCeiling
-  ) {
-    throw new Error("Panelák interior geometry is missing or hidden: " + JSON.stringify(interiorBefore));
-  }
+    worldCheck.theme !== "DEPOO" || worldCheck.count < 55 ||
+    !worldCheck.ids.includes("space-kit/hangar-largea") ||
+    !worldCheck.ids.includes("space-kit/monorail-trackstraight") ||
+    !worldCheck.ids.includes("space-kit/craft-cargoa")
+  ) throw new Error("DEPOO modular asset world is incomplete: " + JSON.stringify(worldCheck));
 
-  const route = await page.evaluate(() => {
-    const smoke = window.__DFLAT_SMOKE__;
-    smoke.setPlayerPosition(-10.9, -29, Math.PI / 2);
-    if (!smoke.interact("door-vchodove-dvere")) throw new Error("Entrance door interactable is missing");
-    const door = smoke.interiorDiagnostics();
-    if (!door.doorName.startsWith("Zavřít") || door.doorRotationY === Math.PI / 2) {
-      throw new Error("Entrance interaction did not open the door: " + JSON.stringify(door));
-    }
-    const doorway = smoke.moveForFrames("KeyW", 60);
-    if (doorway.error || doorway.x > -12.4) {
-      throw new Error("Player could not cross the opened entrance: " + JSON.stringify({
-        doorway, door, blockers: smoke.blockingCollidersAt(doorway.x, doorway.z)
-      }));
-    }
-    smoke.setPlayerPosition(doorway.x, doorway.z, 0);
-    const hall = smoke.moveForFrames("KeyW", 65);
-    if (hall.error || hall.x > -12.4 || hall.z > -32.0 || hall.z < -34.4) {
-      throw new Error("Player could not walk down the entrance hall: " + JSON.stringify({
-        hall, blockers: smoke.blockingCollidersAt(hall.x, hall.z)
-      }));
-    }
-    smoke.setPlayerPosition(hall.x, hall.z, 0);
-    const stairApproach = smoke.moveForFrames("KeyA", 60);
-    if (stairApproach.error || stairApproach.x > -17.7) {
-      throw new Error("Player could not cross the hall to the stairwell passage: " + JSON.stringify({
-        stairApproach, blockers: smoke.blockingCollidersAt(stairApproach.x, stairApproach.z)
-      }));
-    }
-    smoke.setPlayerPosition(stairApproach.x, stairApproach.z, 0);
-    const stairs = smoke.moveForFrames("KeyW", 60);
-    if (stairs.error || stairs.z > -35.5) {
-      throw new Error("Player is blocked by the stairwell partition: " + JSON.stringify({
-        stairs, blockers: smoke.blockingCollidersAt(stairs.x, stairs.z)
-      }));
-    }
-    smoke.setPlayerPosition(-18.2, -37.5, -Math.PI / 2);
-    return { doorway, hall, stairApproach, stairs };
-  });
-  await page.waitForTimeout(300);
-  const interiorVisual = await page.evaluate(() => {
-    const canvas = document.querySelector("#screenCanvas");
-    const gl = canvas?.getContext("webgl2") || canvas?.getContext("webgl");
-    if (!gl || !canvas) return { ok: false, reason: "WebGL canvas unavailable inside panelák" };
-    gl.finish();
-    const data = new Uint8Array(canvas.width * canvas.height * 4);
-    gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, data);
-    const colors = new Set();
-    let lit = 0, nonBlack = 0, samples = 0;
-    const stride = Math.max(4, Math.floor(Math.sqrt(canvas.width * canvas.height / 20000)) * 4);
-    for (let i = 0; i < data.length; i += stride) {
-      const r = data[i], g = data[i + 1], b = data[i + 2];
-      colors.add((r >> 3) + ":" + (g >> 3) + ":" + (b >> 3));
-      if (r + g + b > 30) lit++;
-      if (r + g + b > 6) nonBlack++;
-      samples++;
-    }
-    return {
-      ok: colors.size > 16 && lit > samples * 0.03 && nonBlack > samples * 0.15,
-      distinctColorBuckets: colors.size, litRatio: lit / samples, nonBlackRatio: nonBlack / samples
-    };
-  });
-  if (!interiorVisual.ok) {
-    throw new Error("Panelák interior frame is not visibly rendered: " + JSON.stringify({ interiorBefore, interiorVisual }));
+  const controls = await page.evaluate(() => ({
+    dispatch: window.__DEPOO_SMOKE__.interact("depoo-control"),
+    relay: window.__DEPOO_SMOKE__.interact("depoo-relay")
+  }));
+  if (!controls.dispatch || !controls.relay) {
+    throw new Error("DEPOO dispatch/relay interaction failed: " + JSON.stringify(controls));
   }
 
   // Mobile touch regression: use a real touch-enabled Chromium context and
@@ -236,16 +181,16 @@ try {
     const sx = rect.left + rect.width / 2, sy = rect.top + rect.height / 2;
     const look = document.querySelector("#touchLookZone");
     const lookX = innerWidth - 24, lookY = innerHeight * 0.45;
-    const yawBefore = window.__DFLAT_SMOKE__.playerPosition().yaw;
+    const yawBefore = window.__DEPOO_SMOKE__.playerPosition().yaw;
     send(stick, "pointerdown", 11, sx, sy);
     send(stick, "pointermove", 11, sx, sy - rect.height * 0.34);
     send(look, "pointerdown", 22, lookX, lookY);
     send(look, "pointermove", 22, lookX - 36, lookY + 12);
     await new Promise(resolve => setTimeout(resolve, 100));
-    const held = window.__DFLAT_SMOKE__.keysDown();
-    const yawAfter = window.__DFLAT_SMOKE__.playerPosition().yaw;
+    const held = window.__DEPOO_SMOKE__.keysDown();
+    const yawAfter = window.__DEPOO_SMOKE__.playerPosition().yaw;
     send(stick, "pointerup", 11, sx, sy - rect.height * 0.34);
-    const afterStickRelease = window.__DFLAT_SMOKE__.keysDown();
+    const afterStickRelease = window.__DEPOO_SMOKE__.keysDown();
     const lookStillActive = look.classList.contains("active");
     send(look, "pointerup", 22, lookX - 36, lookY + 12);
     return { held, afterStickRelease, lookStillActive, yawBefore, yawAfter };
@@ -261,9 +206,9 @@ try {
       bubbles: true, cancelable: true, pointerId, pointerType: "touch", buttons: type === "pointercancel" ? 0 : 1
     }));
     send("pointerdown", 33);
-    const during = window.__DFLAT_SMOKE__.keysDown().ShiftLeft;
+    const during = window.__DEPOO_SMOKE__.keysDown().ShiftLeft;
     send("pointercancel", 33);
-    const after = window.__DFLAT_SMOKE__.keysDown().ShiftLeft;
+    const after = window.__DEPOO_SMOKE__.keysDown().ShiftLeft;
     return { during, after };
   });
   if (!runRelease.during || runRelease.after) {
@@ -282,12 +227,12 @@ try {
     send(stick, "pointerdown", 41, rect.left + rect.width / 2, rect.top + rect.height / 2);
     send(stick, "pointermove", 41, rect.left + rect.width / 2, rect.top + rect.height * 0.2);
     send(look, "pointerdown", 42, innerWidth - 20, innerHeight * 0.4);
-    const activeBeforePause = window.__DFLAT_SMOKE__.keysDown().KeyW && look.classList.contains("active");
+    const activeBeforePause = window.__DEPOO_SMOKE__.keysDown().KeyW && look.classList.contains("active");
     send(pause, "pointerdown", 43);
     return {
       activeBeforePause,
-      paused: window.__DFLAT_SMOKE__.gameState().paused,
-      keyAfterPause: window.__DFLAT_SMOKE__.keysDown().KeyW,
+      paused: window.__DEPOO_SMOKE__.gameState().paused,
+      keyAfterPause: window.__DEPOO_SMOKE__.keysDown().KeyW,
       lookAfterPause: look.classList.contains("active")
     };
   });

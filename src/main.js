@@ -7,7 +7,7 @@ import { bindInput } from "./game/input.js";
 
 const mount = document.getElementById("game");
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x858b8e);
+scene.background = new THREE.Color(0x151d2b);
 const loadingScreen = document.getElementById("loadingScreen");
 let firstSceneFrame = false;
 let worldReady = false;
@@ -42,7 +42,7 @@ function finishStartupWhenReady() {
     const enterLabel = startButton.querySelector(".nexus-enter");
     if (enterLabel) enterLabel.textContent = "ENTER ↵";
   }
-  setLoadingProgress(100, "SVĚT JE PŘIPRAVEN", "Otevřená čtvrť a knihovna CC0 modelů jsou připraveny.", "READY");
+  setLoadingProgress(100, "SVĚT JE PŘIPRAVEN", "Překladiště DEPOO a knihovna CC0 modelů jsou připraveny.", "READY");
   if (!loadingScreen) return;
   window.setTimeout(() => {
     loadingScreen.classList.add("loading-exit");
@@ -55,13 +55,13 @@ function finishStartupWhenReady() {
 }
 
 setLoadingProgress(12, "ZAPÍNÁM ENGINE", "Inicializuji 3D vykreslování.", "INITIALIZING");
-scene.fog = new THREE.FogExp2(0x858b8e, 0.0022);
-const globalHemisphere = new THREE.HemisphereLight(0xdce8ff, 0x625648, 1.15);
+scene.fog = new THREE.FogExp2(0x151d2b, 0.00155);
+const globalHemisphere = new THREE.HemisphereLight(0xa9c9e5, 0x31303b, 1.05);
 globalHemisphere.name = "Global fill / hemisphere";
 scene.add(globalHemisphere);
-const globalSun = new THREE.DirectionalLight(0xffe6c2, 1.6);
+const globalSun = new THREE.DirectionalLight(0xffc68b, 1.85);
 globalSun.name = "Global fill / key light";
-globalSun.position.set(-7, 12, 6);
+globalSun.position.set(-34, 58, 24);
 globalSun.castShadow = false;
 scene.add(globalSun);
 
@@ -81,7 +81,7 @@ renderer.shadowMap.autoUpdate = true;
 renderer.domElement.id = "screenCanvas";
 renderer.domElement.tabIndex = 0;
 mount.appendChild(renderer.domElement);
-setLoadingProgress(34, "VYKRESLOVAČ PŘIPRAVEN", "Připravuji otevřený svět.", "RENDERER");
+setLoadingProgress(34, "VYKRESLOVAČ PŘIPRAVEN", "Připravuji svět DEPOO.", "RENDERER");
 
 function resize() {
   const displayWidth = Math.max(1, innerWidth);
@@ -104,12 +104,10 @@ window.visualViewport?.addEventListener("resize", resize, { passive: true });
 resize();
 
 const state = {
-  hasKeys: false, doorOpen: false, finished: false, started: false,
-  paused: false, balconyDoorOpen: false, emptyMap: false, openWorld: true,
-  mainBuildingScene: false, currentFloor: 0, ready: false
+  finished: false, started: false, paused: false, openWorld: true, ready: false
 };
 const ui = createUI();
-setLoadingProgress(45, "SKLÁDÁM OTEVŘENÝ SVĚT", "Připravuji silnice, budovy, vozidla a vegetaci.", "CC0 WORLD");
+setLoadingProgress(45, "SKLÁDÁM OTEVŘENÝ SVĚT", "Skládám hangáry, monorail, lodě a servisní uzly.", "CC0 WORLD");
 const world = createOpenWorld({
   THREE,
   scene,
@@ -123,7 +121,7 @@ const controller = createPlayerController({
   navigation: world.navigation, state, ui
 });
 createModelLibrary({ THREE, scene, camera, state, ui, world });
-state.changeFloor = () => ui.showToast("Otevřený svět: nejsou zde samostatná podlaží.");
+state.changeFloor = () => ui.showToast("DEPOO je otevřený jednopodlažní přístav.");
 
 world.ready.then(result => {
   worldReady = true;
@@ -136,7 +134,7 @@ world.ready.then(result => {
   finishStartupWhenReady();
 });
 if (new URLSearchParams(location.search).get("smoke") === "1") {
-  Object.defineProperty(window, "__DFLAT_SMOKE__", {
+  Object.defineProperty(window, "__DEPOO_SMOKE__", {
     configurable: true,
     value: {
       playerPosition: () => ({ x: controller.player.x, z: controller.player.z, yaw: controller.player.yaw }),
@@ -164,22 +162,7 @@ if (new URLSearchParams(location.search).get("smoke") === "1") {
         item.action();
         return true;
       },
-      interiorDiagnostics: () => {
-        const interior = world.panelakInterior;
-        return {
-          rootVisible: interior.root.visible,
-          meshCount: interior.meshes.length,
-          visibleMeshCount: interior.meshes.filter(mesh => mesh.visible).length,
-          hasCeiling: interior.meshes.some(mesh => mesh.name === "Interior / ceiling slab"),
-          names: interior.meshes.slice(0, 12).map(mesh => mesh.name),
-          doorName: interior.entranceDoor.item.name,
-          doorRotationY: interior.entranceDoor.pivot.rotation.y,
-          nearEntryColliders: world.colliders.filter(c =>
-            c.maxX > -12.5 && c.minX < -11.4 && c.maxZ > -31 && c.minZ < -27
-          ).map(({ name, minX, maxX, minZ, maxZ }) => ({ name, minX, maxX, minZ, maxZ })),
-          entrance: { ...interior.bounds }
-        };
-      }
+      worldDiagnostics: () => world.getCoordinateData()
     }
   });
 }
@@ -196,6 +179,7 @@ let nextSceneRenderAt = 0;
 
 function updateSimulation(deltaSeconds, nowMs) {
   const nearest = controller.update(deltaSeconds);
+  world.tick?.(deltaSeconds);
   ui.setInteraction(nearest, state);
   ui.tick(nowMs, clockStart);
 }
