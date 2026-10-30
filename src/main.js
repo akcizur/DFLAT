@@ -141,6 +141,12 @@ if (new URLSearchParams(location.search).get("smoke") === "1") {
       keysDown: () => ({ ...controller.keysDown }),
       gameState: () => ({ started: state.started, paused: state.paused }),
       worldMode: () => world.mode,
+      worldDiagnostics: () => ({
+        mode: world.mode,
+        cityVisible: world.meshes.some(mesh => mesh.name === "Imported LowPoly City" && mesh.visible),
+        housesVisible: world.meshes.some(mesh => mesh.name === "Imported modern houses" && mesh.visible),
+        colliderCount: world.colliders.length
+      }),
       blockingCollidersAt: (x, z) => controller.getBlockingCollidersAt(x, z),
       moveForFrames: (code, frames) => {
         if (!state.started || state.paused) return { error: "gameplay is inactive", state: { ...state } };
