@@ -114,6 +114,8 @@ export function bindInput({ renderer, state, controller, ui }) {
     document.querySelector('[data-touch-action="run"]')?.classList.remove("is-held");
     document.querySelectorAll("[data-key].is-held").forEach(button => button.classList.remove("is-held"));
     resetTouchActions();
+    releaseStick();
+    endLook();
   }
   function startGame() {
     if (state.started || !state.ready) return;
@@ -248,7 +250,7 @@ export function bindInput({ renderer, state, controller, ui }) {
     moveStick.classList.remove("active");
   }
   moveStick.addEventListener("pointerdown", event => {
-    if (event.pointerType === "mouse" || !state.started || state.paused) return;
+    if (event.pointerType === "mouse" || !state.started || state.paused || stickPointer !== null) return;
     event.preventDefault(); stickPointer = event.pointerId;
     moveStick.setPointerCapture?.(event.pointerId);
     moveStick.classList.add("active"); updateStick(event);
@@ -260,11 +262,11 @@ export function bindInput({ renderer, state, controller, ui }) {
 
   // Right thumb: drag to look. Accumulate deltas and apply them once per frame to remove jitter.
   lookZone.addEventListener("pointerdown", event => {
-    if (event.pointerType === "mouse" || !state.started || state.paused) return;
+    if (event.pointerType === "mouse" || !state.started || state.paused || touchLook) return;
     event.preventDefault();
     touchLook = { id: event.pointerId, x: event.clientX, y: event.clientY };
     touchLookDx = 0; touchLookDy = 0;
-    lookZone.setPointerCapture?.(event.pointerId);
+    try { lookZone.setPointerCapture(event.pointerId); } catch {}
     lookZone.classList.add("active");
   });
   lookZone.addEventListener("pointermove", event => {
