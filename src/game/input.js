@@ -9,8 +9,6 @@ export function bindInput({ renderer, state, controller, ui }) {
   let stickPointer = null;
   let previousGamepadButtons = [];
   let gamepadLabel = "";
-  let touchLookDx = 0;
-  let touchLookDy = 0;
   const sensitivity = { mouseX: 0.0010, mouseY: 0.0009, touchX: 0.0030, touchY: 0.0020, padLook: 2.2 };
   let resetTouchActions = () => {};
 
@@ -269,21 +267,22 @@ export function bindInput({ renderer, state, controller, ui }) {
     if (event.pointerType === "mouse" || !state.started || state.paused || touchLook) return;
     event.preventDefault();
     touchLook = { id: event.pointerId, x: event.clientX, y: event.clientY };
-    touchLookDx = 0; touchLookDy = 0;
     try { lookZone.setPointerCapture(event.pointerId); } catch {}
     lookZone.classList.add("active");
   });
   lookZone.addEventListener("pointermove", event => {
     if (!touchLook || touchLook.id !== event.pointerId) return;
     event.preventDefault();
-    touchLookDx += event.clientX - touchLook.x;
-    touchLookDy += event.clientY - touchLook.y;
+    const deltaX = event.clientX - touchLook.x;
+    const deltaY = event.clientY - touchLook.y;
     touchLook.x = event.clientX; touchLook.y = event.clientY;
+    player.yaw -= deltaX * sensitivity.touchX;
+    player.pitch = Math.max(-1.25, Math.min(1.25, player.pitch - deltaY * sensitivity.touchY));
   });
   function endLook(event) {
     if (touchLook && (!event || touchLook.id === event.pointerId)) {
       const pointerId = touchLook.id;
-      touchLook = null; touchLookDx = 0; touchLookDy = 0; lookZone.classList.remove("active");
+      touchLook = null; lookZone.classList.remove("active");
       try {
         if (lookZone.hasPointerCapture?.(pointerId)) lookZone.releasePointerCapture(pointerId);
       } catch {}
@@ -292,17 +291,6 @@ export function bindInput({ renderer, state, controller, ui }) {
   lookZone.addEventListener("pointerup", endLook);
   lookZone.addEventListener("pointercancel", endLook);
   lookZone.addEventListener("lostpointercapture", endLook);
-  function pollTouchLook() {
-    if (touchLook && state.started && !state.paused) {
-      player.yaw -= touchLookDx * sensitivity.touchX;
-      player.pitch = Math.max(-1.25, Math.min(1.25, player.pitch - touchLookDy * sensitivity.touchY));
-      touchLookDx *= 0.22;
-      touchLookDy *= 0.22;
-    } else { touchLookDx = 0; touchLookDy = 0; }
-    requestAnimationFrame(pollTouchLook);
-  }
-  requestAnimationFrame(pollTouchLook);
-
   document.querySelectorAll("[data-key]").forEach(button => {
     const code = button.dataset.key;
     const down = event => {
