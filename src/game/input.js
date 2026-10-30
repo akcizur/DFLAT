@@ -13,15 +13,6 @@ export function bindInput({ renderer, state, controller, ui }) {
   let touchLookDy = 0;
   const sensitivity = { mouseX: 0.0010, mouseY: 0.0009, touchX: 0.0030, touchY: 0.0020, padLook: 2.2 };
 
-  // Load the dedicated mobile layer without changing the desktop HUD.
-  if (!document.querySelector('link[data-touch-remote-style]')) {
-    const style = document.createElement("link");
-    style.rel = "stylesheet";
-    style.href = "./src/game/touch-remote.css?v=1";
-    style.dataset.touchRemoteStyle = "";
-    document.head.appendChild(style);
-  }
-
   function createTouchRemote() {
     if (document.getElementById("touchRemoteCluster")) return;
     const cluster = document.createElement("div");
