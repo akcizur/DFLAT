@@ -27,17 +27,43 @@ export function bindInput({ renderer, state, controller, ui }) {
     document.body.appendChild(cluster);
 
     const button = action => cluster.querySelector(`[data-touch-action="${action}"]`);
-    button("interact")?.addEventListener("pointerdown", event => { event.preventDefault(); if (state.started && !state.paused) doInteract(); });
-    button("jump")?.addEventListener("pointerdown", event => { event.preventDefault(); if (state.started && !state.paused) controller.jump?.(); });
+    const bindTap = (action, callback) => {
+      const target = button(action);
+      target?.addEventListener("pointerdown", event => {
+        if (event.pointerType === "mouse" || !state.started || state.paused) return;
+        event.preventDefault();
+        try { target.setPointerCapture(event.pointerId); } catch {}
+        callback();
+      });
+    };
+    bindTap("interact", doInteract);
+    bindTap("jump", () => controller.jump?.());
+
     const runButton = button("run");
-    const runDown = event => { event.preventDefault(); if (!state.started || state.paused) return; keysDown.ShiftLeft = true; runButton.classList.add("is-held"); };
-    const runUp = event => { event.preventDefault(); keysDown.ShiftLeft = false; runButton.classList.remove("is-held"); };
-    runButton?.addEventListener("pointerdown", event => { runButton.setPointerCapture?.(event.pointerId); runDown(event); });
-    runButton?.addEventListener("pointerup", runUp);
-    runButton?.addEventListener("pointercancel", runUp);
-    runButton?.addEventListener("pointerleave", event => { if (event.buttons === 0) runUp(event); });
-    runButton?.addEventListener("lostpointercapture", runUp);
-    button("pause")?.addEventListener("pointerdown", event => { event.preventDefault(); button("pause").setPointerCapture?.(event.pointerId); togglePause(); });
+    const runPointers = new Set();
+    const releaseRun = event => {
+      if (event && !runPointers.has(event.pointerId)) return;
+      if (event) runPointers.delete(event.pointerId);
+      else runPointers.clear();
+      setKey("ShiftLeft", runPointers.size > 0, "touchButtons");
+      runButton?.classList.toggle("is-held", runPointers.size > 0);
+    };
+    runButton?.addEventListener("pointerdown", event => {
+      if (event.pointerType === "mouse" || !state.started || state.paused) return;
+      event.preventDefault();
+      runPointers.add(event.pointerId);
+      setKey("ShiftLeft", true, "touchButtons");
+      runButton.classList.add("is-held");
+      try { runButton.setPointerCapture(event.pointerId); } catch {}
+    });
+    runButton?.addEventListener("pointerup", releaseRun);
+    runButton?.addEventListener("pointercancel", releaseRun);
+    runButton?.addEventListener("lostpointercapture", releaseRun);
+    button("pause")?.addEventListener("pointerdown", event => {
+      if (event.pointerType === "mouse") return;
+      event.preventDefault();
+      togglePause();
+    });
   }
   createTouchRemote();
 
@@ -50,21 +76,33 @@ export function bindInput({ renderer, state, controller, ui }) {
     }
   }
   const movementCodes = ["KeyW","KeyA","KeyS","KeyD","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"];
-  const sources = { keyboard: Object.create(null), touch: Object.create(null), gamepad: Object.create(null) };
+  // Every held input is source-aware. Releasing one touch must never cancel another.
+  const sources = {
+    keyboard: Object.create(null),
+    touchStick: Object.create(null),
+    touchButtons: Object.create(null),
+    gamepad: Object.create(null)
+  };
+  const knownCodes = new Set([...movementCodes, "ShiftLeft", "ShiftRight", "Space"]);
   function setKey(code, value, source = "keyboard") {
-    if (!movementCodes.includes(code)) { keysDown[code] = Boolean(value); return; }
+    if (!sources[source]) sources[source] = Object.create(null);
+    knownCodes.add(code);
     sources[source][code] = Boolean(value);
-    keysDown[code] = Boolean(sources.keyboard[code] || sources.touch[code] || sources.gamepad[code]);
+    keysDown[code] = Object.values(sources).some(sourceKeys => Boolean(sourceKeys[code]));
   }
-  function clearSource(source) { for (const code of movementCodes) setKey(code, false, source); }
+  function clearSource(source) {
+    const sourceKeys = sources[source];
+    if (!sourceKeys) return;
+    for (const code of Object.keys(sourceKeys)) {
+      sourceKeys[code] = false;
+      keysDown[code] = Object.values(sources).some(entry => Boolean(entry[code]));
+    }
+  }
   function clearMovement() {
-    clearSource("keyboard");
-    clearSource("touch");
-    clearSource("gamepad");
-    keysDown.ShiftLeft = false;
-    keysDown.ShiftRight = false;
-    keysDown.Space = false;
+    for (const source of Object.keys(sources)) clearSource(source);
+    for (const code of knownCodes) keysDown[code] = false;
     document.querySelector('[data-touch-action="run"]')?.classList.remove("is-held");
+    document.querySelectorAll("[data-key].is-held").forEach(button => button.classList.remove("is-held"));
   }
   function startGame() {
     if (state.started || !state.ready) return;
@@ -186,15 +224,15 @@ export function bindInput({ renderer, state, controller, ui }) {
     moveKnob.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px))`;
     const x = dx / Math.max(radius, 1), y = dy / Math.max(radius, 1);
     const dead = 0.18;
-    setKey("KeyW", y < -dead, "touch"); setKey("KeyS", y > dead, "touch");
-    setKey("KeyA", x < -dead, "touch"); setKey("KeyD", x > dead, "touch");
+    setKey("KeyW", y < -dead, "touchStick"); setKey("KeyS", y > dead, "touchStick");
+    setKey("KeyA", x < -dead, "touchStick"); setKey("KeyD", x > dead, "touchStick");
     moveStick.style.setProperty("--stick-x", `${nx * 100}%`);
     moveStick.style.setProperty("--stick-y", `${ny * 100}%`);
   }
   function releaseStick(event) {
     if (!stickPointer || (event && event.pointerId !== stickPointer)) return;
     stickPointer = null;
-    clearSource("touch");
+    clearSource("touchStick");
     moveKnob.style.transform = "translate(-50%, -50%)";
     moveStick.classList.remove("active");
   }
@@ -246,8 +284,18 @@ export function bindInput({ renderer, state, controller, ui }) {
 
   document.querySelectorAll("[data-key]").forEach(button => {
     const code = button.dataset.key;
-    const down = event => { event.preventDefault(); setKey(code, true, "touch"); };
-    const up = event => { event.preventDefault(); setKey(code, false, "touch"); };
+    const down = event => {
+      if (event.pointerType === "mouse" || !state.started || state.paused) return;
+      event.preventDefault();
+      setKey(code, true, "touchButtons");
+      button.classList.add("is-held");
+      try { button.setPointerCapture(event.pointerId); } catch {}
+    };
+    const up = event => {
+      event.preventDefault();
+      setKey(code, false, "touchButtons");
+      button.classList.remove("is-held");
+    };
     button.addEventListener("pointerdown", down);
     button.addEventListener("pointerup", up);
     button.addEventListener("pointercancel", up);
@@ -292,7 +340,14 @@ export function bindInput({ renderer, state, controller, ui }) {
   }
   requestAnimationFrame(pollGamepad);
 
-  window.addEventListener("blur", () => {
-    clearMovement(); releaseStick(); endLook();
+  function resetTransientInput() {
+    clearMovement();
+    releaseStick();
+    endLook();
+  }
+  window.addEventListener("blur", resetTransientInput);
+  window.addEventListener("pagehide", resetTransientInput);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) resetTransientInput();
   });
 }
