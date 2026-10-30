@@ -301,7 +301,13 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
     meshesToAnimate,
     doorAnimations,
     meshes,
-    navigation: { floorHeight: 0, floors: 1 },
+    navigation: {
+      floorHeight: baseBuilding.height / baseBuilding.floors,
+      floors: baseBuilding.floors,
+      buildings: PANELAK_LAYOUT.length,
+      apartmentModules: PANELAK_APARTMENT_INSTANCES.length,
+      verticalMovementEnabled: false
+    },
     ready,
     addPlacedModel,
     getCoordinateData: () => ({
@@ -316,7 +322,8 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
     }),
     exportCoordinateCSV: () => "record_type,id,name,x,y,z\n" + [
       ...PANELAK_LAYOUT.map(entry => ({ id: entry.id, x: entry.x, z: entry.z })),
+      ...PANELAK_APARTMENT_INSTANCES.map(entry => ({ id: entry.id, x: entry.x, z: entry.z, elevation: entry.elevation })),
       ...WORLD_LAYOUT
-    ].map((entry, i) => ["object", i + 1, entry.id, entry.x, 0, entry.z].join(",")).join("\n")
+    ].map((entry, i) => ["object", i + 1, entry.id, entry.x, entry.elevation ?? 0, entry.z].join(",")).join("\n")
   };
 }
