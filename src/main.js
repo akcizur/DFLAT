@@ -95,7 +95,12 @@ function resize() {
   camera.aspect = displayWidth / displayHeight;
   camera.updateProjectionMatrix();
 }
-addEventListener("resize", resize);
+addEventListener("resize", resize, { passive: true });
+addEventListener("orientationchange", () => {
+  requestAnimationFrame(() => requestAnimationFrame(resize));
+}, { passive: true });
+// iOS Safari changes the visual viewport as browser chrome expands/collapses.
+window.visualViewport?.addEventListener("resize", resize, { passive: true });
 resize();
 
 const state = {
