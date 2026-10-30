@@ -172,6 +172,14 @@ try {
     const wrongRoadSizes = roads.filter(item =>
       Math.abs(item.width - 8) > 0.08 || Math.abs(item.depth - 8) > 0.08
     );
+    const modelFitViolations = geometry.filter(item =>
+      (item.targetFootprint && Math.max(item.width, item.depth) > item.targetFootprint + 0.08) ||
+      (item.targetHeight && item.height > item.targetHeight + 0.08)
+    ).map(item => ({
+      id: item.id, kind: item.kind, position: [item.x, item.z],
+      size: [item.width, item.height, item.depth],
+      expectedMax: [item.targetFootprint, item.targetHeight]
+    }));
     const offCenter = geometry.filter(item =>
       Math.abs((item.minX + item.maxX) / 2 - item.x) > 0.02 ||
       Math.abs((item.minZ + item.maxZ) / 2 - item.z) > 0.02
@@ -185,7 +193,7 @@ try {
       buildingCount: buildings.length,
       vehicleCount: vehicles.length,
       ids: [...new Set(objects.map(item => item.id))],
-      missingRoadCells, wrongRoadSizes, roadOverlaps, buildingOverlaps, offCenter,
+      missingRoadCells, wrongRoadSizes, modelFitViolations, roadOverlaps, buildingOverlaps, offCenter,
       spawnBlockers: window.__DEPOO_SMOKE__?.blockingCollidersAt(0, 100) || [],
       fifthTowerBlockers: window.__DEPOO_SMOKE__?.blockingCollidersAt(-12, -36) || []
     };
@@ -200,8 +208,8 @@ try {
     !worldCheck.ids.includes("car-kit/sedan") ||
     !worldCheck.ids.includes("mini-characters/character-female-a")
   ) throw new Error("DEPOO modular city is incomplete: " + JSON.stringify(worldCheck));
-  if (worldCheck.missingRoadCells.length || worldCheck.wrongRoadSizes.length) {
-    throw new Error("DEPOO road grid has a gap or a mis-sized module: " + JSON.stringify(worldCheck));
+  if (worldCheck.missingRoadCells.length || worldCheck.wrongRoadSizes.length || worldCheck.modelFitViolations.length) {
+    throw new Error("DEPOO road grid or fitted model dimensions are incorrect: " + JSON.stringify(worldCheck));
   }
   if (worldCheck.roadOverlaps.length || worldCheck.buildingOverlaps.length || worldCheck.offCenter.length) {
     throw new Error("DEPOO geometry overlaps or off-center models were found: " + JSON.stringify(worldCheck));

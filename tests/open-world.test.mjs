@@ -38,6 +38,10 @@ test("every 8 m road module connects to its exact neighbours without gaps", () =
   }
   assert.equal(roadMap.size, 273, "road intersections must be represented once, not duplicated");
   assert.ok(roads.every(item => item.targetFootprint === 8), "all road tiles must use the 8 m module size");
+  const source = await import("node:fs/promises").then(fs => fs.readFile(new URL("../src/game/open-world.js", import.meta.url), "utf8"));
+  assert.match(source, /const fitLimits = \[\]/, "GLB fitting must calculate the actual scale required");
+  assert.match(source, /fitLimits\.push\(entry\.targetFootprint/, "fitting must allow sub-unit assets to scale up to their footprint");
+  assert.doesNotMatch(source, /Math\.min\(fitScale, entry\.target/, "the fitting routine must not clamp all assets to scale 1");
 });
 
 test("district coverage, building counts and city hierarchy are complete", () => {

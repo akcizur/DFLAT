@@ -10,7 +10,7 @@ DEPOO is a first-person, low-poly open city assembled from modular Kenney CC0 GL
 - **Street tiles:** 273 unique modules, including the central roundabout, crossroads, crossings, straight segments and terminal ends.
 - **City blocks:** 36 blocks between the main streets.
 - **Player spawn:** (0, 0, 100), facing toward the downtown entrance.
-- **World composition:** 610 object instances built from 106 curated model types.
+- **World composition:** 607 object instances built from 106 curated model types.
 
 ## District plan
 
@@ -19,7 +19,7 @@ DEPOO is a first-person, low-poly open city assembled from modular Kenney CC0 GL
 | Downtown | x/z = -12 to 12 | Four tower blocks, five skyline buildings and the central roundabout |
 | Market district | z = 36, x = -36 to 36 | Four blocks of shops/offices, awnings, parasols and parked cars |
 | Civic quarter | around (36, 12) | Three civic buildings, public space and city services |
-| Residential | distributed across 23 blocks | 66 varied homes, driveways, trees and gardens |
+| Residential | distributed across 22 blocks | 66 varied homes, driveways, trees and gardens |
 | Central park | around (-36, 12) | Eight trees, benches, planters, paths and interactive lighting |
 | Neighbourhood garden | around (-36, -12) | Smaller green space with seating and vegetation |
 | Parking and traffic | around (-60, 12) | Sedans, taxi, SUV, police and delivery vehicles |
@@ -32,7 +32,7 @@ The five towers sit inside reserved 24 m blocks rather than on road centerlines.
 
 The layout is defined in `src/game/open-world.js`. Repeated road, building, tree, streetlight, vehicle and character models are loaded once per asset ID and emitted as `THREE.InstancedMesh` batches. Each instance retains its own world matrix, so the city can repeat a modular part without producing a separate draw call for every object.
 
-Every road module is fitted to an 8 m footprint. All GLB models are uniformly scaled, then recentered on their authored map coordinate and grounded at y=0. Runtime bounds are measured from the transformed GLB geometry, so building, vehicle and skyline collision boxes match the visible model rather than guessed dimensions. The browser audit checks every road tile, every building-to-road clearance, building overlaps, model centering and the entrance-to-city route.
+Every road module is scaled to an exact 8 m footprint, including source assets that start at 1 m or 3 m. Buildings, vehicles and props are uniformly scaled up or down to fit the smaller of their height and footprint limits. All GLB models are then recentered on their authored map coordinate and grounded at y=0. Runtime bounds are measured from the transformed GLB geometry, so building, vehicle and skyline collision boxes match the visible model rather than guessed dimensions. The browser audit checks every road tile, every building-to-road clearance, building overlaps, model centering and the entrance-to-city route.
 
 ## Asset families
 

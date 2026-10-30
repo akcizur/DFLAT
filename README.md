@@ -16,7 +16,7 @@ The map is arranged as a **seven-by-seven connected street network** with 36 cit
 - **Public life:** twelve static pedestrians, an accessible wheelchair character, a park dog, streetlights, traffic signals, signs, bins and utility poles.
 - **City edge:** low-detail skyline buildings create a visual boundary beyond the playable street grid.
 
-The authored layout contains **610 placed world instances using 106 curated model types**. Repeated GLB components are rendered with Three.js `InstancedMesh` batches, which keeps the larger city practical to run in a browser. Building and vehicle lots retain collision bounds, while the roads and main pedestrian routes stay open.
+The authored layout contains **607 placed world instances using 106 curated model types**. Repeated GLB components are rendered with Three.js `InstancedMesh` batches, which keeps the larger city practical to run in a browser. Building and vehicle lots retain collision bounds, while the roads and main pedestrian routes stay open.
 
 ## Asset library
 

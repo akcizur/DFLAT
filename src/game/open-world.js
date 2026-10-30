@@ -266,10 +266,10 @@ world.push(
 
 // 09 / Skyline fringe. Low-detail buildings extend the city beyond the playable blocks.
 const skyline = [
-  ["a", -96, -88], ["d", -100, 0], ["g", -96, 88],
-  ["j", 96, -88], ["m", 100, 0], ["wide-a", 96, 88],
-  ["b", -88, -96], ["e", -36, -96], ["h", 88, -96],
-  ["k", -88, 96], ["n", 36, 96], ["wide-b", 88, 96]
+  ["a", -104, -88], ["d", -100, 0], ["g", -104, 88],
+  ["j", 104, -88], ["m", 100, 0], ["wide-a", 104, 88],
+  ["b", -88, -104], ["e", -36, -96], ["h", 88, -104],
+  ["k", -88, 104], ["n", 36, 96], ["wide-b", 88, 104]
 ];
 for (const [variant, x, z] of skyline) {
   world.push(place(
@@ -289,9 +289,10 @@ function prepareModel(THREE, root, entry) {
 
   let bounds = new THREE.Box3().setFromObject(root);
   const size = bounds.getSize(new THREE.Vector3());
-  let fitScale = 1;
-  if (entry.targetHeight) fitScale = Math.min(fitScale, entry.targetHeight / Math.max(0.001, size.y));
-  if (entry.targetFootprint) fitScale = Math.min(fitScale, entry.targetFootprint / Math.max(0.001, size.x, size.z));
+  const fitLimits = [];
+  if (entry.targetHeight) fitLimits.push(entry.targetHeight / Math.max(0.001, size.y));
+  if (entry.targetFootprint) fitLimits.push(entry.targetFootprint / Math.max(0.001, size.x, size.z));
+  const fitScale = fitLimits.length ? Math.min(...fitLimits) : 1;
   root.scale.multiplyScalar(fitScale);
   root.updateMatrixWorld(true);
 
@@ -326,6 +327,8 @@ function addStaticInstances(THREE, scene, sourceScene, entries, meshes, collider
     placementBounds.push({
       id: entry.id, kind: entry.kind, zone: entry.zone,
       x: entry.x, z: entry.z,
+      targetFootprint: entry.targetFootprint ?? null,
+      targetHeight: entry.targetHeight ?? null,
       minX: bounds.min.x, maxX: bounds.max.x,
       minY: bounds.min.y, maxY: bounds.max.y,
       minZ: bounds.min.z, maxZ: bounds.max.z,
