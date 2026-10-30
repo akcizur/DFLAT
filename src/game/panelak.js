@@ -6,6 +6,19 @@ export const PANELAK_LAYOUT = Object.freeze([
   { id: "panelak-east-b", x: 17.2, z: -67, floors: 4, width: 10.6, length: 34.4, height: 11.6 }
 ]);
 
+export const PANELAK_APARTMENT_INSTANCES = Object.freeze(
+  PANELAK_LAYOUT.flatMap(building =>
+    Array.from({ length: building.floors }, (_, floor) => Object.freeze({
+      id: building.id + "-floor-" + (floor + 1),
+      buildingId: building.id,
+      x: building.x,
+      z: building.z,
+      floor,
+      elevation: floor * (building.height / building.floors)
+    }))
+  )
+);
+
 // Shared dimensions for every facade and the matching interior room plan.
 export const PANELAK_FACADE_GRID = Object.freeze({
   bayOffsets: Object.freeze([-14, -10, -6, -2, 2, 6, 10, 14]),
