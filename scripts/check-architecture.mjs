@@ -58,16 +58,18 @@ if (!worldSource.includes('ground.name = "DEPOO city ground"')) fail("DEPOO city
 if (!worldSource.includes('theme: "DEPOO"')) fail("world diagnostics must identify DEPOO");
 if (!worldSource.includes('fetch(APP_BASE + "models/manifest.json")')) fail("the local city asset manifest is not loaded");
 if (worldSource.includes("space-kit/") || worldSource.includes("monorail") || worldSource.includes("hangar")) fail("old space-depot world code remains connected");
-for (const id of ["city-kit-roads/road-straight","city-kit-commercial/building-skyscraper-a","city-kit-suburban/building-type-a","car-kit/sedan","nature-kit/tree-oak"]) {
+for (const id of ["city-kit-roads/road-straight","city-kit-commercial/building-skyscraper-a","car-kit/sedan","nature-kit/tree-oak"]) {
   if (!worldSource.includes(id)) fail("required city component is missing from world: " + id);
 }
+if (!worldSource.includes('place("city-kit-suburban/building-type-" + type')) fail("residential house variants are not generated from the city kit");
 const modelPrep = await readFile(path.join(root, "scripts/prepare-open-models.mjs"), "utf8");
 if (!modelPrep.includes('model.license !== "CC0-1.0"')) fail("asset downloader must verify CC0 license");
 if (!modelPrep.includes('model.author !== "Kenney"')) fail("asset downloader must verify artist");
 if (!modelPrep.includes("model.size")) fail("asset downloader must verify file size");
-for (const id of ["city-kit-roads/road-straight","city-kit-commercial/building-a","city-kit-suburban/building-type-a","car-kit/sedan"]) {
+for (const id of ["city-kit-roads/road-straight","city-kit-commercial/building-a","car-kit/sedan"]) {
   if (!worldSource.includes(id) || !modelPrep.includes(id)) fail("required DEPOO city component is not bundled: " + id);
 }
+if (!modelPrep.includes("city-kit-suburban/building-type-a")) fail("suburban building variants are not included in the city asset bundle");
 
 const library = await readFile(path.join(root, "src/game/model-library.js"), "utf8");
 if (!library.includes('fetch(SOURCE_ROOT + "/catalog.json")') || !library.includes("PAGE_SIZE = 48")) fail("searchable paginated CC0 catalog is missing");
