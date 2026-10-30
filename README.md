@@ -4,10 +4,10 @@ DEPOO is a first-person low-poly exploration game set in a remote modular freigh
 
 ## World composition
 
-- **Arrival corridor:** modular road tiles, intersections and terminal gates.
-- **Freight apron:** raised loading platforms, cargo machinery, barrels and dispatch equipment.
-- **Hangar district:** one primary hangar and four secondary halls with different silhouettes.
-- **Monorail:** elevated track assembled from repeated track/support modules, with a train made from separate front and cargo cars.
+- **Arrival spine and dispatch court:** a terminal gate opens into a connected cross-yard with separate west/east service wings.
+- **Freight yard:** paired craft pads, raised loading platforms, cargo machinery, pipework and crew modules.
+- **Hangar crescent:** one primary hangar and four satellite halls distributed across a broad terminal yard.
+- **Monorail:** a continuous elevated freight line assembled from repeated track/support modules, with a three-car train.
 - **Outer rim:** terrain pieces, satellite antenna, craters, rocks and a meteor outcrop.
 - **Crew and control:** astronaut figures, dispatch console and service beacon.
 

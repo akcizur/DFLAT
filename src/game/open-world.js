@@ -3,74 +3,107 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 const APP_BASE = typeof import.meta.env !== "undefined" && import.meta.env.BASE_URL ? import.meta.env.BASE_URL : "/";
 
 // The depot is built from independent CC0 Space Kit GLBs, not procedural buildings.
-const ROAD_Z = Array.from({ length: 12 }, (_, index) => 4 - index * 10);
+const module = (id, x, z, kind, zone, options = {}) => ({
+  id, x, z, kind, zone, ...options
+});
+
+const ROAD_Z = Array.from({ length: 14 }, (_, index) => 12 - index * 10);
+
+// DEPOO is arranged as a connected freight campus:
+// arrival spine -> dispatch court -> cross-yard -> five-hangar crescent.
+// Every visible structure, vehicle and prop is an independent Space Kit GLB.
 export const WORLD_LAYOUT = [
-  ...ROAD_Z.map(z => ({ id: "space-kit/terrain-roadstraight", x: 0, z, kind: "road" })),
-  { id: "space-kit/terrain-roadcross", x: 0, z: -36, kind: "road" },
-  { id: "space-kit/terrain-roadcross", x: 0, z: -76, kind: "road" },
-  { id: "space-kit/terrain-roadstraight", x: -10, z: -46, yaw: Math.PI / 2, kind: "road" },
-  { id: "space-kit/terrain-roadstraight", x: 10, z: -66, yaw: Math.PI / 2, kind: "road" },
-  { id: "space-kit/terrain-roadcorner", x: -10, z: -36, yaw: Math.PI / 2, kind: "road" },
-  { id: "space-kit/terrain-roadcorner", x: 10, z: -76, yaw: -Math.PI / 2, kind: "road" },
-  { id: "space-kit/terrain-roadend", x: -20, z: -46, yaw: Math.PI / 2, kind: "road" },
-  { id: "space-kit/terrain-roadend", x: 20, z: -66, yaw: -Math.PI / 2, kind: "road" },
+  // Arrival spine and terminal threshold.
+  ...ROAD_Z.map(z => module("space-kit/terrain-roadstraight", 0, z, "road", "arrival")),
+  module("space-kit/terrain-roadcross", 0, -38, "road", "dispatch"),
+  module("space-kit/terrain-roadcross", 0, -78, "road", "freight-yard"),
+  module("space-kit/gate-complex", 0, -17, "gate", "arrival", { targetHeight: 5.8 }),
+  module("space-kit/gate-simple", -20, -48, "gate", "west-service", { yaw: Math.PI / 2, targetHeight: 4.2 }),
+  module("space-kit/gate-simple", 20, -88, "gate", "east-service", { yaw: -Math.PI / 2, targetHeight: 4.2 }),
 
-  { id: "space-kit/gate-complex", x: 0, z: -17, targetHeight: 5.8, kind: "gate" },
-  { id: "space-kit/gate-simple", x: -19, z: -50, yaw: Math.PI / 2, targetHeight: 4.2, kind: "gate" },
-  { id: "space-kit/gate-simple", x: 19, z: -70, yaw: -Math.PI / 2, targetHeight: 4.2, kind: "gate" },
-  { id: "space-kit/platform-large", x: 0, z: -43, y: 0.08, kind: "platform" },
-  { id: "space-kit/platform-long", x: 0, z: -50, y: 0.08, kind: "platform" },
-  { id: "space-kit/platform-high", x: -7, z: -48, y: 0.1, kind: "platform" },
-  { id: "space-kit/platform-straight", x: 7, z: -48, y: 0.08, kind: "platform" },
-  { id: "space-kit/stairs", x: 8, z: -45, yaw: -Math.PI / 2, kind: "platform" },
+  // A pair of service wings creates a proper cross-yard instead of one long road.
+  ...[-10, 10].flatMap(x => [
+    module("space-kit/terrain-roadstraight", x, -48, "road", "west-service", { yaw: Math.PI / 2 }),
+    module("space-kit/terrain-roadstraight", x, -88, "road", "east-service", { yaw: Math.PI / 2 })
+  ]),
+  ...[-20, 20].flatMap(x => [-58, -68, -78].map(z =>
+    module("space-kit/terrain-roadstraight", x, z, "road", x < 0 ? "west-service" : "east-service")
+  )),
+  module("space-kit/terrain-roadcorner", -10, -38, "road", "west-service", { yaw: Math.PI / 2 }),
+  module("space-kit/terrain-roadcorner", 10, -38, "road", "east-service", { yaw: 0 }),
+  module("space-kit/terrain-roadcorner", -10, -98, "road", "west-service", { yaw: Math.PI }),
+  module("space-kit/terrain-roadcorner", 10, -98, "road", "east-service", { yaw: -Math.PI / 2 }),
+  module("space-kit/terrain-roadend", -20, -48, "road", "west-service", { yaw: Math.PI / 2 }),
+  module("space-kit/terrain-roadend", 20, -88, "road", "east-service", { yaw: -Math.PI / 2 }),
 
-  { id: "space-kit/hangar-largea", x: 0, z: -101, targetHeight: 12, collider: [10, 8], kind: "hangar" },
-  { id: "space-kit/hangar-largeb", x: -29, z: -85, targetHeight: 10, collider: [8, 7], kind: "hangar" },
-  { id: "space-kit/hangar-smalla", x: 28, z: -86, targetHeight: 8, collider: [6, 6], kind: "hangar" },
-  { id: "space-kit/hangar-rounda", x: 29, z: -116, targetHeight: 7.5, collider: [6, 6], kind: "hangar" },
-  { id: "space-kit/hangar-roundglass", x: -28, z: -116, targetHeight: 7.5, collider: [6, 6], kind: "hangar" },
+  // Dispatch court: console, crew, utilities and the first loading apron.
+  module("space-kit/platform-large", 0, -43, "platform", "dispatch", { y: 0.08 }),
+  module("space-kit/platform-long", 0, -50, "platform", "dispatch", { y: 0.08 }),
+  module("space-kit/platform-high", -7, -48, "platform", "dispatch", { y: 0.1 }),
+  module("space-kit/platform-straight", 7, -48, "platform", "dispatch", { y: 0.08 }),
+  module("space-kit/stairs", 8, -45, "platform", "dispatch", { yaw: -Math.PI / 2 }),
+  module("space-kit/desk-computer", 4.2, -35.5, "console", "dispatch", { targetHeight: 1.5 }),
+  module("space-kit/desk-chair", 4.2, -37.2, "console", "dispatch", { yaw: Math.PI, targetHeight: 1.2 }),
+  module("space-kit/astronauta", -4.5, -29, "crew", "dispatch", { yaw: Math.PI / 2, targetHeight: 1.8 }),
+  module("space-kit/machine-generatorlarge", 9, -39, "machine", "dispatch", { targetHeight: 3.2, collider: [2, 2] }),
+  module("space-kit/machine-generator", -9, -41, "machine", "dispatch", { targetHeight: 2.5, collider: [1.5, 1.5] }),
+  module("space-kit/barrels", 12, -42, "cargo", "dispatch"),
+  module("space-kit/barrels-rail", -12, -44, "cargo", "dispatch"),
 
-  ...Array.from({ length: 11 }, (_, index) => ({
-    id: "space-kit/monorail-trackstraight", x: -13, y: 5.2, z: 4 - index * 10, kind: "rail"
-  })),
-  { id: "space-kit/monorail-trackcornerlarge", x: -13, y: 5.2, z: -108, yaw: Math.PI, kind: "rail" },
-  { id: "space-kit/monorail-tracksupport", x: -13, z: -10, kind: "rail-support" },
-  { id: "space-kit/monorail-tracksupport", x: -13, z: -40, kind: "rail-support" },
-  { id: "space-kit/monorail-tracksupport", x: -13, z: -70, kind: "rail-support" },
-  { id: "space-kit/monorail-tracksupport", x: -13, z: -100, kind: "rail-support" },
-  { id: "space-kit/monorail-trainfront", x: -13, y: 5.6, z: -43, kind: "train" },
-  { id: "space-kit/monorail-traincargo", x: -13, y: 5.6, z: -50, kind: "train" },
-  { id: "space-kit/monorail-trainbox", x: -13, y: 5.6, z: -57, kind: "train" },
+  // Freight court: two craft pads and a dense service strip.
+  module("space-kit/platform-large", -15, -60, "platform", "freight-yard", { y: 0.08 }),
+  module("space-kit/platform-large", 15, -60, "platform", "freight-yard", { y: 0.08 }),
+  module("space-kit/platform-long", 0, -68, "platform", "freight-yard", { y: 0.08 }),
+  module("space-kit/platform-high", -15, -69, "platform", "freight-yard", { y: 0.1 }),
+  module("space-kit/platform-straight", 15, -69, "platform", "freight-yard", { y: 0.08 }),
+  module("space-kit/stairs", -8, -65, "platform", "freight-yard", { yaw: Math.PI / 2 }),
+  module("space-kit/craft-cargoa", 15, -58, "craft", "freight-yard", { yaw: Math.PI / 2, targetHeight: 3.6, collider: [3, 4] }),
+  module("space-kit/craft-cargob", -17, -61, "craft", "freight-yard", { yaw: -Math.PI / 2, targetHeight: 3.6, collider: [3, 4] }),
+  module("space-kit/machine-wireless", 7, -74, "machine", "freight-yard", { targetHeight: 2.8 }),
+  module("space-kit/machine-barrellarge", -8, -74, "machine", "freight-yard", { targetHeight: 2.6 }),
+  module("space-kit/barrels-rail", 11, -52, "cargo", "freight-yard"),
+  module("space-kit/barrels", -11, -81, "cargo", "freight-yard"),
+  module("space-kit/pipe-straight", -9, -82, "pipe", "freight-yard", { y: 1.4, yaw: Math.PI / 2 }),
+  module("space-kit/pipe-straight", -9, -90, "pipe", "freight-yard", { y: 1.4, yaw: Math.PI / 2 }),
+  module("space-kit/pipe-supporthigh", -9, -82, "pipe", "freight-yard", { yaw: Math.PI / 2 }),
+  module("space-kit/astronautb", 7.5, -57, "crew", "freight-yard", { yaw: -Math.PI / 2, targetHeight: 1.8 }),
 
-  { id: "space-kit/craft-cargoa", x: 15, z: -57, yaw: Math.PI / 2, targetHeight: 3.6, collider: [3, 4], kind: "craft" },
-  { id: "space-kit/craft-cargob", x: -17, z: -59, yaw: -Math.PI / 2, targetHeight: 3.6, collider: [3, 4], kind: "craft" },
-  { id: "space-kit/craft-miner", x: 20, z: -91, yaw: Math.PI / 2, targetHeight: 3.1, collider: [3, 3], kind: "craft" },
-  { id: "space-kit/machine-generatorlarge", x: 9, z: -39, targetHeight: 3.2, collider: [2, 2], kind: "machine" },
-  { id: "space-kit/machine-generator", x: -9, z: -41, targetHeight: 2.5, collider: [1.5, 1.5], kind: "machine" },
-  { id: "space-kit/machine-wireless", x: 7, z: -58, targetHeight: 2.8, kind: "machine" },
-  { id: "space-kit/machine-barrellarge", x: -8, z: -59, targetHeight: 2.6, kind: "machine" },
-  { id: "space-kit/barrels-rail", x: 11, z: -48, kind: "cargo" },
-  { id: "space-kit/barrels", x: 12, z: -42, kind: "cargo" },
-  { id: "space-kit/pipe-straight", x: -9, y: 1.4, z: -69, yaw: Math.PI / 2, kind: "pipe" },
-  { id: "space-kit/pipe-straight", x: -9, y: 1.4, z: -77, yaw: Math.PI / 2, kind: "pipe" },
-  { id: "space-kit/pipe-supporthigh", x: -9, z: -69, yaw: Math.PI / 2, kind: "pipe" },
+  // Elevated freight monorail, kept as a continuous modular run.
+  ...Array.from({ length: 13 }, (_, index) =>
+    module("space-kit/monorail-trackstraight", -13, 12 - index * 10, "rail", "monorail", { y: 5.2 })
+  ),
+  module("space-kit/monorail-trackcornerlarge", -13, -118, "rail", "monorail", { y: 5.2, yaw: Math.PI }),
+  ...[-10, -40, -70, -100].map(z =>
+    module("space-kit/monorail-tracksupport", -13, z, "rail-support", "monorail")
+  ),
+  module("space-kit/monorail-trainfront", -13, -43, "train", "monorail", { y: 5.6 }),
+  module("space-kit/monorail-traincargo", -13, -50, "train", "monorail", { y: 5.6 }),
+  module("space-kit/monorail-trainbox", -13, -57, "train", "monorail", { y: 5.6 }),
 
-  { id: "space-kit/astronauta", x: -4.5, z: -29, yaw: Math.PI / 2, targetHeight: 1.8, kind: "crew" },
-  { id: "space-kit/astronautb", x: 7.5, z: -57, yaw: -Math.PI / 2, targetHeight: 1.8, kind: "crew" },
-  { id: "space-kit/desk-computer", x: 4.2, z: -35.5, targetHeight: 1.5, kind: "console" },
-  { id: "space-kit/desk-chair", x: 4.2, z: -37.2, yaw: Math.PI, targetHeight: 1.2, kind: "console" },
-  { id: "space-kit/satellitedish-large", x: -25, z: -69, targetHeight: 5.2, collider: [2, 2], kind: "antenna" },
-  { id: "space-kit/chimney-detailed", x: 11, z: -100, targetHeight: 5.5, kind: "structure" },
+  // Hangar crescent: one primary terminal and four satellite halls.
+  module("space-kit/hangar-largea", 0, -106, "hangar", "hangar-crescent", { targetHeight: 12, collider: [10, 8] }),
+  module("space-kit/hangar-largeb", -30, -94, "hangar", "hangar-crescent", { targetHeight: 10, collider: [8, 7] }),
+  module("space-kit/hangar-smalla", 30, -94, "hangar", "hangar-crescent", { targetHeight: 8, collider: [6, 6] }),
+  module("space-kit/hangar-rounda", 30, -122, "hangar", "hangar-crescent", { targetHeight: 7.5, collider: [6, 6] }),
+  module("space-kit/hangar-roundglass", -30, -122, "hangar", "hangar-crescent", { targetHeight: 7.5, collider: [6, 6] }),
+  module("space-kit/craft-miner", 20, -91, "craft", "hangar-crescent", { yaw: Math.PI / 2, targetHeight: 3.1, collider: [3, 3] }),
+  module("space-kit/chimney-detailed", 11, -103, "structure", "hangar-crescent", { targetHeight: 5.5 }),
+  module("space-kit/satellitedish-large", -25, -76, "antenna", "west-service", { targetHeight: 5.2, collider: [2, 2] }),
 
-  { id: "space-kit/terrain", x: -30, z: -28, kind: "terrain" },
-  { id: "space-kit/terrain", x: 30, z: -30, kind: "terrain" },
-  { id: "space-kit/terrain", x: -34, z: -92, kind: "terrain" },
-  { id: "space-kit/terrain", x: 35, z: -95, kind: "terrain" },
-  { id: "space-kit/terrain-side", x: -30, z: -55, yaw: Math.PI / 2, kind: "terrain" },
-  { id: "space-kit/terrain-side", x: 30, z: -58, yaw: -Math.PI / 2, kind: "terrain" },
-  { id: "space-kit/rock-largea", x: -39, z: -78, targetHeight: 6, collider: [2.5, 2.5], kind: "rock" },
-  { id: "space-kit/craterlarge", x: 39, z: -76, targetHeight: 4.5, collider: [3, 3], kind: "crater" },
-  { id: "space-kit/meteor-detailed", x: 38, z: -112, targetHeight: 5.5, collider: [2, 2], kind: "rock" }
+  // Lunar terrain, rock formations and a meteor mark the outer boundary.
+  module("space-kit/terrain", -34, -28, "terrain", "perimeter"),
+  module("space-kit/terrain", 34, -28, "terrain", "perimeter"),
+  module("space-kit/terrain", -42, -66, "terrain", "perimeter"),
+  module("space-kit/terrain", 42, -66, "terrain", "perimeter"),
+  module("space-kit/terrain", -38, -106, "terrain", "perimeter"),
+  module("space-kit/terrain", 38, -106, "terrain", "perimeter"),
+  module("space-kit/terrain-side", -34, -51, "terrain", "perimeter", { yaw: Math.PI / 2 }),
+  module("space-kit/terrain-side", 34, -55, "terrain", "perimeter", { yaw: -Math.PI / 2 }),
+  module("space-kit/terrain-side", -36, -94, "terrain", "perimeter", { yaw: Math.PI / 2 }),
+  module("space-kit/terrain-side", 36, -96, "terrain", "perimeter", { yaw: -Math.PI / 2 }),
+  module("space-kit/rock-largea", -43, -82, "rock", "perimeter", { targetHeight: 6, collider: [2.5, 2.5] }),
+  module("space-kit/craterlarge", 43, -78, "crater", "perimeter", { targetHeight: 4.5, collider: [3, 3] }),
+  module("space-kit/meteor-detailed", 41, -119, "rock", "perimeter", { targetHeight: 5.5, collider: [2, 2] })
 ];
 
 function prepareModel(THREE, root, entry) {
@@ -228,16 +261,16 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
   function getCoordinateData() {
     return {
       schemaVersion: "2.0", theme: "DEPOO",
-      setting: "Outer Rim / modular cargo depot", units: "metres",
+      setting: "DEPOO / modular freight campus", units: "metres",
       objects: WORLD_LAYOUT.map((entry, index) => ({
         index, id: entry.id, x: entry.x, y: entry.y || 0, z: entry.z,
-        yaw: entry.yaw || 0, kind: entry.kind
+        yaw: entry.yaw || 0, kind: entry.kind, zone: entry.zone
       })),
       anchors: [
         { id: "spawn", x: 0, y: 0, z: 9.2 },
-        { id: "dispatch-console", x: 4.2, y: 0, z: -35.5 },
-        { id: "loading-apron", x: 0, y: 0, z: -48 },
-        { id: "main-hangar", x: 0, y: 0, z: -101 }
+        { id: "dispatch-court", x: 0, y: 0, z: -38 },
+        { id: "freight-yard", x: 0, y: 0, z: -68 },
+        { id: "main-hangar", x: 0, y: 0, z: -106 }
       ],
       loadedAssetIds: [...loadedIds], failedAssetIds: failedIds.slice()
     };
