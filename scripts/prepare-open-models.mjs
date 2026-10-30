@@ -56,10 +56,10 @@ const WORLD_MODEL_IDS = [
   "space-kit/rock-largea",
   "space-kit/craterlarge",
   "space-kit/meteor-detailed"
-
+];
 
 async function fetchBuffer(url) {
-  const response = await fetch(url, { headers: { "User-Agent": "DFLAT-open-source-model-setup" } });
+  const response = await fetch(url, { headers: { "User-Agent": "DEPOO-open-source-model-setup" } });
   if (!response.ok) throw new Error("Download failed (" + response.status + "): " + url);
   return Buffer.from(await response.arrayBuffer());
 }
