@@ -63,7 +63,7 @@ test("the entrance door opens a collision gap and can be closed again", () => {
 test("the interior includes real room geometry, stair parts, and toggleable lights", () => {
   const {colliders,interactables,result}=makeInterior();
   const names=result.meshes.map(mesh=>mesh.name);
-  for (const fragment of ["Stair tread","Kitchen counter","Sofa base","Bed frame","Bathtub","Mailbox bank"]) {
+  for (const fragment of ["Stair tread","Stair return tread","Stair upper landing","Kitchen counter","Sofa base","Bed frame","Bathtub","Mailbox bank"]) {
     assert.ok(names.some(name=>name.includes(fragment)), "missing geometry: "+fragment);
   }
   const doors=interactables.filter(item=>item.id.startsWith("door-"));
