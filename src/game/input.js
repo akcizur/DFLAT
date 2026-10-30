@@ -108,6 +108,9 @@ export function bindInput({ renderer, state, controller, ui }) {
   function clearMovement() {
     for (const source of Object.keys(sources)) clearSource(source);
     for (const code of knownCodes) keysDown[code] = false;
+    keysDown.ShiftLeft = false;
+    keysDown.ShiftRight = false;
+    keysDown.Space = false;
     document.querySelector('[data-touch-action="run"]')?.classList.remove("is-held");
     document.querySelectorAll("[data-key].is-held").forEach(button => button.classList.remove("is-held"));
     resetTouchActions();
