@@ -195,6 +195,82 @@ try {
     throw new Error("Panelák interior frame is not visibly rendered: " + JSON.stringify({ interiorBefore, interiorVisual }));
   }
 
+  // Mobile touch regression: use a real touch-enabled Chromium context and
+  // dispatch independent pointer IDs to exercise two-thumb control ownership.
+  const mobilePage = await browser.newPage({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 1,
+    isMobile: true,
+    hasTouch: true
+  });
+  const mobileErrors = [];
+  mobilePage.on("pageerror", error => mobileErrors.push(error.message));
+  await mobilePage.goto("http://127.0.0.1:4173/?smoke=1&touch=1", {
+    waitUntil: "domcontentloaded",
+    timeout: 30000
+  });
+  await mobilePage.waitForSelector("#screenCanvas", { timeout: 10000 });
+  await mobilePage.waitForFunction(() => document.querySelector("#startButton")?.disabled === false, null, { timeout: 20000 });
+  await mobilePage.locator("#loadingScreen").waitFor({ state: "hidden", timeout: 20000 });
+  await mobilePage.locator("#startButton").click();
+  await mobilePage.waitForTimeout(350);
+  const mobileReady = await mobilePage.evaluate(() => ({
+    touchRemote: getComputedStyle(document.querySelector("#touchRemoteCluster")).display !== "none",
+    joystick: getComputedStyle(document.querySelector("#touchControls")).display !== "none",
+    lookZone: getComputedStyle(document.querySelector("#touchLookZone")).display !== "none"
+  }));
+  if (!mobileReady.touchRemote || !mobileReady.joystick || !mobileReady.lookZone) {
+    throw new Error("Mobile touch controls are not visible: " + JSON.stringify(mobileReady));
+  }
+
+  const touchMovement = await mobilePage.evaluate(async () => {
+    // Synthetic pointer events let the smoke test address two simultaneous touch IDs
+    // deterministically; capture is stubbed because synthetic events are not trusted.
+    Element.prototype.setPointerCapture = function () {};
+    const send = (element, type, pointerId, x, y) => element.dispatchEvent(new PointerEvent(type, {
+      bubbles: true, cancelable: true, pointerId, pointerType: "touch",
+      clientX: x, clientY: y, buttons: type === "pointerup" || type === "pointercancel" ? 0 : 1
+    }));
+    const stick = document.querySelector("#moveStick");
+    const rect = stick.getBoundingClientRect();
+    const sx = rect.left + rect.width / 2, sy = rect.top + rect.height / 2;
+    const look = document.querySelector("#touchLookZone");
+    const lookX = innerWidth - 24, lookY = innerHeight * 0.45;
+    const yawBefore = window.__DFLAT_SMOKE__.playerPosition().yaw;
+    send(stick, "pointerdown", 11, sx, sy);
+    send(stick, "pointermove", 11, sx, sy - rect.height * 0.34);
+    send(look, "pointerdown", 22, lookX, lookY);
+    send(look, "pointermove", 22, lookX - 36, lookY + 12);
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const held = window.__DFLAT_SMOKE__.keysDown();
+    const yawAfter = window.__DFLAT_SMOKE__.playerPosition().yaw;
+    send(stick, "pointerup", 11, sx, sy - rect.height * 0.34);
+    const afterStickRelease = window.__DFLAT_SMOKE__.keysDown();
+    const lookStillActive = look.classList.contains("active");
+    send(look, "pointerup", 22, lookX - 36, lookY + 12);
+    return { held, afterStickRelease, lookStillActive, yawBefore, yawAfter };
+  });
+  if (!touchMovement.held.KeyW || touchMovement.afterStickRelease.KeyW ||
+      !touchMovement.lookStillActive || Math.abs(touchMovement.yawAfter - touchMovement.yawBefore) < 0.001) {
+    throw new Error("Two-thumb joystick/look test failed: " + JSON.stringify(touchMovement));
+  }
+
+  const runRelease = await mobilePage.evaluate(() => {
+    const run = document.querySelector('[data-touch-action="run"]');
+    const send = (type, pointerId) => run.dispatchEvent(new PointerEvent(type, {
+      bubbles: true, cancelable: true, pointerId, pointerType: "touch", buttons: type === "pointercancel" ? 0 : 1
+    }));
+    send("pointerdown", 33);
+    const during = window.__DFLAT_SMOKE__.keysDown().ShiftLeft;
+    send("pointercancel", 33);
+    const after = window.__DFLAT_SMOKE__.keysDown().ShiftLeft;
+    return { during, after };
+  });
+  if (!runRelease.during || runRelease.after) {
+    throw new Error("RUN button did not release after pointercancel: " + JSON.stringify(runRelease));
+  }
+  if (mobileErrors.length) throw new Error("Mobile browser runtime errors: " + mobileErrors.join(" | "));
+
   if (pageErrors.length) throw new Error("Browser runtime errors: " + pageErrors.join(" | "));
   const shaderErrors = consoleErrors.filter(message => /shader error|program linking failed|webgl.*context|failed to compile/i.test(message));
   if (shaderErrors.length) throw new Error("WebGL/shader errors: " + shaderErrors.join(" | "));
