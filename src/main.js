@@ -113,7 +113,7 @@ const world = createOpenWorld({
   scene,
   onProgress: (completed, total, modelId) => {
     const percent = 46 + Math.round(38 * completed / Math.max(1, total));
-    setLoadingProgress(percent, "NAČÍTÁM CC0 MODELY", completed + "/" + total + " · " + modelId, "CC0 ASSETS");
+    setLoadingProgress(percent, "NAČÍTÁM 3D MODELY", completed + "/" + total + " · " + modelId, "WORLD ASSETS");
   }
 });
 const controller = createPlayerController({
@@ -140,6 +140,13 @@ if (new URLSearchParams(location.search).get("smoke") === "1") {
       playerPosition: () => ({ x: controller.player.x, z: controller.player.z, yaw: controller.player.yaw }),
       keysDown: () => ({ ...controller.keysDown }),
       gameState: () => ({ started: state.started, paused: state.paused }),
+      worldMode: () => world.mode,
+      assetDiagnostics: () => ({
+        mode: world.mode,
+        cityVisible: world.meshes.some(mesh => mesh.name === "Imported LowPoly City" && mesh.visible),
+        housesVisible: world.meshes.some(mesh => mesh.name === "Imported modern houses" && mesh.visible),
+        colliderCount: world.colliders.length
+      }),
       blockingCollidersAt: (x, z) => controller.getBlockingCollidersAt(x, z),
       moveForFrames: (code, frames) => {
         if (!state.started || state.paused) return { error: "gameplay is inactive", state: { ...state } };
