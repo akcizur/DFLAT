@@ -1,5 +1,5 @@
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { createPanelakDistrict, PANELAK_LAYOUT } from "./panelak.js";
+import { createPanelakDistrict, PANELAK_LAYOUT, PANELAK_APARTMENT_INSTANCES } from "./panelak.js";
 import { createPanelakInterior } from "./panelak-interior.js";
 
 const SOURCE_COMMIT = "eb99f44e0a4ff36a3d5e52eb1256cb566d8854c3";
@@ -143,14 +143,15 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
   const baseLightItems = interactables.filter(item => item.id.startsWith("light-"));
   const clonedApartments = [];
 
-  for (const building of PANELAK_LAYOUT) {
-    for (let floor = 0; floor < building.floors; floor += 1) {
+  for (const instance of PANELAK_APARTMENT_INSTANCES) {
+      const building = PANELAK_LAYOUT.find(item => item.id === instance.buildingId);
+      const floor = instance.floor;
       if (building === baseBuilding && floor === 0) continue;
-      const offsetX = building.x - baseBuilding.x;
-      const offsetZ = building.z - baseBuilding.z;
+      const offsetX = instance.x - baseBuilding.x;
+      const offsetZ = instance.z - baseBuilding.z;
       const apartment = panelakInterior.root.clone(true);
-      apartment.name = building.id + " / floor " + (floor + 1) + " / apartment module";
-      apartment.position.set(offsetX, floor * floorHeight, offsetZ);
+      apartment.name = instance.id + " / apartment module";
+      apartment.position.set(offsetX, instance.elevation, offsetZ);
       scene.add(apartment);
       meshes.push(apartment);
       clonedApartments.push({ buildingId: building.id, floor, root: apartment });
@@ -223,7 +224,6 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
           });
         }
       }
-    }
   }
 
   for (const entry of WORLD_LAYOUT) {
@@ -308,6 +308,7 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
       units: "metres",
       objects: [
         ...PANELAK_LAYOUT.map(entry => ({ id: entry.id, x: entry.x, y: 0, z: entry.z, kind: "panelak" })),
+        ...PANELAK_APARTMENT_INSTANCES.map(entry => ({ id: entry.id, x: entry.x, y: entry.elevation, z: entry.z, kind: "apartment" })),
         ...WORLD_LAYOUT.map(entry => ({ id: entry.id, x: entry.x, y: 0, z: entry.z, kind: entry.kind }))
       ],
       anchors: [{ id: "spawn", x: 0, y: 0, z: 9.2 }]
