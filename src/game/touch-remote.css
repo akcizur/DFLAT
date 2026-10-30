@@ -8,3 +8,28 @@
 @media (pointer:coarse){.touch-remote-cluster{display:grid}.touch-action{display:none!important}.pause-button,.fullscreen-button{z-index:13}.touch-controls{left:max(18px,env(safe-area-inset-left));bottom:max(74px,calc(18px + env(safe-area-inset-bottom)));z-index:12}.virtual-stick{width:clamp(128px,34vw,168px);height:clamp(128px,34vw,168px)}}
 @media (max-width:520px) and (orientation:portrait){.touch-remote-cluster{right:max(12px,env(safe-area-inset-right));bottom:max(62px,calc(10px + env(safe-area-inset-bottom)));transform:scale(.9);transform-origin:bottom right}.touch-controls{left:max(10px,env(safe-area-inset-left));bottom:max(62px,calc(10px + env(safe-area-inset-bottom)))}}
 @media (pointer:fine){.touch-remote-cluster,#touchLookZone{display:none!important}}
+
+
+/* Keep the model-library launcher clear of the two-thumb action cluster. */
+@media (pointer:coarse) {
+  .model-library-toggle {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(148px, calc(env(safe-area-inset-bottom) + 142px));
+    z-index: 140;
+    min-height: 36px;
+    padding: 7px 10px;
+    gap: 8px;
+  }
+}
+
+/* iOS safe-area layout: controls remain inside the usable screen on notched devices. */
+@supports (height: 100dvh) {
+  @media (pointer:coarse) {
+    .touch-controls {
+      bottom: max(62px, calc(env(safe-area-inset-bottom) + 14px));
+    }
+    .touch-remote-cluster {
+      bottom: max(62px, calc(env(safe-area-inset-bottom) + 14px));
+    }
+  }
+}
