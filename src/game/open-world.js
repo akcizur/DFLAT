@@ -132,6 +132,100 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
   const panelakInterior = createPanelakInterior({ THREE, scene, colliders, interactables });
   meshes.push(...panelakInterior.meshes);
 
+  // Reuse one authored apartment module across every block and storey.
+  // Geometry/materials are shared by Object3D.clone(true), keeping this affordable.
+  const baseBuilding = PANELAK_LAYOUT[0];
+  const floorHeight = baseBuilding.height / baseBuilding.floors;
+  const baseGroundColliders = colliders.slice();
+  const baseDoorCollider = baseGroundColliders.find(item => item.name === "vchodové dveře");
+  const baseDoorItem = interactables.find(item => item.id === "door-vchodove-dvere");
+  const baseLights = panelakInterior.lights || [];
+  const baseLightItems = interactables.filter(item => item.id.startsWith("light-"));
+  const clonedApartments = [];
+
+  for (const building of PANELAK_LAYOUT) {
+    for (let floor = 0; floor < building.floors; floor += 1) {
+      if (building === baseBuilding && floor === 0) continue;
+      const offsetX = building.x - baseBuilding.x;
+      const offsetZ = building.z - baseBuilding.z;
+      const apartment = panelakInterior.root.clone(true);
+      apartment.name = building.id + " / floor " + (floor + 1) + " / apartment module";
+      apartment.position.set(offsetX, floor * floorHeight, offsetZ);
+      scene.add(apartment);
+      meshes.push(apartment);
+      clonedApartments.push({ buildingId: building.id, floor, root: apartment });
+
+      // The current controller is ground-plane based. Only ground-floor room
+      // walls/furniture receive collision volumes; upper floors remain visual
+      // architectural modules until vertical player navigation is implemented.
+      if (floor === 0 && building !== baseBuilding) {
+        for (const source of baseGroundColliders) {
+          if (source === baseDoorCollider) continue;
+          colliders.push({
+            ...source,
+            minX: source.minX + offsetX,
+            maxX: source.maxX + offsetX,
+            minZ: source.minZ + offsetZ,
+            maxZ: source.maxZ + offsetZ,
+            name: source.name ? building.id + " / " + source.name : undefined
+          });
+        }
+        const hinge = apartment.getObjectByName("vchodové dveře hinge");
+        if (hinge && baseDoorCollider && baseDoorItem) {
+          const doorCollider = {
+            ...baseDoorCollider,
+            minX: baseDoorCollider.minX + offsetX,
+            maxX: baseDoorCollider.maxX + offsetX,
+            minZ: baseDoorCollider.minZ + offsetZ,
+            maxZ: baseDoorCollider.maxZ + offsetZ,
+            name: building.id + " / vchodové dveře"
+          };
+          colliders.push(doorCollider);
+          let opened = false;
+          interactables.push({
+            id: "door-" + building.id,
+            name: "Otevřít vchodové dveře " + building.id,
+            x: baseDoorItem.x + offsetX,
+            z: baseDoorItem.z + offsetZ,
+            range: baseDoorItem.range,
+            action() {
+              opened = !opened;
+              hinge.rotation.y = opened ? 0 : Math.PI / 2;
+              if (opened) {
+                const index = colliders.indexOf(doorCollider);
+                if (index >= 0) colliders.splice(index, 1);
+              } else if (!colliders.includes(doorCollider)) colliders.push(doorCollider);
+              this.name = (opened ? "Zavřít " : "Otevřít ") + "vchodové dveře " + building.id;
+            }
+          });
+        }
+
+        // Duplicate room-light interactions with references to the cloned lights.
+        for (let index = 0; index < baseLights.length; index += 1) {
+          const sourceLight = baseLights[index];
+          const clonedLight = apartment.getObjectByName(sourceLight.light.name);
+          const clonedFixture = apartment.getObjectByName(sourceLight.fixture.name);
+          const sourceItem = baseLightItems[index];
+          if (!clonedLight || !clonedFixture || !sourceItem) continue;
+          let isOn = true;
+          interactables.push({
+            id: "light-" + building.id + "-" + index,
+            name: sourceItem.name,
+            x: sourceItem.x + offsetX,
+            z: sourceItem.z + offsetZ,
+            range: sourceItem.range,
+            action() {
+              isOn = !isOn;
+              clonedLight.visible = isOn;
+              clonedFixture.material = isOn ? sourceLight.fixture.material : sourceLight.fixture.material;
+              this.name = (isOn ? "Zhasnout " : "Rozsvítit ") + sourceItem.name.replace(/^Zhasnout /, "");
+            }
+          });
+        }
+      }
+    }
+  }
+
   for (const entry of WORLD_LAYOUT) {
     if (entry.collider) {
       const [halfWidth, halfDepth] = entry.collider;
@@ -202,6 +296,7 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
     interactables,
     panelakDistrict,
     panelakInterior,
+    clonedApartments,
     meshesToAnimate,
     doorAnimations,
     meshes,
