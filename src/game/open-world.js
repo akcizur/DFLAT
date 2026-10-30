@@ -1,6 +1,14 @@
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
 
 const APP_BASE = typeof import.meta.env !== "undefined" && import.meta.env.BASE_URL ? import.meta.env.BASE_URL : "/";
+
+export const IMPORTED_CITY_ASSETS = Object.freeze({
+  city: "models/user-world/LowPoly_City_01Ready.glb.gz",
+  houses: "models/user-world/LowPoly_Modern_Houses_fbx.FBX",
+  colliders: "models/user-world/LowPoly_City_Colliders.json"
+});
+export const IMPORTED_CITY_SCALE = 0.22;
 const place = (id, x, z, kind, zone, options = {}) => ({ id, x, z, kind, zone, ...options });
 
 const BLOCK_CENTERS = [-60, -36, -12, 12, 36, 60];
@@ -378,6 +386,12 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
   const meshes = [];
   const loadedIds = new Set();
   const failedIds = [];
+  let mode = "bundled-city";
+  const navigation = {
+    theme: "DEPOO", floors: 1, verticalMovementEnabled: false,
+    assetInstances: WORLD_LAYOUT.length,
+    bounds: { minX: -112, maxX: 112, minZ: -112, maxZ: 112 }
+  };
   let elapsed = 0;
   let parkLightOnline = false;
   let streetLightOnline = false;
@@ -425,7 +439,127 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
     }
   });
 
+  async function loadImportedUserCity() {
+    try {
+      const [cityResponse, housesResponse, colliderResponse] = await Promise.all([
+        fetch(APP_BASE + IMPORTED_CITY_ASSETS.city),
+        fetch(APP_BASE + IMPORTED_CITY_ASSETS.houses),
+        fetch(APP_BASE + IMPORTED_CITY_ASSETS.colliders)
+      ]);
+      if (!cityResponse.ok || !housesResponse.ok || !colliderResponse.ok) return null;
+      if (typeof DecompressionStream === "undefined") {
+        throw new Error("This browser cannot decompress the optimized city model.");
+      }
+
+      const [compressedCity, housesBuffer, colliderData] = await Promise.all([
+        cityResponse.arrayBuffer(),
+        housesResponse.arrayBuffer(),
+        colliderResponse.json()
+      ]);
+      const decompressedCity = await new Response(
+        new Blob([compressedCity]).stream().pipeThrough(new DecompressionStream("gzip"))
+      ).arrayBuffer();
+
+      const [cityGltf, houseRoot] = await Promise.all([
+        loader.parseAsync(decompressedCity, APP_BASE + "models/user-world/"),
+        Promise.resolve(new FBXLoader().parse(housesBuffer, APP_BASE + "models/user-world/"))
+      ]);
+
+      // All three uploaded files are ready before the old procedural world is removed.
+      const cityRoot = cityGltf.scene;
+      cityRoot.name = "Imported LowPoly City";
+      const sourceBounds = new THREE.Box3().setFromObject(cityRoot);
+      const sourceCenter = sourceBounds.getCenter(new THREE.Vector3());
+      const sourceSize = sourceBounds.getSize(new THREE.Vector3());
+      cityRoot.scale.setScalar(IMPORTED_CITY_SCALE);
+      cityRoot.position.set(
+        -sourceCenter.x * IMPORTED_CITY_SCALE,
+        -sourceBounds.min.y * IMPORTED_CITY_SCALE,
+        -sourceCenter.z * IMPORTED_CITY_SCALE
+      );
+      cityRoot.updateMatrixWorld(true);
+
+      // The supplied FBX is a separate modern-housing collection. Fit it as a
+      // compact additional district just beyond the imported city's east edge.
+      houseRoot.name = "Imported modern houses";
+      const rawHouseBounds = new THREE.Box3().setFromObject(houseRoot);
+      const rawHouseSize = rawHouseBounds.getSize(new THREE.Vector3());
+      const houseFootprint = Math.max(rawHouseSize.x, rawHouseSize.z, 0.001);
+      const houseScale = Math.min(1, 62 / houseFootprint);
+      houseRoot.scale.multiplyScalar(houseScale);
+      houseRoot.updateMatrixWorld(true);
+      const fittedHouseBounds = new THREE.Box3().setFromObject(houseRoot);
+      const fittedHouseCenter = fittedHouseBounds.getCenter(new THREE.Vector3());
+      houseRoot.position.set(
+        sourceSize.x * IMPORTED_CITY_SCALE * 0.5 + 34 - fittedHouseCenter.x,
+        -fittedHouseBounds.min.y,
+        -sourceSize.z * IMPORTED_CITY_SCALE * 0.5 + 8 - fittedHouseCenter.z
+      );
+      houseRoot.updateMatrixWorld(true);
+      houseRoot.traverse(node => {
+        if (!node.isMesh) return;
+        node.castShadow = true;
+        node.receiveShadow = true;
+        const materials = Array.isArray(node.material) ? node.material : [node.material];
+        for (const material of materials) {
+          if (material) material.roughness = Math.max(material.roughness ?? 0.8, 0.72);
+        }
+      });
+
+      scene.remove(ground, parkLight, streetLight);
+      for (const mesh of meshes) scene.remove(mesh);
+      meshes.length = 0;
+      colliders.length = 0;
+      interactables.length = 0;
+      parkLightOnline = false;
+      streetLightOnline = false;
+
+      // The city package includes its own roads and public spaces; this subtle
+      // underlay only covers the outer edge where the imported map tapers off.
+      const importedGround = new THREE.Mesh(
+        new THREE.PlaneGeometry(360, 240),
+        new THREE.MeshStandardMaterial({ color: 0x64705d, roughness: 1, metalness: 0 })
+      );
+      importedGround.name = "Imported city / outer ground";
+      importedGround.rotation.x = -Math.PI / 2;
+      importedGround.position.y = -0.08;
+      importedGround.receiveShadow = true;
+      scene.add(importedGround, cityRoot, houseRoot);
+      meshes.push(importedGround, cityRoot, houseRoot);
+
+      for (const collider of colliderData.colliders || []) {
+        colliders.push({
+          minX: (collider.minX - sourceCenter.x) * IMPORTED_CITY_SCALE,
+          maxX: (collider.maxX - sourceCenter.x) * IMPORTED_CITY_SCALE,
+          minZ: (collider.minZ - sourceCenter.z) * IMPORTED_CITY_SCALE,
+          maxZ: (collider.maxZ - sourceCenter.z) * IMPORTED_CITY_SCALE,
+          name: "Imported city / building"
+        });
+      }
+
+      mode = "imported-user-city";
+      navigation.theme = "Imported LowPoly City";
+      navigation.assetInstances = cityRoot.children.length + houseRoot.children.length;
+      navigation.bounds = {
+        minX: -sourceSize.x * IMPORTED_CITY_SCALE / 2 - 34,
+        maxX: sourceSize.x * IMPORTED_CITY_SCALE / 2 + 96,
+        minZ: -sourceSize.z * IMPORTED_CITY_SCALE / 2 - 70,
+        maxZ: sourceSize.z * IMPORTED_CITY_SCALE / 2 + 70
+      };
+      return {
+        loaded: 2, total: 2, instances: navigation.assetInstances,
+        colliders: colliders.length, failed: [], source: "user-supplied OBJ city + FBX modern houses",
+        mode
+      };
+    } catch (error) {
+      console.warn("Imported user city could not be loaded; keeping the bundled city:", error);
+      return null;
+    }
+  }
+
   const ready = (async () => {
+    const imported = await loadImportedUserCity();
+    if (imported) return imported;
     const response = await fetch(APP_BASE + "models/manifest.json");
     if (!response.ok) throw new Error("DEPOO city asset manifest request failed: " + response.status);
     const manifest = await response.json();
@@ -527,13 +661,8 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
     colliders,
     interactables,
     meshes,
-    navigation: {
-      theme: "DEPOO",
-      floors: 1,
-      verticalMovementEnabled: false,
-      assetInstances: WORLD_LAYOUT.length,
-      bounds: { minX: -112, maxX: 112, minZ: -112, maxZ: 112 }
-    },
+    navigation,
+    get mode() { return mode; },
     ready,
     addPlacedModel,
     tick,
