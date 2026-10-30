@@ -14,7 +14,7 @@
 @media (pointer:coarse) {
   .model-library-toggle {
     right: max(12px, env(safe-area-inset-right));
-    bottom: max(148px, calc(env(safe-area-inset-bottom) + 142px));
+    bottom: max(208px, calc(env(safe-area-inset-bottom) + 198px));
     z-index: 140;
     min-height: 36px;
     padding: 7px 10px;
