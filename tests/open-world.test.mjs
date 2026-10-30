@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
-import { WORLD_LAYOUT, ROAD_CELLS, STREET_LINES } from "../src/game/open-world.js";
+import { WORLD_LAYOUT, ROAD_CELLS, STREET_LINES, IMPORTED_CITY_ASSETS, IMPORTED_CITY_SCALE } from "../src/game/open-world.js";
 
 const worldSource = await readFile(new URL("../src/game/open-world.js", import.meta.url), "utf8");
 const ids = new Set(WORLD_LAYOUT.map(item => item.id));
@@ -138,4 +138,12 @@ test("repeated assets use GPU instancing and no depot assets remain", async () =
   assert.match(source, /placementBounds/);
   assert.match(source, /bounds\.min\.x - padding/);
   assert.ok(WORLD_LAYOUT.every(item => !/space-kit|hangar|monorail|panelak|apartment/.test(item.id)));
+});
+
+
+test("uploaded LowPoly city and modern houses can replace the bundled grid", () => {
+  assert.equal(IMPORTED_CITY_ASSETS.city, "models/user-world/LowPoly_City_01Ready.glb.gz");
+  assert.equal(IMPORTED_CITY_ASSETS.houses, "models/user-world/LowPoly_Modern_Houses_fbx.FBX");
+  assert.equal(IMPORTED_CITY_ASSETS.colliders, "models/user-world/LowPoly_City_Colliders.json");
+  assert.ok(IMPORTED_CITY_SCALE > 0 && IMPORTED_CITY_SCALE <= 1);
 });
