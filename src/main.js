@@ -107,7 +107,7 @@ const state = {
   finished: false, started: false, paused: false, openWorld: true, ready: false
 };
 const ui = createUI();
-setLoadingProgress(45, "SKLÁDÁM OTEVŘENÝ SVĚT", "Skládám hangáry, monorail, lodě a servisní uzly.", "CC0 WORLD");
+setLoadingProgress(45, "SKLÁDÁM PŘÍSTAV DEPOO", "Skládám hangáry, monorail, lodě a servisní uzly.", "CC0 WORLD");
 const world = createOpenWorld({
   THREE,
   scene,

@@ -62,7 +62,7 @@ export function createUI() {
       toastEl.classList.remove("show");
     }
     const minute = 7 + Math.floor((now - clockStart) / 45000);
-    clockEl.innerHTML = "21:" + String(minute % 60).padStart(2, "0") + "<br>ÚTERÝ";
+    clockEl.innerHTML = "21:" + String(minute % 60).padStart(2, "0") + "<br>NOČNÍ SMĚNA";
   }
 
   return {
