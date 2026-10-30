@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFile } from "node:fs/promises";
 import { WORLD_LAYOUT, ROAD_CELLS, STREET_LINES } from "../src/game/open-world.js";
 
+const worldSource = await readFile(new URL("../src/game/open-world.js", import.meta.url), "utf8");
 const ids = new Set(WORLD_LAYOUT.map(item => item.id));
 const kinds = new Set(WORLD_LAYOUT.map(item => item.kind));
 const zones = new Set(WORLD_LAYOUT.map(item => item.zone));
@@ -38,7 +40,7 @@ test("every 8 m road module connects to its exact neighbours without gaps", () =
   }
   assert.equal(roadMap.size, 273, "road intersections must be represented once, not duplicated");
   assert.ok(roads.every(item => item.targetFootprint === 8), "all road tiles must use the 8 m module size");
-  const source = await import("node:fs/promises").then(fs => fs.readFile(new URL("../src/game/open-world.js", import.meta.url), "utf8"));
+  const source = worldSource;
   assert.match(source, /const fitLimits = \[\]/, "GLB fitting must calculate the actual scale required");
   assert.match(source, /fitLimits\.push\(entry\.targetFootprint/, "fitting must allow sub-unit assets to scale up to their footprint");
   assert.doesNotMatch(source, /Math\.min\(fitScale, entry\.target/, "the fitting routine must not clamp all assets to scale 1");
@@ -130,8 +132,7 @@ test("the downtown roundabout, central park and neighbourhood garden are distinc
 });
 
 test("repeated assets use GPU instancing and no depot assets remain", async () => {
-  const { readFile } = await import("node:fs/promises");
-  const source = await readFile(new URL("../src/game/open-world.js", import.meta.url), "utf8");
+  const source = worldSource;
   assert.match(source, /new THREE\.InstancedMesh/);
   assert.match(source, /addStaticInstances/);
   assert.match(source, /placementBounds/);
