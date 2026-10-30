@@ -80,3 +80,29 @@ test("transient movement keys are cleared on reset", () => {
   assert.match(inputSource, /keysDown\.ShiftRight = false/);
   assert.match(inputSource, /keysDown\.Space = false/);
 });
+
+test("touch joystick and action buttons keep independent input sources", () => {
+  assert.match(inputSource, /touchStick: Object\.create\(null\)/);
+  assert.match(inputSource, /touchButtons: Object\.create\(null\)/);
+  assert.match(inputSource, /Object\.values\(sources\)\.some/);
+  assert.match(inputSource, /setKey\("KeyW", y < -dead, "touchStick"\)/);
+  assert.match(inputSource, /setKey\("ShiftLeft", true, "touchButtons"\)/);
+});
+
+test("touch controls release on pointer cancellation, lost capture and page lifecycle", () => {
+  assert.match(inputSource, /moveStick\.addEventListener\("pointercancel", releaseStick\)/);
+  assert.match(inputSource, /lookZone\.addEventListener\("pointercancel", endLook\)/);
+  assert.match(inputSource, /runButton\?\.addEventListener\("pointercancel", releaseRun\)/);
+  assert.match(inputSource, /window\.addEventListener\("pagehide", resetTransientInput\)/);
+  assert.match(inputSource, /document\.addEventListener\("visibilitychange"/);
+});
+
+test("pausing or clearing input releases both active touch pointers", () => {
+  assert.match(inputSource, /function clearMovement\(\)[\s\S]*?releaseStick\(\);[\s\S]*?endLook\(\);/);
+  assert.match(inputSource, /function pauseGame\(\)[\s\S]*?clearMovement\(\);/);
+});
+
+test("one pointer owns each joystick and camera-look gesture", () => {
+  assert.match(inputSource, /stickPointer !== null\) return/);
+  assert.match(inputSource, /\|\| touchLook\) return/);
+});
