@@ -141,7 +141,7 @@ if (new URLSearchParams(location.search).get("smoke") === "1") {
       keysDown: () => ({ ...controller.keysDown }),
       gameState: () => ({ started: state.started, paused: state.paused }),
       worldMode: () => world.mode,
-      worldDiagnostics: () => ({
+      assetDiagnostics: () => ({
         mode: world.mode,
         cityVisible: world.meshes.some(mesh => mesh.name === "Imported LowPoly City" && mesh.visible),
         housesVisible: world.meshes.some(mesh => mesh.name === "Imported modern houses" && mesh.visible),
