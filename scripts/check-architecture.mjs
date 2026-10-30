@@ -75,10 +75,12 @@ const modelPrep = await readFile(path.join(root, "scripts/prepare-open-models.mj
 if (!modelPrep.includes('model.license !== "CC0-1.0"')) fail("asset downloader must verify CC0 license");
 if (!modelPrep.includes('model.author !== "Kenney"')) fail("asset downloader must verify artist");
 if (!modelPrep.includes("model.size")) fail("asset downloader must verify file size");
-for (const id of ["city-kit-roads/road-straight","city-kit-commercial/building-a","car-kit/sedan"]) {
-  if (!worldSource.includes(id) || !modelPrep.includes(id)) fail("required DEPOO city component is not bundled: " + id);
+for (const id of ["city-kit-roads/road-straight","city-kit-roads/road-roundabout"]) {
+  if (!worldSource.includes(id) || !modelPrep.includes(id)) fail("required DEPOO road component is not bundled: " + id);
 }
-if (!modelPrep.includes("city-kit-suburban/building-type-a")) fail("suburban building variants are not included in the city asset bundle");
+for (const id of ["city-kit-commercial/building-a","city-kit-commercial/building-skyscraper-a","city-kit-suburban/building-type-a","car-kit/sedan","mini-characters/character-female-a","nature-kit/tree-oak"]) {
+  if (!modelPrep.includes(id)) fail("required DEPOO city asset is not bundled: " + id);
+}
 
 const library = await readFile(path.join(root, "src/game/model-library.js"), "utf8");
 if (!library.includes('fetch(SOURCE_ROOT + "/catalog.json")') || !library.includes("PAGE_SIZE = 48")) fail("searchable paginated CC0 catalog is missing");
