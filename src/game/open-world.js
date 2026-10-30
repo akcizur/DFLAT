@@ -135,12 +135,12 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
   // Reuse one authored apartment module across every block and storey.
   // Geometry/materials are shared by Object3D.clone(true), keeping this affordable.
   const baseBuilding = PANELAK_LAYOUT[0];
-  const floorHeight = baseBuilding.height / baseBuilding.floors;
   const baseGroundColliders = colliders.slice();
   const baseDoorCollider = baseGroundColliders.find(item => item.name === "vchodové dveře");
   const baseDoorItem = interactables.find(item => item.id === "door-vchodove-dvere");
   const baseLights = panelakInterior.lights || [];
   const baseLightItems = interactables.filter(item => item.id.startsWith("light-"));
+  const unlitFixtureMaterial = new THREE.MeshStandardMaterial({ color: 0x59615e, roughness: 0.55 });
   const clonedApartments = [];
 
   for (const instance of PANELAK_APARTMENT_INSTANCES) {
@@ -218,7 +218,7 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
             action() {
               isOn = !isOn;
               clonedLight.visible = isOn;
-              clonedFixture.material = isOn ? sourceLight.fixture.material : sourceLight.fixture.material;
+              clonedFixture.material = isOn ? sourceLight.fixture.material : unlitFixtureMaterial;
               this.name = (isOn ? "Zhasnout " : "Rozsvítit ") + sourceItem.name.replace(/^Zhasnout /, "");
             }
           });
@@ -297,6 +297,7 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
     panelakDistrict,
     panelakInterior,
     clonedApartments,
+    apartmentInstances: PANELAK_APARTMENT_INSTANCES,
     meshesToAnimate,
     doorAnimations,
     meshes,
