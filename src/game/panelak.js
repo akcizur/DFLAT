@@ -73,17 +73,30 @@ export function createPanelakDistrict({ THREE, scene }) {
     // The room module supplies real perimeter walls and floor plates on every
     // storey. A solid core here would hide all cloned apartments behind concrete.
     if (buildingIndex === 0) {
-      // Keep the street-facing east plinth aligned with the entrance opening.
+      // The first block has one main east-facing entrance.
       const entranceZ = z;
       box("plinth", 0.18, 0.64, length+0.16, x-halfWidth-0.02, 0.32, z);
       for (const [start, end] of [[z-halfLength-0.08, entranceZ-1.3], [entranceZ+1.3, z+halfLength+0.08]]) {
         box("plinth", 0.18, 0.64, end-start, x+halfWidth+0.02, 0.32, (start+end)/2);
       }
-      box("plinth", width+0.16, 0.64, 0.18, x, 0.32, z-halfLength-0.02);
-      box("plinth", width+0.16, 0.64, 0.18, x, 0.32, z+halfLength+0.02);
     } else {
-      box("plinth", width + 0.16, 0.64, length + 0.16, x, 0.32, z);
+      // Each repeated block has three recessed entrances on both long facades.
+      for (const side of [-1, 1]) {
+        const faceX = x + side * (halfWidth + 0.02);
+        let cursor = z-halfLength-0.08;
+        for (const offset of [-8, 0, 8]) {
+          const entranceZ = z+offset;
+          const start = entranceZ-1.3, end = entranceZ+1.3;
+          if (start>cursor) box("plinth", 0.18, 0.64, start-cursor, faceX, 0.32, (cursor+start)/2);
+          cursor = end;
+        }
+        if (cursor<z+halfLength+0.08) {
+          box("plinth", 0.18, 0.64, z+halfLength+0.08-cursor, faceX, 0.32, (cursor+z+halfLength+0.08)/2);
+        }
+      }
     }
+    box("plinth", width+0.16, 0.64, 0.18, x, 0.32, z-halfLength-0.02);
+    box("plinth", width+0.16, 0.64, 0.18, x, 0.32, z+halfLength+0.02);
 
     // Flat roof, low parapet and a small service room typical of prefabricated blocks.
     box("roof", width + 0.08, 0.16, length + 0.08, x, height + 0.04, z);
