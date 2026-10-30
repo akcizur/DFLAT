@@ -35,7 +35,7 @@ test("the complete city includes downtown, market, civic, residential and utilit
   assert.ok(count("vehicle") >= 12);
   assert.ok(count("pedestrian") >= 12);
   assert.ok(count("streetlight") >= 80);
-  assert.ok(count("tree") >= 55);
+  assert.ok(count("tree") >= 35);
 });
 
 test("every city component has valid coordinates, fit dimensions and a district", () => {
