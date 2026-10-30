@@ -1,30 +1,38 @@
-# DEPOO | Open City
+# DEPOO | Complete Open City
 
-DEPOO is a first-person low-poly city exploration game built from modular Kenney CC0 city assets. The previous outer-rim depot layout has been replaced by a connected urban environment with a downtown core, civic park, residential streets, commercial buildings, skyline and street traffic.
+DEPOO is a first-person low-poly city exploration game built from modular Kenney CC0 assets. It is a complete, walkable urban map rather than a single street or a themed prop scene.
 
-## City districts
+## The city
 
-- **Downtown:** multi-storey commercial buildings, skyscrapers, shop details, traffic lights and a central roundabout.
-- **Civic park:** trees, planters, benches and interactive public lighting.
-- **Residential quarters:** varied houses, driveways and small trees arranged around the street grid.
-- **Market street:** low-rise stores, awnings and public-space props.
-- **City edge:** distant low-detail buildings, utility poles and a skyline.
-- **Street network:** modular straight roads, crossroads, road ends and a roundabout, assembled on a consistent grid.
+The map is arranged as a **seven-by-seven connected street network** with 36 city blocks and a playable area of roughly 224 × 224 metres.
 
-All visible buildings, roads, vehicles, street furniture and vegetation are loaded as independent GLB assets. The only primitive surface is the ground/navigation plane. No space hangars, monorail or freight-depot geometry remains connected to the world generator.
+- **Street network:** 273 fitted road modules, seven north-south avenues, seven cross streets, a central roundabout, marked crossings and street ends.
+- **Downtown:** five skyline towers surrounded by commercial streets and a central traffic junction.
+- **Market district:** four mixed-use blocks with fourteen shop/office variations, awnings, parasols and street details.
+- **Civic quarter:** public buildings, pedestrian spaces and city services.
+- **Residential neighbourhoods:** 69 houses in 23 blocks, with varied building types, driveways, gardens and trees.
+- **Green space:** a central park and a smaller neighbourhood garden with trees, benches, planters and paths.
+- **Parking and services:** parked cars, taxi, police, delivery van, ambulance, fire engine, refuse truck and utility vehicles.
+- **Public life:** twelve static pedestrians, an accessible wheelchair character, a park dog, streetlights, traffic signals, signs, bins and utility poles.
+- **City edge:** low-detail skyline buildings create a visual boundary beyond the playable street grid.
+
+The authored layout contains **621 placed world instances using 106 curated model types**. Repeated GLB components are rendered with Three.js `InstancedMesh` batches, which keeps the larger city practical to run in a browser. Building and vehicle lots retain collision bounds, while the roads and main pedestrian routes stay open.
 
 ## Asset library
 
-The in-game browser exposes **1,883 CC0 1.0 models** from 19 Kenney packs. Press `M` or select **MODEL LIBRARY** in the start menu to search by model, pack or asset id. The build downloads only the selected city components into `public/models/`; other catalog models load only when selected.
+The build downloads the selected city modules into `public/models/` and writes a verified `manifest.json`. Each source model is checked against the pinned catalog for Kenney authorship, CC0-1.0 licensing and exact byte size.
 
-The curated city set uses:
-- **City Kit (Roads):** streets, crossroads, roundabout, street lights, traffic lights and signs.
-- **City Kit (Commercial):** shops, office buildings, skyscrapers and low-detail skyline blocks.
-- **City Kit (Suburban):** houses, trees, driveways and planters.
-- **Car Kit:** sedans, taxis, service vehicles and delivery traffic.
-- **Nature / Furniture kits:** trees, bushes, benches and bins.
+The in-game browser still exposes the full **1,883-model CC0 catalog** from 19 Kenney packs. Press `M` or choose **MODEL LIBRARY** in the start menu to search the catalog. Additional models are loaded only when selected.
 
-See [assets/OPEN_SOURCE_MODELS.md](assets/OPEN_SOURCE_MODELS.md) for upstream source, pinned revision and license details.
+The city uses:
+- **City Kit (Roads):** road pieces, roundabout, streetlights, traffic lights, signs and construction details.
+- **City Kit (Commercial):** shops, public buildings, skyscrapers, awnings and distant skyline blocks.
+- **City Kit (Suburban):** 21 house types, trees, driveways and planters.
+- **Car Kit:** civilian, public-safety, delivery and utility vehicles.
+- **Nature Kit / Furniture Kit:** trees, shrubs, benches and bins.
+- **Mini Characters / Prototype Kit:** pedestrians, wheelchair character and dog.
+
+See [assets/DEPOO_WORLD.md](assets/DEPOO_WORLD.md) for the district plan and [assets/OPEN_SOURCE_MODELS.md](assets/OPEN_SOURCE_MODELS.md) for source and license details.
 
 ## Run locally
 
@@ -49,7 +57,7 @@ bun run preview
 - `Shift`: run
 - `Space`: jump
 - Mouse: look around
-- `E`: interact with park or street lighting
+- `E`: interact with park or downtown lighting
 - `M`: open or close the model library
 - `Esc`: pause / close the model library
 - Touch screens: on-screen movement, look, jump and run controls

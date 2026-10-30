@@ -2,7 +2,7 @@
   "name": "depoo-open-city",
   "private": true,
   "type": "module",
-  "description": "A first-person low-poly open city built from CC0 Kenney modular assets with Three.js.",
+  "description": "A complete first-person low-poly open city with a seven-by-seven road grid, modular buildings, pedestrians, traffic and parks using CC0 Kenney assets.",
   "scripts": {
     "dev": "node scripts/prepare-open-models.mjs && vite",
     "build": "node scripts/prepare-open-models.mjs && vite build",

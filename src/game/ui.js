@@ -17,8 +17,8 @@ export function createUI() {
 
   function updateObjective(state) {
     if (state.openWorld) {
-      objectiveText.textContent = "Prozkoumej město DEPOO. Najdi centrální park a projdi okolní čtvrti.";
-      inventoryText.textContent = "DEPOO / OPEN CITY · CC0 CITY ASSETS";
+      objectiveText.textContent = "Prozkoumej celé DEPOO. Centrum, obytné čtvrti, parky a městský okraj čekají.";
+      inventoryText.textContent = "DEPOO / FULL CITY · 621 MODULŮ · 106 TYPŮ ASSETŮ";
       return;
     }
     if (state.emptyMap) {

@@ -6,8 +6,9 @@ export function createPlayerController({ camera, colliders, interactables, state
   const JUMP_SPEED = 5.4;
   const GRAVITY = 18.5;
   const movementCodes = ["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
+  const bounds = navigation?.bounds || null;
   const player = {
-    x: 0, z: 46, elevation: 0,
+    x: 0, z: 100, elevation: 0,
     yaw: Math.PI * 0.02, pitch: -0.04,
     speed: WALK_SPEED, radius: 0.29, jumpHeight: 0
   };
@@ -24,9 +25,7 @@ export function createPlayerController({ camera, colliders, interactables, state
   let isRunning = false;
   let bodyLean = 0;
   let bodyRoll = 0;
-
   let cameraX = player.x, cameraY = 1.68, cameraZ = player.z;
-
   const keysDown = Object.create(null);
 
   function blockingCollidersAt(nx, nz) {
@@ -38,10 +37,10 @@ export function createPlayerController({ camera, colliders, interactables, state
   }
 
   function canMove(nx, nz) {
+    if (bounds && (nx < bounds.minX || nx > bounds.maxX || nz < bounds.minZ || nz > bounds.maxZ)) return false;
     return blockingCollidersAt(nx, nz).length === 0;
   }
 
-  // Open-world navigation: no storeys, stairs, elevators or architectural walls.
   function tryMoveTo(x, z) {
     if (!canMove(x, z)) return false;
     player.x = x;
@@ -79,27 +78,18 @@ export function createPlayerController({ camera, colliders, interactables, state
   }
 
   function syncCamera(deltaTime = 1 / 60) {
-    // A quiet idle breath, grounded footstep cadence, and small body lean make
-    // the first-person stance feel inhabited without adding a nauseating camera shake.
     const desiredMoving = state.started && !state.paused && bodySpeed > 0.06;
     const blend = 1 - Math.exp(-deltaTime * 18);
     const settle = 1 - Math.exp(-deltaTime * 5.5);
-
-    walkBlend += ((desiredMoving ? 1 : 0) - walkBlend) *
-      (1 - Math.exp(-deltaTime * 3.2));
+    walkBlend += ((desiredMoving ? 1 : 0) - walkBlend) * (1 - Math.exp(-deltaTime * 3.2));
     breathTime += deltaTime;
     if (desiredMoving) walkTime += deltaTime * (isRunning ? 10.4 : 7.2);
-
     const targetLean = desiredMoving
       ? (forwardIntent > 0 ? (isRunning ? 0.052 : 0.022) : forwardIntent < 0 ? -0.012 : 0)
       : 0;
     const targetRoll = desiredMoving ? -strafeIntent * (isRunning ? 0.042 : 0.026) : 0;
     bodyLean += (targetLean - bodyLean) * settle;
     bodyRoll += (targetRoll - bodyRoll) * settle;
-
-
-    // Slow breathing remains visible when idle. Steps are firmer when running,
-    // while the camera follows real foot elevation rather than snapping by floor.
     const breathing = Math.sin(breathTime * 1.35) * 0.008;
     const bobAmplitude = isRunning ? 0.017 : 0.010;
     const bob = Math.sin(walkTime * 1.65) * bobAmplitude * walkBlend;
@@ -111,7 +101,6 @@ export function createPlayerController({ camera, colliders, interactables, state
     cameraY += (targetY - cameraY) * blend;
     cameraZ += (targetZ - cameraZ) * blend;
     camera.position.set(cameraX, cameraY, cameraZ);
-
     camera.rotation.order = "YXZ";
     let yawDelta = player.yaw - cameraYaw;
     yawDelta = Math.atan2(Math.sin(yawDelta), Math.cos(yawDelta));
@@ -137,7 +126,6 @@ export function createPlayerController({ camera, colliders, interactables, state
       if (keysDown.KeyS || keysDown.ArrowDown) forward -= 1;
       if (keysDown.KeyD || keysDown.ArrowRight) strafe += 1;
       if (keysDown.KeyA || keysDown.ArrowLeft) strafe -= 1;
-
       const length = Math.hypot(forward, strafe);
       if (length > 0) { forward /= length; strafe /= length; }
       forwardIntent = forward;
@@ -150,8 +138,6 @@ export function createPlayerController({ camera, colliders, interactables, state
       bodySpeed = deltaTime > 0
         ? Math.hypot(player.x - previousX, player.z - previousZ) / deltaTime
         : 0;
-
-      // Lightweight vertical physics for a short, responsive jump. The floor stays authoritative.
       if (player.jumpHeight > 0 || jumpVelocity > 0) {
         jumpVelocity -= GRAVITY * deltaTime;
         player.jumpHeight += jumpVelocity * deltaTime;

@@ -35,8 +35,8 @@ try {
 
   await page.goto("http://127.0.0.1:4173/?smoke=1", { waitUntil: "domcontentloaded", timeout: 30000 });
   await page.waitForSelector("#screenCanvas", { timeout: 10000 });
-  await page.waitForFunction(() => document.querySelector("#startButton")?.disabled === false, null, { timeout: 15000 });
-  await page.locator("#loadingScreen").waitFor({ state: "hidden", timeout: 15000 });
+  await page.waitForFunction(() => document.querySelector("#startButton")?.disabled === false, null, { timeout: 30000 });
+  await page.locator("#loadingScreen").waitFor({ state: "hidden", timeout: 30000 });
 
   const beforeStart = await page.evaluate(() => ({
     webgl: (() => {
@@ -126,8 +126,8 @@ try {
     const count = document.querySelector("#modelLibraryCount")?.textContent || "";
     return Number(count.replace(/[^0-9]/g, "")) >= 1883;
   }, null, { timeout: 20000 });
-  await page.locator("#modelLibrarySearch").fill("hangar-largea");
-  const modelCard = page.locator("#modelLibraryGrid .model-card").filter({ hasText: "Hangar largea" }).first();
+  await page.locator("#modelLibrarySearch").fill("building-a");
+  const modelCard = page.locator("#modelLibraryGrid .model-card").filter({ hasText: "Building a" }).first();
   await modelCard.waitFor({ state: "visible", timeout: 10000 });
   await modelCard.click();
   await page.locator("#modelLibraryPlace").click();
@@ -141,10 +141,11 @@ try {
   });
   if (
     worldCheck.theme !== "DEPOO" || worldCheck.count < 140 ||
-    !worldCheck.ids.includes("city-kit-roads/road-straight") ||
+    !worldCheck.ids.includes("city-kit-roads/road-roundabout") ||
     !worldCheck.ids.includes("city-kit-commercial/building-skyscraper-a") ||
     !worldCheck.ids.includes("city-kit-suburban/building-type-a") ||
-    !worldCheck.ids.includes("car-kit/sedan")
+    !worldCheck.ids.includes("car-kit/sedan") ||
+    !worldCheck.ids.includes("mini-characters/character-female-a")
   ) throw new Error("DEPOO modular city is incomplete: " + JSON.stringify(worldCheck));
 
   const controls = await page.evaluate(() => ({

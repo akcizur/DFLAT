@@ -58,9 +58,10 @@ if (!worldSource.includes('ground.name = "DEPOO city ground"')) fail("DEPOO city
 if (!worldSource.includes('theme: "DEPOO"')) fail("world diagnostics must identify DEPOO");
 if (!worldSource.includes('fetch(APP_BASE + "models/manifest.json")')) fail("the local city asset manifest is not loaded");
 if (worldSource.includes("space-kit/") || worldSource.includes("monorail") || worldSource.includes("hangar")) fail("old space-depot world code remains connected");
-for (const id of ["city-kit-roads/road-straight","city-kit-commercial/building-skyscraper-a","car-kit/sedan","nature-kit/tree-oak"]) {
+for (const id of ["city-kit-roads/road-straight","city-kit-roads/road-roundabout","city-kit-commercial/building-skyscraper-a","car-kit/sedan","mini-characters/character-female-a","nature-kit/tree-oak"]) {
   if (!worldSource.includes(id)) fail("required city component is missing from world: " + id);
 }
+if (!worldSource.includes('place("city-kit-commercial/building-" + variant')) fail("the commercial building variation set is not generated");
 if (!worldSource.includes('place("city-kit-suburban/building-type-" + type')) fail("residential house variants are not generated from the city kit");
 const modelPrep = await readFile(path.join(root, "scripts/prepare-open-models.mjs"), "utf8");
 if (!modelPrep.includes('model.license !== "CC0-1.0"')) fail("asset downloader must verify CC0 license");

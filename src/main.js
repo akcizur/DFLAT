@@ -81,7 +81,7 @@ renderer.shadowMap.autoUpdate = true;
 renderer.domElement.id = "screenCanvas";
 renderer.domElement.tabIndex = 0;
 mount.appendChild(renderer.domElement);
-setLoadingProgress(34, "VYKRESLOVAČ PŘIPRAVEN", "Připravuji město DEPOO.", "RENDERER");
+setLoadingProgress(34, "VYKRESLOVAČ PŘIPRAVEN", "Připravuji kompletní město DEPOO.", "RENDERER");
 
 function resize() {
   const displayWidth = Math.max(1, innerWidth);
@@ -107,7 +107,7 @@ const state = {
   finished: false, started: false, paused: false, openWorld: true, ready: false
 };
 const ui = createUI();
-setLoadingProgress(45, "STAVÍM MĚSTO DEPOO", "Skládám ulice, domy, obchody, parky a městský provoz.", "CITY KIT");
+setLoadingProgress(45, "STAVÍM MĚSTO DEPOO", "Skládám 36 městských bloků, celé čtvrti, parky a městský provoz.", "CITY KIT");
 const world = createOpenWorld({
   THREE,
   scene,

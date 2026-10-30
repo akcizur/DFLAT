@@ -1,4 +1,4 @@
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -9,50 +9,78 @@ const SOURCE_COMMIT = "eb99f44e0a4ff36a3d5e52eb1256cb566d8854c3";
 const SOURCE_ROOT = "https://raw.githubusercontent.com/" + SOURCE_REPO + "/" + SOURCE_COMMIT;
 const CATALOG_URL = SOURCE_ROOT + "/catalog.json";
 
-// Curated Kenney city models. The full 1,883-model CC0 catalog stays searchable in-game.
+// The complete DEPOO town is assembled from verified, curated Kenney CC0 modules.
 const CITY_MODEL_IDS = [
-  "city-kit-roads/road-straight",
-  "city-kit-roads/road-crossroad",
   "city-kit-roads/road-roundabout",
+  "city-kit-roads/road-crossroad-path",
+  "city-kit-roads/road-crossroad",
   "city-kit-roads/road-end",
+  "city-kit-roads/road-straight",
+  "city-kit-roads/road-square",
   "city-kit-roads/light-square-double",
   "city-kit-roads/traffic-light-object-vertical",
   "city-kit-roads/road-sign-stop",
   "city-kit-roads/road-sign-street",
-  "city-kit-roads/electricity-pole",
+  "city-kit-roads/road-sign-warning",
   "city-kit-roads/dumpster",
-  "city-kit-commercial/building-a",
-  "city-kit-commercial/building-c",
-  "city-kit-commercial/building-f",
-  "city-kit-commercial/building-h",
-  "city-kit-commercial/building-j",
-  "city-kit-commercial/building-n",
+  "city-kit-roads/electricity-pole",
+  "city-kit-roads/construction-barrier",
+  "city-kit-roads/construction-cone",
   "city-kit-commercial/building-skyscraper-a",
   "city-kit-commercial/building-skyscraper-b",
   "city-kit-commercial/building-skyscraper-c",
   "city-kit-commercial/building-skyscraper-d",
   "city-kit-commercial/building-skyscraper-e",
-  "city-kit-commercial/low-detail-building-a",
-  "city-kit-commercial/low-detail-building-d",
-  "city-kit-commercial/low-detail-building-g",
-  "city-kit-commercial/low-detail-building-j",
-  "city-kit-commercial/low-detail-building-m",
-  "city-kit-commercial/low-detail-building-wide-a",
+  "city-kit-commercial/building-a",
+  "city-kit-commercial/building-b",
+  "city-kit-commercial/building-c",
+  "city-kit-commercial/building-d",
+  "city-kit-commercial/building-e",
+  "city-kit-commercial/building-f",
+  "city-kit-commercial/building-g",
+  "city-kit-commercial/building-h",
+  "city-kit-commercial/building-i",
+  "city-kit-commercial/building-j",
+  "city-kit-commercial/building-k",
+  "city-kit-commercial/building-l",
+  "city-kit-commercial/building-m",
+  "city-kit-commercial/building-n",
   "city-kit-commercial/detail-awning-wide",
   "city-kit-commercial/detail-awning",
   "city-kit-commercial/detail-parasol-a",
   "city-kit-commercial/detail-parasol-b",
   "city-kit-commercial/detail-overhang-wide",
+  "city-kit-commercial/low-detail-building-a",
+  "city-kit-commercial/low-detail-building-b",
+  "city-kit-commercial/low-detail-building-d",
+  "city-kit-commercial/low-detail-building-e",
+  "city-kit-commercial/low-detail-building-g",
+  "city-kit-commercial/low-detail-building-h",
+  "city-kit-commercial/low-detail-building-j",
+  "city-kit-commercial/low-detail-building-k",
+  "city-kit-commercial/low-detail-building-m",
+  "city-kit-commercial/low-detail-building-n",
+  "city-kit-commercial/low-detail-building-wide-a",
+  "city-kit-commercial/low-detail-building-wide-b",
   "city-kit-suburban/building-type-a",
   "city-kit-suburban/building-type-b",
+  "city-kit-suburban/building-type-c",
   "city-kit-suburban/building-type-d",
+  "city-kit-suburban/building-type-e",
   "city-kit-suburban/building-type-f",
+  "city-kit-suburban/building-type-g",
   "city-kit-suburban/building-type-h",
+  "city-kit-suburban/building-type-i",
   "city-kit-suburban/building-type-j",
+  "city-kit-suburban/building-type-k",
   "city-kit-suburban/building-type-l",
+  "city-kit-suburban/building-type-m",
   "city-kit-suburban/building-type-n",
+  "city-kit-suburban/building-type-o",
   "city-kit-suburban/building-type-p",
+  "city-kit-suburban/building-type-q",
   "city-kit-suburban/building-type-r",
+  "city-kit-suburban/building-type-s",
   "city-kit-suburban/building-type-t",
   "city-kit-suburban/building-type-u",
   "city-kit-suburban/tree-large",
@@ -61,6 +89,7 @@ const CITY_MODEL_IDS = [
   "city-kit-suburban/planter",
   "nature-kit/tree-oak",
   "nature-kit/tree-detailed",
+  "nature-kit/tree-default",
   "nature-kit/plant-bushlarge",
   "furniture-kit/bench",
   "furniture-kit/trashcan",
@@ -69,9 +98,25 @@ const CITY_MODEL_IDS = [
   "car-kit/suv",
   "car-kit/police",
   "car-kit/delivery",
+  "car-kit/van",
   "car-kit/ambulance",
   "car-kit/firetruck",
-  "car-kit/garbage-truck"
+  "car-kit/garbage-truck",
+  "car-kit/truck",
+  "mini-characters/character-female-a",
+  "mini-characters/character-female-b",
+  "mini-characters/character-female-c",
+  "mini-characters/character-female-d",
+  "mini-characters/character-female-e",
+  "mini-characters/character-female-f",
+  "mini-characters/character-male-a",
+  "mini-characters/character-male-b",
+  "mini-characters/character-male-c",
+  "mini-characters/character-male-d",
+  "mini-characters/character-male-e",
+  "mini-characters/character-male-f",
+  "mini-characters/wheelchair-deluxe",
+  "prototype-kit/animal-dog"
 ];
 
 async function fetchBuffer(url) {
@@ -105,8 +150,8 @@ async function main() {
   });
 
   let completed = 0;
-  for (let offset = 0; offset < chosen.length; offset += 4) {
-    const batch = chosen.slice(offset, offset + 4);
+  for (let offset = 0; offset < chosen.length; offset += 6) {
+    const batch = chosen.slice(offset, offset + 6);
     await Promise.all(batch.map(async model => {
       const destination = path.join(PUBLIC_MODELS, model.file);
       await mkdir(path.dirname(destination), { recursive: true });
@@ -125,7 +170,7 @@ async function main() {
   }
 
   const manifest = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     source: "https://github.com/" + SOURCE_REPO,
     sourceCommit: SOURCE_COMMIT,
     sourceCatalog: CATALOG_URL,
@@ -133,7 +178,7 @@ async function main() {
     author: "Kenney",
     catalogModelCount: available.size,
     bundledModelCount: chosen.length,
-    world: "DEPOO Open City",
+    world: "DEPOO Complete Open City",
     assets: chosen.map(model => ({
       id: model.id, name: model.name, pack: model.packId, file: model.file,
       bytes: model.size, license: model.license, author: model.author,
@@ -141,15 +186,19 @@ async function main() {
       packUrl: model.packUrl
     }))
   };
+
   await writeFile(path.join(PUBLIC_MODELS, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
   await writeFile(path.join(PUBLIC_MODELS, "NOTICE-KENNEY-CC0.txt"),
-    "DEPOO uses modular city, road, vehicle and nature models by Kenney.\n" +
+    "DEPOO uses modular city, road, vehicle, pedestrian, nature and furniture models by Kenney.\n" +
     "Source: " + manifest.source + "\n" +
     "Pinned commit: " + SOURCE_COMMIT + "\n" +
     "License: Creative Commons Zero 1.0 Universal (CC0-1.0).\n" +
     "Attribution is not required but appreciated. Support the artist: https://kenney.nl/donate\n"
   );
-  console.log("Prepared " + chosen.length + " local city CC0 models; catalog exposes " + available.size + " models.");
+
+  const totalBytes = chosen.reduce((sum, model) => sum + model.size, 0);
+  console.log("Prepared " + chosen.length + " city model types (" +
+    (totalBytes / (1024 * 1024)).toFixed(2) + " MB source size); catalog exposes " + available.size + " models.");
 }
 
 main().catch(error => {
