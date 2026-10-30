@@ -2,6 +2,8 @@
 export const PANELAK_INTERIOR_LAYOUT = Object.freeze({
   bounds: Object.freeze({ west: -22.5, east: -11.9, north: -46.2, south: -11.8 }),
   entrance: Object.freeze({ x: -12.02, z: -29, width: 2.5, side: "east" }),
+  floor: Object.freeze({ index: 0, elevation: 0, height: 2.9 }),
+  windowBays: Object.freeze([-14, -10, -6, -2, 2, 6, 10, 14].map(offset => -29 + offset)),
   rooms: Object.freeze(["entrance-hall", "stairwell", "kitchen", "living-room", "bedroom", "bathroom"]),
   interactions: Object.freeze(["entrance-door", "lights"]), staticDoors: Object.freeze(["apartment", "bedroom", "bathroom"])
 });
@@ -41,14 +43,46 @@ export function createPanelakInterior({ THREE, scene, colliders, interactables }
   // Leave the playable ground floor open at the top so the apartment layout is visible
   // from the entrance and is easy to read while navigating the blockout.
 
-  // The entrance faces the street on the east side, so it is reachable without
-  // walking around the whole block. Both wall segments leave a full door-width gap.
+  // The ground-floor plan uses the same 4 m facade rhythm as the upper floors.
+  // Every main room receives a real window opening at the matching exterior bay.
   const doorwayZ = -29, doorwayHalf = 1.25;
-  box("West exterior wall", west+0.08, wallY, -29, 0.16, wallH, 33.8, mats.concrete, { collider: true });
-  for (const [a,b] of [[north, doorwayZ-doorwayHalf],[doorwayZ+doorwayHalf,south]]) {
-    const length = b-a;
-    box("East exterior wall", east-0.08, wallY, (a+b)/2, 0.16, wallH, length, mats.concrete, { collider: true });
-  }
+  const windowCenters = PANELAK_INTERIOR_LAYOUT.windowBays;
+  const windowWidth = 1.34, sillHeight = 0.78, windowTop = 2.24;
+  const addLongFacade = (x, label, side) => {
+    const intervals = windowCenters
+      .filter(z => !(side === "east" && Math.abs(z - doorwayZ) < 0.01))
+      .map(z => [z-windowWidth/2, z+windowWidth/2])
+      .sort((a,b) => a[0]-b[0]);
+    const openings = side === "east"
+      ? [...intervals, [doorwayZ-doorwayHalf, doorwayZ+doorwayHalf]].sort((a,b)=>a[0]-b[0])
+      : intervals;
+    let cursor = north;
+    for (const [a,b] of openings) {
+      if (a > cursor) {
+        const length = a-cursor;
+        box(label+" / concrete pier", x, wallY, (cursor+a)/2, 0.16, wallH, length, mats.concrete, { collider:true });
+      }
+      if (b > a && !(side === "east" && Math.abs((a+b)/2-doorwayZ)<0.01)) {
+        box(label+" / window sill", x, sillHeight/2, (a+b)/2, 0.16, sillHeight, b-a, mats.concrete, { collider:true });
+        box(label+" / window head", x, (windowTop+wallH)/2, (a+b)/2, 0.16, wallH-windowTop, b-a, mats.concrete, { collider:true });
+      }
+      cursor = Math.max(cursor,b);
+    }
+    if (cursor < south) {
+      box(label+" / concrete pier", x, wallY, (cursor+south)/2, 0.16, wallH, south-cursor, mats.concrete, { collider:true });
+    }
+    for (const z of windowCenters) {
+      if (side === "east" && Math.abs(z-doorwayZ)<0.01) continue;
+      const frame = box(label+" / window frame", x, (sillHeight+windowTop)/2, z, 0.19, windowTop-sillHeight, windowWidth, mats.white);
+      const glass = box(label+" / window glass", x + (side === "east" ? -0.035 : 0.035), (sillHeight+windowTop)/2, z, 0.045, windowTop-sillHeight-0.12, windowWidth-0.12, mats.glass);
+      box(label+" / window mullion", x, (sillHeight+windowTop)/2, z, 0.20, windowTop-sillHeight-0.08, 0.055, mats.white);
+      box(label+" / window sill ledge", x, sillHeight, z, 0.24, 0.08, windowWidth+0.12, mats.concrete);
+      frame.userData = { ...(frame.userData||{}), facadeSide:side, bayZ:z };
+      glass.userData = { ...(glass.userData||{}), facadeSide:side, bayZ:z };
+    }
+  };
+  addLongFacade(west+0.08, "West exterior", "west");
+  addLongFacade(east-0.08, "East exterior", "east");
   box("North end wall", -17.2, wallY, north+0.08, 10.2, wallH, 0.16, mats.concrete, { collider: true });
   box("South end wall", -17.2, wallY, south-0.08, 10.2, wallH, 0.16, mats.concrete, { collider: true });
 
