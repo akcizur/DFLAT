@@ -58,11 +58,19 @@ if (!worldSource.includes('ground.name = "DEPOO city ground"')) fail("DEPOO city
 if (!worldSource.includes('theme: "DEPOO"')) fail("world diagnostics must identify DEPOO");
 if (!worldSource.includes('fetch(APP_BASE + "models/manifest.json")')) fail("the local city asset manifest is not loaded");
 if (worldSource.includes("space-kit/") || worldSource.includes("monorail") || worldSource.includes("hangar")) fail("old space-depot world code remains connected");
-for (const id of ["city-kit-roads/road-straight","city-kit-roads/road-roundabout","city-kit-commercial/building-skyscraper-a","car-kit/sedan","mini-characters/character-female-a","nature-kit/tree-oak"]) {
+for (const id of ["city-kit-roads/road-straight","city-kit-roads/road-roundabout","nature-kit/tree-oak"]) {
   if (!worldSource.includes(id)) fail("required city component is missing from world: " + id);
 }
-if (!worldSource.includes('place("city-kit-commercial/building-" + variant')) fail("the commercial building variation set is not generated");
-if (!worldSource.includes('place("city-kit-suburban/building-type-" + type')) fail("residential house variants are not generated from the city kit");
+for (const template of [
+  '"city-kit-commercial/building-skyscraper-" + variant',
+  '"city-kit-commercial/building-" + variant',
+  '"city-kit-suburban/building-type-" + variant',
+  '"car-kit/" + model',
+  '"mini-characters/character-" + model'
+]) if (!worldSource.includes(template)) fail("missing generated city asset family: " + template);
+if (!worldSource.includes("new THREE.InstancedMesh") || !worldSource.includes("addStaticInstances")) fail("repeated city assets must use GPU instancing");
+if (!worldSource.includes("ROAD_FOOTPRINT = 8") || !worldSource.includes("targetFootprint: ROAD_FOOTPRINT")) fail("road modules must use the fitted city grid");
+if (!worldSource.includes("length: 23") || !worldSource.includes("STREET_LINES = [-72, -48, -24, 0, 24, 48, 72]")) fail("the seven-by-seven street network is missing");
 const modelPrep = await readFile(path.join(root, "scripts/prepare-open-models.mjs"), "utf8");
 if (!modelPrep.includes('model.license !== "CC0-1.0"')) fail("asset downloader must verify CC0 license");
 if (!modelPrep.includes('model.author !== "Kenney"')) fail("asset downloader must verify artist");
@@ -76,7 +84,7 @@ const library = await readFile(path.join(root, "src/game/model-library.js"), "ut
 if (!library.includes('fetch(SOURCE_ROOT + "/catalog.json")') || !library.includes("PAGE_SIZE = 48")) fail("searchable paginated CC0 catalog is missing");
 const player = await readFile(path.join(root, "src/game/player.js"), "utf8");
 if (!player.includes("function tryMoveTo(x, z)") || !player.includes("function nearestInteractable()")) fail("first-person movement/interactions are missing");
-if (!player.includes("z: 46")) fail("player must spawn at the DEPOO city entrance");
+if (!player.includes("z: 100")) fail("player must spawn at the DEPOO city entrance");
 
 for (const relativePath of required.filter(file => file.endsWith(".js") || file.endsWith(".mjs"))) {
   const fullPath = path.join(root, relativePath);
