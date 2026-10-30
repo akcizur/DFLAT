@@ -6,6 +6,16 @@ export const PANELAK_LAYOUT = Object.freeze([
   { id: "panelak-east-b", x: 17.2, z: -67, floors: 4, width: 10.6, length: 34.4, height: 11.6 }
 ]);
 
+// Shared dimensions for every facade and the matching interior room plan.
+export const PANELAK_FACADE_GRID = Object.freeze({
+  bayOffsets: Object.freeze([-14, -10, -6, -2, 2, 6, 10, 14]),
+  endWindowOffsets: Object.freeze([-2, 2]),
+  longWindowWidth: 1.28,
+  longWindowHeight: 1.48,
+  endWindowWidth: 1.38,
+  endWindowHeight: 1.48
+});
+
 const MATERIALS = Object.freeze({
   concrete: 0xa6a69e, concreteLight: 0xb7b5aa, concreteCool: 0x979d9b,
   concreteBand: 0x858983, plinth: 0x747873, windowFrame: 0xd0cec3,
@@ -42,7 +52,7 @@ export function createPanelakDistrict({ THREE, scene }) {
     batch.positions.push({ x, y, z });
   }
 
-  const bayOffsets = [-14, -10, -6, -2, 2, 6, 10, 14];
+  const bayOffsets = PANELAK_FACADE_GRID.bayOffsets;
 
   PANELAK_LAYOUT.forEach((building, buildingIndex) => {
     const { x, z, floors, width, length, height } = building;
@@ -149,7 +159,7 @@ export function createPanelakDistrict({ THREE, scene }) {
       const faceZ = z + endSide * halfLength;
       for (let floor = 0; floor < floors; floor += 1) {
         const windowY = floorHeight * (floor + 0.51);
-        for (const offset of [-2.0, 2.0]) {
+        for (const offset of PANELAK_FACADE_GRID.endWindowOffsets) {
           box("windowFrame", 1.38, 1.48, 0.15, x + offset, windowY, faceZ + endSide * 0.065);
           box("glass", 1.14, 1.27, 0.045, x + offset, windowY + 0.015, faceZ + endSide * 0.15);
           box("windowFrame", 0.045, 1.20, 0.035, x + offset, windowY, faceZ + endSide * 0.176);
