@@ -1,15 +1,23 @@
-// First playable panelák ground-floor interior. Coordinates are metres in the existing world.
+// The interior is derived from the same building and facade grid as the exterior.
+import { PANELAK_LAYOUT, PANELAK_FACADE_GRID } from "./panelak.js";
+const FIRST_PANELAK = PANELAK_LAYOUT[0];
+const FLOOR_HEIGHT = FIRST_PANELAK.height / FIRST_PANELAK.floors;
 export const PANELAK_INTERIOR_LAYOUT = Object.freeze({
-  bounds: Object.freeze({ west: -22.5, east: -11.9, north: -46.2, south: -11.8 }),
-  entrance: Object.freeze({ x: -12.02, z: -29, width: 2.5, side: "east" }),
-  floor: Object.freeze({ index: 0, elevation: 0, height: 2.9 }),
-  windowBays: Object.freeze([-14, -10, -6, -2, 2, 6, 10, 14].map(offset => -29 + offset)),
+  bounds: Object.freeze({
+    west: FIRST_PANELAK.x-FIRST_PANELAK.width/2,
+    east: FIRST_PANELAK.x+FIRST_PANELAK.width/2,
+    north: FIRST_PANELAK.z-FIRST_PANELAK.length/2,
+    south: FIRST_PANELAK.z+FIRST_PANELAK.length/2
+  }),
+  entrance: Object.freeze({ x: FIRST_PANELAK.x+FIRST_PANELAK.width/2-0.12, z: FIRST_PANELAK.z, width: 2.5, side: "east" }),
+  floor: Object.freeze({ index: 0, elevation: 0, height: FLOOR_HEIGHT }),
+  windowBays: Object.freeze(PANELAK_FACADE_GRID.bayOffsets.map(offset => FIRST_PANELAK.z+offset)),
   roomWindowBays: Object.freeze({
-    "living-room": -35,
-    "kitchen": -27,
-    "bedroom": -19,
-    "bathroom": -15,
-    "stairwell": -39
+    "living-room": FIRST_PANELAK.z+PANELAK_FACADE_GRID.bayOffsets[2],
+    "kitchen": FIRST_PANELAK.z+PANELAK_FACADE_GRID.bayOffsets[4],
+    "bedroom": FIRST_PANELAK.z+PANELAK_FACADE_GRID.bayOffsets[6],
+    "bathroom": FIRST_PANELAK.z+PANELAK_FACADE_GRID.bayOffsets[7],
+    "stairwell": FIRST_PANELAK.z+PANELAK_FACADE_GRID.bayOffsets[1]
   }),
   rooms: Object.freeze(["entrance-hall", "stairwell", "kitchen", "living-room", "bedroom", "bathroom"]),
   interactions: Object.freeze(["entrance-door", "lights"]), staticDoors: Object.freeze(["apartment", "bedroom", "bathroom"])
@@ -44,8 +52,9 @@ export function createPanelakInterior({ THREE, scene, colliders, interactables }
     return mesh;
   };
   // First west block bounds: x [-22.5,-11.9], z [-46.2,-11.8].
-  const west = -22.5, east = -11.9, north = -46.2, south = -11.8;
-  const floorY = 0.06, wallY = 1.48, wallH = 2.84;
+  const { west, east, north, south } = PANELAK_INTERIOR_LAYOUT.bounds;
+  const floorHeight = PANELAK_INTERIOR_LAYOUT.floor.height;
+  const floorY = 0.06, wallY = floorHeight*0.51, wallH = floorHeight-0.06;
   box("Interior / terrazzo entrance floor", -17.2, floorY, -29, 10.2, 0.12, 33.8, mats.floor);
   // Leave the playable ground floor open at the top so the apartment layout is visible
   // from the entrance and is easy to read while navigating the blockout.
@@ -54,7 +63,10 @@ export function createPanelakInterior({ THREE, scene, colliders, interactables }
   // Every main room receives a real window opening at the matching exterior bay.
   const doorwayZ = -29, doorwayHalf = 1.25;
   const windowCenters = PANELAK_INTERIOR_LAYOUT.windowBays;
-  const windowWidth = 1.34, sillHeight = 0.78, windowTop = 2.24;
+  const windowWidth = PANELAK_FACADE_GRID.longWindowWidth;
+  const windowHeight = PANELAK_FACADE_GRID.longWindowHeight;
+  const sillHeight = floorHeight*0.51-windowHeight/2;
+  const windowTop = floorHeight*0.51+windowHeight/2;
   const addLongFacade = (x, label, side) => {
     const intervals = windowCenters
       .filter(z => !(side === "east" && Math.abs(z - doorwayZ) < 0.01))
@@ -91,8 +103,8 @@ export function createPanelakInterior({ THREE, scene, colliders, interactables }
   addLongFacade(west+0.08, "West exterior", "west");
   addLongFacade(east-0.08, "East exterior", "east");
   const addEndFacade = (z, label, side) => {
-    const centers = [-19.2, -15.2];
-    const width = 1.38;
+    const centers = PANELAK_FACADE_GRID.endWindowOffsets.map(offset => FIRST_PANELAK.x+offset);
+    const width = PANELAK_FACADE_GRID.endWindowWidth;
     let cursor = west;
     for (const x of centers) {
       const a=x-width/2, b=x+width/2;
