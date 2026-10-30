@@ -631,6 +631,24 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
   }
 
   function getCoordinateData() {
+    if (mode === "imported-user-city") {
+      return {
+        schemaVersion: "6.0",
+        theme: "Imported LowPoly City",
+        setting: "User-supplied LowPoly City + Modern Houses collection",
+        units: "metres",
+        objects: [
+          { id: "user-lowpoly-city", x: 0, y: 0, z: 0, kind: "imported-city", zone: "city" },
+          { id: "user-modern-houses", x: 143, y: 0, z: -58, kind: "imported-houses", zone: "residential" }
+        ],
+        zones: ["city", "residential"],
+        anchors: [{ id: "spawn", x: 0, y: 0, z: 9.2 }, { id: "modern-houses", x: 143, y: 0, z: -58 }],
+        loadedAssetIds: ["user-lowpoly-city", "user-modern-houses"],
+        failedAssetIds: [],
+        colliderCount: colliders.length,
+        geometry: []
+      };
+    }
     const zones = [...new Set(WORLD_LAYOUT.map(entry => entry.zone))];
     return {
       schemaVersion: "5.0",
@@ -667,8 +685,10 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
     addPlacedModel,
     tick,
     getCoordinateData,
-    exportCoordinateCSV: () => "record_type,id,name,x,y,z,zone\n" + WORLD_LAYOUT.map((entry, index) =>
-      ["object", index + 1, entry.id, entry.x, entry.y || 0, entry.z, entry.zone].join(",")
-    ).join("\n")
+    exportCoordinateCSV: () => mode === "imported-user-city"
+      ? "record_type,id,name,x,y,z,zone\\nobject,1,user-lowpoly-city,0,0,0,city\\nobject,2,user-modern-houses,143,0,-58,residential"
+      : "record_type,id,name,x,y,z,zone\\n" + WORLD_LAYOUT.map((entry, index) =>
+        ["object", index + 1, entry.id, entry.x, entry.y || 0, entry.z, entry.zone].join(",")
+      ).join("\\n")
   };
 }
