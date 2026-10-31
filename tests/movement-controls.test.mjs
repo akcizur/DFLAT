@@ -35,7 +35,7 @@ test("imported-world spawn relocates the player and synchronizes the camera befo
 
 test("spawn relocation refuses points outside imported bounds or inside a collider", () => {
   const bounds = { minX: -10, maxX: 10, minZ: -10, maxZ: 10 };
-  const { controller } = createController(bounds, [
+  const { controller } = createController({ bounds }, [
     { minX: 1, maxX: 3, minZ: 1, maxZ: 3 }
   ]);
   assert.equal(controller.setSpawn({ x: 12, z: 0 }), false);
