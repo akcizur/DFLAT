@@ -124,6 +124,7 @@ createModelLibrary({ THREE, scene, camera, state, ui, world });
 state.changeFloor = () => ui.showToast("DEPOO je otevřené město. Prozkoumej jeho ulice.");
 
 world.ready.then(result => {
+  if (world.navigation.spawn) controller.setSpawn(world.navigation.spawn);
   worldReady = true;
   setLoadingProgress(87, "MĚSTO PŘIPRAVENO", result.loaded + " / " + result.total + " typů městských assetů načteno.", "CITY ASSETS");
   finishStartupWhenReady();
