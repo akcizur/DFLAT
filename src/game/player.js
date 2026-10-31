@@ -37,7 +37,8 @@ export function createPlayerController({ camera, colliders, interactables, state
   }
 
   function canMove(nx, nz) {
-    if (bounds && (nx < bounds.minX || nx > bounds.maxX || nz < bounds.minZ || nz > bounds.maxZ)) return false;
+    const activeBounds = navigation?.bounds || bounds;
+    if (activeBounds && (nx < activeBounds.minX || nx > activeBounds.maxX || nz < activeBounds.minZ || nz > activeBounds.maxZ)) return false;
     return blockingCollidersAt(nx, nz).length === 0;
   }
 
