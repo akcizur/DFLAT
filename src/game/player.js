@@ -37,7 +37,8 @@ export function createPlayerController({ camera, colliders, interactables, state
   }
 
   function canMove(nx, nz) {
-    if (bounds && (nx < bounds.minX || nx > bounds.maxX || nz < bounds.minZ || nz > bounds.maxZ)) return false;
+    const activeBounds = navigation?.bounds || bounds;
+    if (activeBounds && (nx < activeBounds.minX || nx > activeBounds.maxX || nz < activeBounds.minZ || nz > activeBounds.maxZ)) return false;
     return blockingCollidersAt(nx, nz).length === 0;
   }
 
@@ -111,6 +112,31 @@ export function createPlayerController({ camera, colliders, interactables, state
     camera.rotation.z = bodyRoll;
   }
 
+  function setSpawn(spawn) {
+    if (!spawn || !Number.isFinite(spawn.x) || !Number.isFinite(spawn.z)) return false;
+    if (!canMove(spawn.x, spawn.z)) return false;
+    player.x = spawn.x;
+    player.z = spawn.z;
+    player.elevation = 0;
+    player.jumpHeight = 0;
+    jumpVelocity = 0;
+    player.yaw = Number.isFinite(spawn.yaw) ? spawn.yaw : 0;
+    cameraYaw = player.yaw;
+    cameraPitch = player.pitch;
+    cameraX = player.x;
+    cameraY = 1.68;
+    cameraZ = player.z;
+    for (const code of Object.keys(keysDown)) delete keysDown[code];
+    bodySpeed = 0;
+    walkBlend = 0;
+    camera.position.set(player.x, cameraY, player.z);
+    camera.rotation.order = "YXZ";
+    camera.rotation.x = cameraPitch;
+    camera.rotation.y = cameraYaw;
+    camera.rotation.z = 0;
+    return true;
+  }
+
   function update(deltaTime) {
     const previousX = player.x;
     const previousZ = player.z;
@@ -159,7 +185,7 @@ export function createPlayerController({ camera, colliders, interactables, state
   }
 
   return {
-    player, keysDown, doInteract, update, syncCamera, jump,
+    player, keysDown, doInteract, update, syncCamera, jump, setSpawn,
     getBlockingCollidersAt: (x, z) => blockingCollidersAt(x, z).map(c => ({
       name: c.name ?? "(unnamed collider)",
       minX: c.minX, maxX: c.maxX, minZ: c.minZ, maxZ: c.maxZ

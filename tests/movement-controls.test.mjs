@@ -9,15 +9,48 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const inputSource = readFileSync(path.join(root, "src/game/input.js"), "utf8");
 const htmlSource = readFileSync(path.join(root, "index.html"), "utf8");
 
-function createController() {
+function createController(navigation = null, colliders = []) {
   const camera = {
     position: { x: 0, y: 0, z: 0, set(x, y, z) { this.x = x; this.y = y; this.z = z; } },
     rotation: { order: "YXZ", x: 0, y: 0, z: 0 }
   };
   const state = { started: true, paused: false, currentFloor: 0 };
   const ui = { updateObjective() {}, showToast() {} };
-  return { controller: createPlayerController({ camera, colliders: [], interactables: [], state, ui }), camera, state };
+  return { controller: createPlayerController({ camera, colliders, interactables: [], state, ui, navigation }), camera, state };
 }
+
+
+test("imported-world spawn relocates the player and synchronizes the camera before play", () => {
+  const { controller, camera } = createController({
+    bounds: { minX: -20, maxX: 20, minZ: -20, maxZ: 20 }
+  });
+  assert.equal(controller.setSpawn({ x: 4.95, z: 2.32, yaw: 0.25 }), true);
+  assert.equal(controller.player.x, 4.95);
+  assert.equal(controller.player.z, 2.32);
+  assert.equal(controller.player.yaw, 0.25);
+  assert.ok(Math.abs(camera.position.x - 4.95) < 1e-9);
+  assert.ok(Math.abs(camera.position.z - 2.32) < 1e-9);
+  assert.equal(camera.rotation.y, 0.25);
+});
+
+test("spawn relocation refuses points outside imported bounds or inside a collider", () => {
+  const bounds = { minX: -10, maxX: 10, minZ: -10, maxZ: 10 };
+  const { controller } = createController({ bounds }, [
+    { minX: 1, maxX: 3, minZ: 1, maxZ: 3 }
+  ]);
+  assert.equal(controller.setSpawn({ x: 12, z: 0 }), false);
+  assert.equal(controller.setSpawn({ x: 2, z: 2 }), false);
+  assert.equal(controller.player.x, 0);
+  assert.equal(controller.player.z, 100);
+});
+
+test("movement reads imported navigation bounds after asynchronous world loading", () => {
+  const navigation = { bounds: { minX: -112, maxX: 112, minZ: -112, maxZ: 112 } };
+  const { controller } = createController(navigation);
+  navigation.bounds = { minX: -10, maxX: 10, minZ: -10, maxZ: 10 };
+  assert.equal(controller.setSpawn({ x: 20, z: 0 }), false);
+  assert.equal(controller.setSpawn({ x: 5, z: 2 }), true);
+});
 
 test("walking uses the faster 3.6 m/s base speed on the open map", () => {
   const { controller } = createController();

@@ -549,6 +549,8 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
         minZ: -sourceSize.z * IMPORTED_CITY_SCALE / 2 - 70,
         maxZ: sourceSize.z * IMPORTED_CITY_SCALE / 2 + 70
       };
+      // Spawn on a verified open road tile inside the imported city's bounds.
+      navigation.spawn = { x: 4.95, z: 2.32, yaw: Math.PI * 0.02 };
       return {
         loaded: 2, total: 2, instances: navigation.assetInstances,
         colliders: colliders.length, failed: [], source: "user-supplied OBJ city + FBX modern houses",
@@ -645,7 +647,7 @@ export function createOpenWorld({ THREE, scene, onProgress = () => {} }) {
           { id: "user-modern-houses", x: 143, y: 0, z: -58, kind: "imported-houses", zone: "residential" }
         ],
         zones: ["city", "residential"],
-        anchors: [{ id: "spawn", x: 0, y: 0, z: 9.2 }, { id: "modern-houses", x: 143, y: 0, z: -58 }],
+        anchors: [{ id: "spawn", x: 4.95, y: 0, z: 2.32 }, { id: "modern-houses", x: 143, y: 0, z: -58 }],
         loadedAssetIds: ["user-lowpoly-city", "user-modern-houses"],
         failedAssetIds: [],
         colliderCount: colliders.length,
