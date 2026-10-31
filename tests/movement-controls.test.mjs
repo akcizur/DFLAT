@@ -44,6 +44,14 @@ test("spawn relocation refuses points outside imported bounds or inside a collid
   assert.equal(controller.player.z, 100);
 });
 
+test("movement reads imported navigation bounds after asynchronous world loading", () => {
+  const navigation = { bounds: { minX: -112, maxX: 112, minZ: -112, maxZ: 112 } };
+  const { controller } = createController(navigation);
+  navigation.bounds = { minX: -10, maxX: 10, minZ: -10, maxZ: 10 };
+  assert.equal(controller.setSpawn({ x: 20, z: 0 }), false);
+  assert.equal(controller.setSpawn({ x: 5, z: 2 }), true);
+});
+
 test("walking uses the faster 3.6 m/s base speed on the open map", () => {
   const { controller } = createController();
   assert.equal(controller.player.speed, 3.6);
