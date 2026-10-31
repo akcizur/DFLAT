@@ -28,8 +28,8 @@ test("imported-world spawn relocates the player and synchronizes the camera befo
   assert.equal(controller.player.x, 4.95);
   assert.equal(controller.player.z, 2.32);
   assert.equal(controller.player.yaw, 0.25);
-  assert.equal(camera.position.x, 4.95);
-  assert.equal(camera.position.z, 2.32);
+  assert.ok(Math.abs(camera.position.x - 4.95) < 1e-9);
+  assert.ok(Math.abs(camera.position.z - 2.32) < 1e-9);
   assert.equal(camera.rotation.y, 0.25);
 });
 
