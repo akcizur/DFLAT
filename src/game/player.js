@@ -128,7 +128,11 @@ export function createPlayerController({ camera, colliders, interactables, state
     for (const code of Object.keys(keysDown)) delete keysDown[code];
     bodySpeed = 0;
     walkBlend = 0;
-    syncCamera(1);
+    camera.position.set(player.x, cameraY, player.z);
+    camera.rotation.order = "YXZ";
+    camera.rotation.x = cameraPitch;
+    camera.rotation.y = cameraYaw;
+    camera.rotation.z = 0;
     return true;
   }
 
